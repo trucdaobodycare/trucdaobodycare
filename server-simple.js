@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 
 const app = express();
-const PORT = 3001;
+const PORT = 3002;  // 🎯 ĐỔI THÀNH 3002
 
 // Middleware
 app.use(cors());
@@ -31,22 +31,13 @@ app.get('/api/products', (req, res) => {
       id: 1, 
       name: 'Son môi Trúc Đào', 
       price: 150000,
-      category: 'son',
-      image: '/images/son.jpg'
+      category: 'son'
     },
     { 
       id: 2, 
       name: 'Kem dưỡng da cao cấp', 
       price: 250000,
-      category: 'kem',
-      image: '/images/kem.jpg'
-    },
-    { 
-      id: 3, 
-      name: 'Sữa rửa mặt dịu nhẹ', 
-      price: 120000,
-      category: 'sua',
-      image: '/images/sua.jpg'
+      category: 'kem'
     }
   ]);
 });
@@ -63,19 +54,13 @@ app.get('/', (req, res) => {
   });
 });
 
-// Xử lý 404
-app.use('*', (req, res) => {
-  res.status(404).json({ 
-    error: 'Route không tồn tại',
-    requestedUrl: req.originalUrl,
-    availableEndpoints: ['/api/test', '/api/products', '/']
-  });
-});
-
 // Khởi động server
 app.listen(PORT, () => {
-  console.log(`🚀 Server đang chạy trên http://localhost:${PORT}`);
-  console.log(`📊 Truy cập: http://localhost:${PORT}`);
+  console.log(`=================================`);
+  console.log(`🚀 Server đang chạy!`);
+  console.log(`📍 Port: ${PORT}`);
+  console.log(`🌐 Truy cập: http://localhost:${PORT}`);
   console.log(`🧪 Test API: http://localhost:${PORT}/api/test`);
-  console.log(`📦 Products API: http://localhost:${PORT}/api/products`);
+  console.log(`📦 Products: http://localhost:${PORT}/api/products`);
+  console.log(`=================================`);
 });
