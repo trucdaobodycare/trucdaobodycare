@@ -4,7 +4,7 @@ const { MongoClient, ObjectId } = require('mongodb');
 const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
 
 // Middleware - ĐẶT CORS ĐẦU TIÊN
 app.use(cors());
@@ -107,5 +107,6 @@ async function startServer() {
 startServer().catch(console.error);
 
 module.exports = app;
+
 
 
