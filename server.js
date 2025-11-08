@@ -6,105 +6,104 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
-app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3001'],
-  credentials: true
-}));
+// Middleware - ĐẶT CORS ĐẦU TIÊN
+app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Serve static files (nếu có frontend)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// K?t n?i MongoDB
-const mongoUrl = 'mongodb://localhost:27017';
-const dbName = 'trucdao-cosmetics';
+// Biến kết nối MongoDB
 let db;
+let mongoClient;
 
-MongoClient.connect(mongoUrl, { useUnifiedTopology: true })
-  .then(client => {
-    console.log('? K?t n?i MongoDB th�nh c�ng');
-    db = client.db(dbName);
-  })
-  .catch(error => {
-    console.error('? L?i k?t n?i MongoDB:', error);
-  });
+// Kết nối MongoDB - SỬA LẠI PHẦN NÀY
+async function connectDB() {
+  try {
+    const mongoUrl = 'mongodb://localhost:27017';
+    mongoClient = new MongoClient(mongoUrl, {
+      useUnifiedTopology: true,
+      useNewUrlParser: true
+    });
+    
+    await mongoClient.connect();
+    db = mongoClient.db('trucdao-cosmetics');
+    console.log('✅ Kết nối MongoDB thành công');
+  } catch (error) {
+    console.error('❌ Lỗi kết nối MongoDB:', error);
+  }
+}
 
-// Routes API s?n ph?m
+// Routes API sản phẩm - ĐẢM BẢO CÓ DẤU / Ở ĐẦU
 app.get('/api/products', async (req, res) => {
   try {
+    console.log('📦 API /api/products được gọi');
+    
+    if (!db) {
+      return res.status(500).json({ error: 'Database chưa kết nối' });
+    }
+    
     const products = await db.collection('products').find().toArray();
+    console.log(`✅ Trả về ${products.length} sản phẩm`);
     res.json(products);
   } catch (error) {
-    console.error('L?i l?y s?n ph?m:', error);
-    res.status(500).json({ error: 'L?i server khi l?y s?n ph?m' });
+    console.error('❌ Lỗi lấy sản phẩm:', error);
+    res.status(500).json({ error: 'Lỗi server khi lấy sản phẩm: ' + error.message });
   }
 });
 
 app.get('/api/products/:id', async (req, res) => {
   try {
-    const product = await db.collection('products').findOne({ _id: new ObjectId(req.params.id) });
-    if (!product) {
-      return res.status(404).json({ error: 'Kh�ng t�m th?y s?n ph?m' });
+    if (!db) {
+      return res.status(500).json({ error: 'Database chưa kết nối' });
     }
-    res.json(product);
-  } catch (error) {
-    console.error('L?i l?y s?n ph?m chi ti?t:', error);
-    res.status(500).json({ error: 'L?i server khi l?y s?n ph?m' });
-  }
-});
-
-app.post('/api/products', async (req, res) => {
-  try {
-    const result = await db.collection('products').insertOne(req.body);
-    res.status(201).json({ 
-      message: 'Th�m s?n ph?m th�nh c�ng', 
-      productId: result.insertedId 
-    });
-  } catch (error) {
-    console.error('L?i th�m s?n ph?m:', error);
-    res.status(500).json({ error: 'L?i server khi th�m s?n ph?m' });
-  }
-});
-
-app.put('/api/products/:id', async (req, res) => {
-  try {
-    const result = await db.collection('products').updateOne(
-      { _id: new ObjectId(req.params.id) },
-      { $set: req.body }
-    );
-    if (result.matchedCount === 0) {
-      return res.status(404).json({ error: 'Kh�ng t�m th?y s?n ph?m' });
-    }
-    res.json({ message: 'C?p nh?t s?n ph?m th�nh c�ng' });
-  } catch (error) {
-    console.error('L?i c?p nh?t s?n ph?m:', error);
-    res.status(500).json({ error: 'L?i server khi c?p nh?t s?n ph?m' });
-  }
-});
-
-app.delete('/api/products/:id', async (req, res) => {
-  try {
-    const result = await db.collection('products').deleteOne({ 
+    
+    const product = await db.collection('products').findOne({ 
       _id: new ObjectId(req.params.id) 
     });
-    if (result.deletedCount === 0) {
-      return res.status(404).json({ error: 'Kh�ng t�m th?y s?n ph?m' });
+    
+    if (!product) {
+      return res.status(404).json({ error: 'Không tìm thấy sản phẩm' });
     }
-    res.json({ message: 'X�a s?n ph?m th�nh c�ng' });
+    
+    res.json(product);
   } catch (error) {
-    console.error('L?i x�a s?n ph?m:', error);
-    res.status(500).json({ error: 'L?i server khi x�a s?n ph?m' });
+    console.error('Lỗi lấy sản phẩm chi tiết:', error);
+    res.status(500).json({ error: 'Lỗi server khi lấy sản phẩm' });
   }
 });
 
-// Route m?c d?nh cho frontend
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// Route test đơn giản (tạm thời)
+app.get('/api/test', (req, res) => {
+  res.json({ 
+    message: '✅ API đang hoạt động!',
+    timestamp: new Date().toISOString()
+  });
 });
 
-// Kh?i d?ng server
-app.listen(PORT, () => {
-  console.log(`?? Server dang ch?y tr�n http://localhost:${PORT}`);
-  console.log(`?? API Products: http://localhost:${PORT}/api/products`);
+// Route mặc định
+app.get('/', (req, res) => {
+  res.json({ 
+    message: '🚀 Trúc Đào Cosmetics Server',
+    endpoints: {
+      products: '/api/products',
+      test: '/api/test'
+    }
+  });
 });
+
+// Khởi động server
+async function startServer() {
+  await connectDB();
+  
+  app.listen(PORT, () => {
+    console.log(`🚀 Server đang chạy trên http://localhost:${PORT}`);
+    console.log(`📊 API Products: http://localhost:${PORT}/api/products`);
+    console.log(`🧪 API Test: http://localhost:${PORT}/api/test`);
+  });
+}
+
+startServer().catch(console.error);
 
 module.exports = app;
