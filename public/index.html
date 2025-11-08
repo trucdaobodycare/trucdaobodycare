@@ -1784,555 +1784,378 @@
     </div>
 
     <script>
-        // Admin credentials
-        const ADMIN_USERNAME = "Trucdaoadminlogin";
-        const ADMIN_PASSWORD = "Thanhduy@060596";
+    // Admin credentials
+    const ADMIN_USERNAME = "Trucdaoadminlogin";
+    const ADMIN_PASSWORD = "Thanhduy@060596";
+    
+    // Data storage - Giờ đây dữ liệu sẽ lưu trong MongoDB
+    let products = [];
+    let messages = [];
+    let visitors = { total: 0, today: 0, date: new Date().toDateString() };
+    let productViews = {};
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    
+    // API Base URL
+    const API_BASE = '/api';
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        updateVisitorCount();
+        loadProducts();
+        updateAnalytics();
+        updateCartCount();
+        renderCartItems();
         
-        // Data storage
-        let products = [
-            {
-                id: 1,
-                name: "Son lì cao cấp Luxury Matte",
-                category: "Son môi",
-                originalPrice: 399000,
-                salePrice: 299000,
-                image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-                description: "Son lì cao cấp với công thức mềm mịn, lâu trôi"
-            },
-            {
-                id: 2,
-                name: "Bảng phấn mắt 12 màu Pro Palette",
-                category: "Trang điểm mắt",
-                originalPrice: 600000,
-                salePrice: 450000,
-                image: "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-                description: "Bảng phấn mắt đa dạng màu sắc, dễ phối màu"
-            },
-            {
-                id: 3,
-                name: "Kem nền che khuyết điểm Full Cover",
-                category: "Trang điểm mặt",
-                originalPrice: 650000,
-                salePrice: 520000,
-                image: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-                description: "Kem nền che phủ hoàn hảo, không gây bít tắc lỗ chân lông"
-            },
-            {
-                id: 4,
-                name: "Serum dưỡng ẩm chống lão hóa",
-                category: "Chăm sóc da",
-                originalPrice: 850000,
-                salePrice: 680000,
-                image: "https://images.unsplash.com/photo-1594035910387-fea47794261f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-                description: "Serum dưỡng ẩm chuyên sâu, cải thiện nếp nhăn"
-            }
-        ];
+        // Mobile navigation
+        const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+        const mobileNav = document.getElementById('mobile-nav');
+        const closeMobileNav = document.getElementById('close-mobile-nav');
+        const mobileNavOverlay = document.getElementById('mobile-nav-overlay');
         
-        let messages = [];
-        let visitors = JSON.parse(localStorage.getItem('visitors')) || { total: 0, today: 0, date: new Date().toDateString() };
-        let productViews = JSON.parse(localStorage.getItem('productViews')) || {};
-        let cart = JSON.parse(localStorage.getItem('cart')) || [];
-        
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            updateVisitorCount();
-            renderProductsInAdmin();
-            updateAnalytics();
-            updateCartCount();
-            renderCartItems();
-            
-            // Mobile navigation
-            const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
-            const mobileNav = document.getElementById('mobile-nav');
-            const closeMobileNav = document.getElementById('close-mobile-nav');
-            const mobileNavOverlay = document.getElementById('mobile-nav-overlay');
-            
+        if (mobileMenuToggle) {
             mobileMenuToggle.addEventListener('click', function() {
                 mobileNav.classList.add('active');
                 mobileNavOverlay.classList.add('active');
                 document.body.style.overflow = 'hidden';
             });
-            
+        }
+        
+        if (closeMobileNav) {
             closeMobileNav.addEventListener('click', function() {
                 mobileNav.classList.remove('active');
                 mobileNavOverlay.classList.remove('active');
                 document.body.style.overflow = '';
             });
-            
+        }
+        
+        if (mobileNavOverlay) {
             mobileNavOverlay.addEventListener('click', function() {
                 mobileNav.classList.remove('active');
                 mobileNavOverlay.classList.remove('active');
                 document.body.style.overflow = '';
             });
-            
-            // Track product views
-            document.querySelectorAll('.product-card').forEach(card => {
-                card.addEventListener('click', function() {
-                    const productId = this.getAttribute('data-id');
-                    productViews[productId] = (productViews[productId] || 0) + 1;
-                    localStorage.setItem('productViews', JSON.stringify(productViews));
-                    updateAnalytics();
-                });
-            });
-            
-            // Add to cart functionality
-            document.querySelectorAll('.add-to-cart').forEach(button => {
-                button.addEventListener('click', function() {
-                    const productId = this.getAttribute('data-id');
-                    const productName = this.getAttribute('data-name');
-                    const productPrice = parseInt(this.getAttribute('data-price'));
-                    const productImage = this.getAttribute('data-image');
-                    
-                    addToCart(productId, productName, productPrice, productImage);
-                });
+        }
+        
+        // Track product views
+        document.querySelectorAll('.product-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const productId = this.getAttribute('data-id');
+                productViews[productId] = (productViews[productId] || 0) + 1;
+                localStorage.setItem('productViews', JSON.stringify(productViews));
+                updateAnalytics();
             });
         });
         
-        // Update visitor count
-        function updateVisitorCount() {
-            const today = new Date().toDateString();
-            if (visitors.date !== today) {
-                visitors.today = 0;
-                visitors.date = today;
-            }
-            visitors.total++;
-            visitors.today++;
-            localStorage.setItem('visitors', JSON.stringify(visitors));
+        // Add to cart functionality
+        document.querySelectorAll('.add-to-cart').forEach(button => {
+            button.addEventListener('click', function() {
+                const productId = this.getAttribute('data-id');
+                const productName = this.getAttribute('data-name');
+                const productPrice = parseInt(this.getAttribute('data-price'));
+                const productImage = this.getAttribute('data-image');
+                
+                addToCart(productId, productName, productPrice, productImage);
+            });
+        });
+    });
+    
+    // ========== API FUNCTIONS ==========
+    
+    // Load products from MongoDB
+    async function loadProducts() {
+        try {
+            const response = await fetch(`${API_BASE}/products`);
+            products = await response.json();
+            renderProducts();
+            renderProductsInAdmin();
+        } catch (error) {
+            console.error('Lỗi tải sản phẩm:', error);
+        }
+    }
+    
+    // Save product to MongoDB
+    async function saveProduct(productData) {
+        try {
+            const url = productData._id ? 
+                `${API_BASE}/products/${productData._id}` : 
+                `${API_BASE}/products`;
+                
+            const method = productData._id ? 'PUT' : 'POST';
+            
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(productData)
+            });
+            
+            const savedProduct = await response.json();
+            await loadProducts(); // Reload products
+            return savedProduct;
+        } catch (error) {
+            console.error('Lỗi lưu sản phẩm:', error);
+        }
+    }
+    
+    // Delete product from MongoDB
+    async function deleteProduct(productId) {
+        try {
+            await fetch(`${API_BASE}/products/${productId}`, {
+                method: 'DELETE'
+            });
+            await loadProducts(); // Reload products
+            alert('Sản phẩm đã được xóa!');
+        } catch (error) {
+            console.error('Lỗi xóa sản phẩm:', error);
+        }
+    }
+    
+    // Save order to MongoDB
+    async function saveOrder(orderData) {
+        try {
+            const response = await fetch(`${API_BASE}/orders`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(orderData)
+            });
+            return await response.json();
+        } catch (error) {
+            console.error('Lỗi lưu đơn hàng:', error);
+        }
+    }
+    
+    // Save message to MongoDB
+    async function saveMessage(messageData) {
+        try {
+            const response = await fetch(`${API_BASE}/messages`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(messageData)
+            });
+            return await response.json();
+        } catch (error) {
+            console.error('Lỗi lưu tin nhắn:', error);
+        }
+    }
+    
+    // Load messages from MongoDB
+    async function loadMessages() {
+        try {
+            const response = await fetch(`${API_BASE}/messages`);
+            messages = await response.json();
+            updateMessagesInAdmin();
+        } catch (error) {
+            console.error('Lỗi tải tin nhắn:', error);
+        }
+    }
+
+    // Update visitor count
+    function updateVisitorCount() {
+        const today = new Date().toDateString();
+        if (visitors.date !== today) {
+            visitors.today = 0;
+            visitors.date = today;
+        }
+        visitors.total++;
+        visitors.today++;
+    }
+    
+    // Cart functionality (giữ nguyên)
+    function addToCart(id, name, price, image) {
+        const existingItem = cart.find(item => item.id === id);
+        
+        if (existingItem) {
+            existingItem.quantity += 1;
+        } else {
+            cart.push({
+                id: id,
+                name: name,
+                price: price,
+                image: image,
+                quantity: 1
+            });
         }
         
-        // Cart functionality
-        function addToCart(id, name, price, image) {
-            const existingItem = cart.find(item => item.id === id);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        updateCartCount();
+        renderCartItems();
+        
+        alert(`Đã thêm ${name} vào giỏ hàng!`);
+    }
+    
+    function updateCartCount() {
+        const cartCount = document.querySelector('.cart-count');
+        const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+        if (cartCount) cartCount.textContent = totalItems;
+    }
+    
+    function renderCartItems() {
+        const cartItems = document.getElementById('cart-items');
+        const cartSubtotal = document.getElementById('cart-subtotal');
+        const cartTotal = document.getElementById('cart-total');
+        
+        if (!cartItems) return;
+        
+        cartItems.innerHTML = '';
+        
+        if (cart.length === 0) {
+            cartItems.innerHTML = '<p>Giỏ hàng của bạn đang trống</p>';
+            if (cartSubtotal) cartSubtotal.textContent = '0đ';
+            if (cartTotal) cartTotal.textContent = '0đ';
+            return;
+        }
+        
+        let subtotal = 0;
+        
+        cart.forEach(item => {
+            const itemTotal = item.price * item.quantity;
+            subtotal += itemTotal;
             
-            if (existingItem) {
-                existingItem.quantity += 1;
+            const cartItem = document.createElement('div');
+            cartItem.className = 'cart-item';
+            cartItem.innerHTML = `
+                <img src="${item.image}" alt="${item.name}" class="cart-item-image">
+                <div class="cart-item-info">
+                    <div class="cart-item-name">${item.name}</div>
+                    <div class="cart-item-price">${formatPrice(item.price)}</div>
+                    <div class="cart-item-quantity">
+                        <button class="quantity-btn minus" data-id="${item.id}">-</button>
+                        <input type="number" class="quantity-input" value="${item.quantity}" min="1" data-id="${item.id}">
+                        <button class="quantity-btn plus" data-id="${item.id}">+</button>
+                    </div>
+                </div>
+            `;
+            
+            cartItems.appendChild(cartItem);
+        });
+        
+        // Add event listeners for quantity buttons
+        document.querySelectorAll('.quantity-btn.minus').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const productId = this.getAttribute('data-id');
+                updateQuantity(productId, -1);
+            });
+        });
+        
+        document.querySelectorAll('.quantity-btn.plus').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const productId = this.getAttribute('data-id');
+                updateQuantity(productId, 1);
+            });
+        });
+        
+        document.querySelectorAll('.quantity-input').forEach(input => {
+            input.addEventListener('change', function() {
+                const productId = this.getAttribute('data-id');
+                const newQuantity = parseInt(this.value);
+                if (newQuantity < 1) {
+                    this.value = 1;
+                    updateQuantity(productId, 0, 1);
+                } else {
+                    updateQuantity(productId, 0, newQuantity);
+                }
+            });
+        });
+        
+        const shipping = 30000;
+        const total = subtotal + shipping;
+        
+        if (cartSubtotal) cartSubtotal.textContent = formatPrice(subtotal);
+        if (cartTotal) cartTotal.textContent = formatPrice(total);
+    }
+    
+    function updateQuantity(productId, change, setQuantity = null) {
+        const item = cart.find(item => item.id === productId);
+        if (item) {
+            if (setQuantity !== null) {
+                item.quantity = setQuantity;
             } else {
-                cart.push({
-                    id: id,
-                    name: name,
-                    price: price,
-                    image: image,
-                    quantity: 1
-                });
+                item.quantity += change;
+            }
+            
+            if (item.quantity < 1) {
+                cart = cart.filter(item => item.id !== productId);
             }
             
             localStorage.setItem('cart', JSON.stringify(cart));
             updateCartCount();
             renderCartItems();
-            
-            // Show notification
-            alert(`Đã thêm ${name} vào giỏ hàng!`);
         }
-        
-        function updateCartCount() {
-            const cartCount = document.querySelector('.cart-count');
-            const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
-            cartCount.textContent = totalItems;
-        }
-        
-        function renderCartItems() {
-            const cartItems = document.getElementById('cart-items');
-            const cartSubtotal = document.getElementById('cart-subtotal');
-            const cartTotal = document.getElementById('cart-total');
-            
-            cartItems.innerHTML = '';
-            
-            if (cart.length === 0) {
-                cartItems.innerHTML = '<p>Giỏ hàng của bạn đang trống</p>';
-                cartSubtotal.textContent = '0đ';
-                cartTotal.textContent = '0đ';
-                return;
-            }
-            
-            let subtotal = 0;
-            
-            cart.forEach(item => {
-                const itemTotal = item.price * item.quantity;
-                subtotal += itemTotal;
-                
-                const cartItem = document.createElement('div');
-                cartItem.className = 'cart-item';
-                cartItem.innerHTML = `
-                    <img src="${item.image}" alt="${item.name}" class="cart-item-image">
-                    <div class="cart-item-info">
-                        <div class="cart-item-name">${item.name}</div>
-                        <div class="cart-item-price">${formatPrice(item.price)}</div>
-                        <div class="cart-item-quantity">
-                            <button class="quantity-btn minus" data-id="${item.id}">-</button>
-                            <input type="number" class="quantity-input" value="${item.quantity}" min="1" data-id="${item.id}">
-                            <button class="quantity-btn plus" data-id="${item.id}">+</button>
-                        </div>
-                    </div>
-                `;
-                
-                cartItems.appendChild(cartItem);
-            });
-            
-            // Add event listeners for quantity buttons
-            document.querySelectorAll('.quantity-btn.minus').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const productId = this.getAttribute('data-id');
-                    updateQuantity(productId, -1);
-                });
-            });
-            
-            document.querySelectorAll('.quantity-btn.plus').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const productId = this.getAttribute('data-id');
-                    updateQuantity(productId, 1);
-                });
-            });
-            
-            document.querySelectorAll('.quantity-input').forEach(input => {
-                input.addEventListener('change', function() {
-                    const productId = this.getAttribute('data-id');
-                    const newQuantity = parseInt(this.value);
-                    if (newQuantity < 1) {
-                        this.value = 1;
-                        updateQuantity(productId, 0, 1);
-                    } else {
-                        updateQuantity(productId, 0, newQuantity);
-                    }
-                });
-            });
-            
-            const shipping = 30000;
-            const total = subtotal + shipping;
-            
-            cartSubtotal.textContent = formatPrice(subtotal);
-            cartTotal.textContent = formatPrice(total);
-        }
-        
-        function updateQuantity(productId, change, setQuantity = null) {
-            const item = cart.find(item => item.id === productId);
-            if (item) {
-                if (setQuantity !== null) {
-                    item.quantity = setQuantity;
-                } else {
-                    item.quantity += change;
-                }
-                
-                if (item.quantity < 1) {
-                    cart = cart.filter(item => item.id !== productId);
-                }
-                
-                localStorage.setItem('cart', JSON.stringify(cart));
-                updateCartCount();
-                renderCartItems();
-            }
-        }
-        
-        // Image upload functionality
-        document.getElementById('upload-image-btn').addEventListener('click', function() {
-            document.getElementById('edit-product-image-upload').click();
-        });
-        
-        document.getElementById('edit-product-image-upload').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.getElementById('image-preview');
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                    document.getElementById('edit-product-image-url').value = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-        
-        // Payment screenshot upload
-        document.getElementById('upload-payment-btn').addEventListener('click', function() {
-            document.getElementById('payment-screenshot').click();
-        });
-        
-        document.getElementById('payment-screenshot').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.getElementById('payment-preview');
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-        
-        // Cart modal functionality
-        document.getElementById('cart-icon').addEventListener('click', function(e) {
-            e.preventDefault();
-            document.getElementById('cart-modal').classList.add('active');
-        });
-        
-        document.getElementById('close-cart').addEventListener('click', function() {
-            document.getElementById('cart-modal').classList.remove('active');
-        });
-        
-        // Checkout functionality
-        document.getElementById('checkout-btn').addEventListener('click', function() {
-            if (cart.length === 0) {
-                alert('Giỏ hàng của bạn đang trống!');
-                return;
-            }
-            
-            document.getElementById('cart-modal').classList.remove('active');
-            document.getElementById('payment-modal').style.display = 'flex';
-            
-            // Update payment information
-            const subtotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-            const total = subtotal + 30000;
-            document.getElementById('payment-amount').textContent = formatPrice(total);
-            
-            // Generate payment content
-            const productNames = cart.map(item => `${item.name}(${item.quantity})`).join('_');
-            document.getElementById('payment-content').textContent = `Tên Khách_${productNames}`;
-        });
-        
-        document.getElementById('close-payment').addEventListener('click', function() {
-            document.getElementById('payment-modal').style.display = 'none';
-        });
-        
-        // Confirm payment
-        document.getElementById('confirm-payment').addEventListener('click', function() {
-            const customerName = document.getElementById('customer-name').value;
-            const customerPhone = document.getElementById('customer-phone').value;
-            const customerAddress = document.getElementById('customer-address').value;
-            const paymentScreenshot = document.getElementById('payment-screenshot').files[0];
-            
-            if (!customerName || !customerPhone || !customerAddress || !paymentScreenshot) {
-                alert('Vui lòng điền đầy đủ thông tin và tải lên ảnh chụp màn hình chuyển khoản!');
-                return;
-            }
-            
-            // In a real application, you would send this data to a server
-            // For this demo, we'll just show a success message
-            alert('Đơn hàng của bạn đã được xác nhận! Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.');
-            
-            // Clear cart and close modals
-            cart = [];
-            localStorage.setItem('cart', JSON.stringify(cart));
-            updateCartCount();
-            document.getElementById('payment-modal').style.display = 'none';
-            document.getElementById('customer-name').value = '';
-            document.getElementById('customer-phone').value = '';
-            document.getElementById('customer-address').value = '';
-            document.getElementById('payment-screenshot').value = '';
-            document.getElementById('payment-preview').style.display = 'none';
-        });
-        
-        // Chat functionality
-        const chatToggle = document.querySelector('.chat-toggle');
-        const chatModal = document.querySelector('.chat-modal');
-        const closeChat = document.querySelector('.close-chat');
-        const sendBtn = document.querySelector('.send-btn');
-        const chatInput = document.querySelector('.chat-footer input');
-        const chatBody = document.querySelector('.chat-body');
-        const chatButtons = document.querySelectorAll('.chat-btn');
-        
-        chatToggle.addEventListener('click', () => {
-            chatModal.style.display = 'flex';
-        });
-        
-        closeChat.addEventListener('click', () => {
-            chatModal.style.display = 'none';
-        });
-        
-        sendBtn.addEventListener('click', sendMessage);
-        
-        chatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-        
-        function sendMessage() {
-            const message = chatInput.value.trim();
-            if (message) {
-                const messageElement = document.createElement('div');
-                messageElement.classList.add('message', 'sent');
-                messageElement.textContent = message;
-                chatBody.appendChild(messageElement);
-                
-                // Save message to admin
-                messages.push({
-                    text: message,
-                    timestamp: new Date(),
-                    read: false
-                });
-                updateMessagesInAdmin();
-                
-                chatInput.value = '';
-                chatBody.scrollTop = chatBody.scrollHeight;
-                
-                // Simulate response after a delay
-                setTimeout(() => {
-                    const responseElement = document.createElement('div');
-                    responseElement.classList.add('message', 'received');
-                    responseElement.textContent = 'Cảm ơn bạn đã liên hệ. Chúng tôi sẽ phản hồi sớm nhất có thể.';
-                    chatBody.appendChild(responseElement);
-                    chatBody.scrollTop = chatBody.scrollHeight;
-                }, 1000);
-            }
-        }
-        
-        // Open chat with product info when clicking chat button on product
-        chatButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const productName = button.getAttribute('data-product');
-                chatModal.style.display = 'flex';
-                
-                // Add product info to chat
-                const productMessage = document.createElement('div');
-                productMessage.classList.add('message', 'sent');
-                productMessage.textContent = `Tôi quan tâm đến sản phẩm: ${productName}`;
-                chatBody.appendChild(productMessage);
-                
-                // Save message to admin
-                messages.push({
-                    text: `Hỏi về sản phẩm: ${productName}`,
-                    timestamp: new Date(),
-                    read: false
-                });
-                updateMessagesInAdmin();
-                
-                chatBody.scrollTop = chatBody.scrollHeight;
-                
-                // Simulate response
-                setTimeout(() => {
-                    const responseElement = document.createElement('div');
-                    responseElement.classList.add('message', 'received');
-                    responseElement.textContent = `Cảm ơn bạn đã quan tâm đến sản phẩm ${productName}. Tôi có thể tư vấn gì thêm cho bạn về sản phẩm này?`;
-                    chatBody.appendChild(responseElement);
-                    chatBody.scrollTop = chatBody.scrollHeight;
-                }, 1000);
-            });
-        });
-        
-        // Login functionality
-        const loginBtn = document.getElementById('login-btn');
-        const loginModal = document.querySelector('.login-modal');
-        const closeLogin = document.querySelector('.close-login');
-        const adminLoginBtn = document.getElementById('admin-login-btn');
-        
-        loginBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            loginModal.style.display = 'flex';
-        });
-        
-        closeLogin.addEventListener('click', () => {
-            loginModal.style.display = 'none';
-        });
-        
-        adminLoginBtn.addEventListener('click', () => {
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            
-            if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-                loginModal.style.display = 'none';
-                document.getElementById('admin-toggle').classList.add('active');
-                localStorage.setItem('adminLoggedIn', 'true');
-                alert('Đăng nhập admin thành công!');
-            } else {
-                alert('Tên đăng nhập hoặc mật khẩu không đúng!');
-            }
-        });
-        
-        // Close modals when clicking outside
-        window.addEventListener('click', (e) => {
-            if (e.target === loginModal) {
-                loginModal.style.display = 'none';
-            }
-            if (e.target === document.getElementById('payment-modal')) {
-                document.getElementById('payment-modal').style.display = 'none';
-            }
-        });
-        
-        // Admin Panel Functionality
-        const adminToggle = document.getElementById('admin-toggle');
-        const adminPanel = document.getElementById('admin-panel');
-        const closeAdmin = document.getElementById('close-admin');
-        const adminTabs = document.querySelectorAll('.admin-tab');
-        const adminContents = document.querySelectorAll('.admin-content');
-        
-        // Check if admin is already logged in
-        if (localStorage.getItem('adminLoggedIn') === 'true') {
-            adminToggle.classList.add('active');
-        }
-        
-        adminToggle.addEventListener('click', () => {
-            adminPanel.classList.add('active');
-        });
-        
-        closeAdmin.addEventListener('click', () => {
-            adminPanel.classList.remove('active');
-        });
-        
-        // Tab switching
-        adminTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                const tabId = tab.getAttribute('data-tab');
-                
-                // Update active tab
-                adminTabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                
-                // Update active content
-                adminContents.forEach(content => {
-                    content.classList.remove('active');
-                    if (content.id === `${tabId}-tab`) {
-                        content.classList.add('active');
-                    }
-                });
-                
-                // Refresh data if needed
-                if (tabId === 'messages') {
-                    updateMessagesInAdmin();
-                } else if (tabId === 'analytics') {
-                    updateAnalytics();
-                }
-            });
-        });
-        
-        // Render products in admin panel
-        function renderProductsInAdmin() {
-            const productList = document.getElementById('admin-product-list');
-            productList.innerHTML = '';
-            
-            products.forEach(product => {
+    }
+
+    // ========== RENDER FUNCTIONS ==========
+    
+    // Render products on frontend
+    function renderProducts() {
+        // Cập nhật sản phẩm trên trang chủ
+        products.forEach(product => {
+            const productElement = document.querySelector(`.product-card[data-id="${product._id}"]`);
+            if (productElement) {
                 const discount = Math.round((1 - product.salePrice / product.originalPrice) * 100);
                 
-                const productItem = document.createElement('div');
-                productItem.className = 'admin-product-item';
-                productItem.innerHTML = `
-                    <div class="admin-product-info">
-                        <strong>${product.name}</strong>
-                        <div>${product.category} | ${formatPrice(product.salePrice)} | -${discount}%</div>
-                    </div>
-                    <div class="admin-product-actions">
-                        <button class="admin-btn edit" data-id="${product.id}">Sửa</button>
-                        <button class="admin-btn delete" data-id="${product.id}">Xóa</button>
-                    </div>
-                `;
+                productElement.querySelector('.product-category').textContent = product.category;
+                productElement.querySelector('.product-name').textContent = product.name;
+                productElement.querySelector('.current-price').textContent = formatPrice(product.salePrice);
+                productElement.querySelector('.original-price').textContent = formatPrice(product.originalPrice);
+                productElement.querySelector('.sale-badge').textContent = `-${discount}%`;
+                productElement.querySelector('.product-image img').src = product.image;
+                productElement.querySelector('.chat-btn').setAttribute('data-product', product.name);
                 
-                productList.appendChild(productItem);
-            });
+                const addToCartBtn = productElement.querySelector('.add-to-cart');
+                addToCartBtn.setAttribute('data-id', product._id);
+                addToCartBtn.setAttribute('data-name', product.name);
+                addToCartBtn.setAttribute('data-price', product.salePrice);
+                addToCartBtn.setAttribute('data-image', product.image);
+            }
+        });
+    }
+    
+    // Render products in admin panel
+    function renderProductsInAdmin() {
+        const productList = document.getElementById('admin-product-list');
+        if (!productList) return;
+        
+        productList.innerHTML = '';
+        
+        products.forEach(product => {
+            const discount = Math.round((1 - product.salePrice / product.originalPrice) * 100);
             
-            // Add event listeners to edit and delete buttons
-            document.querySelectorAll('.admin-btn.edit').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const productId = this.getAttribute('data-id');
-                    editProduct(productId);
-                });
-            });
+            const productItem = document.createElement('div');
+            productItem.className = 'admin-product-item';
+            productItem.innerHTML = `
+                <div class="admin-product-info">
+                    <strong>${product.name}</strong>
+                    <div>${product.category} | ${formatPrice(product.salePrice)} | -${discount}%</div>
+                </div>
+                <div class="admin-product-actions">
+                    <button class="admin-btn edit" data-id="${product._id}">Sửa</button>
+                    <button class="admin-btn delete" data-id="${product._id}">Xóa</button>
+                </div>
+            `;
             
-            document.querySelectorAll('.admin-btn.delete').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const productId = this.getAttribute('data-id');
-                    deleteProduct(productId);
-                });
+            productList.appendChild(productItem);
+        });
+        
+        // Add event listeners to edit and delete buttons
+        document.querySelectorAll('.admin-btn.edit').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const productId = this.getAttribute('data-id');
+                editProduct(productId);
             });
-        }
+        });
+        
+        document.querySelectorAll('.admin-btn.delete').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const productId = this.getAttribute('data-id');
+                deleteProduct(productId);
+            });
+        });
+    }
         
         // Add new product
         document.getElementById('add-product-btn').addEventListener('click', function() {
