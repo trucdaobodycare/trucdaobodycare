@@ -29,47 +29,73 @@ async function connectDB() {
         await client.connect();
         await client.db("admin").command({ ping: 1 });
         db = client.db('trucdaocosmetics');
-        console.log('? �� k?t n?i MongoDB Atlas th�nh c�ng!');
+        console.log('✅ Đã kết nối MongoDB Atlas thành công!');
         
-        // T?o collections n?u chua t?n t?i
+        // Tạo collections nếu chưa tồn tại
         const collections = await db.listCollections().toArray();
         const collectionNames = collections.map(c => c.name);
         
         if (!collectionNames.includes('products')) {
             await db.createCollection('products');
-            console.log('?? �� t?o collection products');
+            console.log('📁 Đã tạo collection products');
+            
+            // Thêm dữ liệu mẫu
+            const sampleProducts = [
+                {
+                    name: "Son lì cao cấp Luxury Matte",
+                    category: "Son môi",
+                    originalPrice: 399000,
+                    salePrice: 299000,
+                    image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
+                    description: "Son lì cao cấp với công thức mềm mịn, lâu trôi",
+                    createdAt: new Date()
+                },
+                {
+                    name: "Bảng phấn mắt 12 màu Pro Palette",
+                    category: "Trang điểm mắt",
+                    originalPrice: 600000,
+                    salePrice: 450000,
+                    image: "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
+                    description: "Bảng phấn mắt đa dạng màu sắc, dễ phối màu",
+                    createdAt: new Date()
+                }
+            ];
+            
+            await db.collection('products').insertMany(sampleProducts);
+            console.log('📦 Đã thêm sản phẩm mẫu');
         }
         
         if (!collectionNames.includes('orders')) {
             await db.createCollection('orders');
-            console.log('?? �� t?o collection orders');
+            console.log('📁 Đã tạo collection orders');
         }
         
         if (!collectionNames.includes('messages')) {
             await db.createCollection('messages');
-            console.log('?? �� t?o collection messages');
+            console.log('📁 Đã tạo collection messages');
         }
         
         return db;
     } catch (error) {
-        console.error('? L?i k?t n?i MongoDB:', error);
+        console.error('❌ Lỗi kết nối MongoDB:', error);
         process.exit(1);
     }
 }
 
 // API Routes
 
-// L?y t?t c? s?n ph?m
+// Lấy tất cả sản phẩm
 app.get('/api/products', async (req, res) => {
     try {
-        const products = await db.collection('products').find().toArray();
+        const products = await db.collection('products').find().sort({ createdAt: -1 }).toArray();
         res.json(products);
     } catch (error) {
-        res.status(500).json({ error: 'L?i khi t?i s?n ph?m' });
+        console.error('Lỗi API /api/products:', error);
+        res.status(500).json({ error: 'Lỗi khi tải sản phẩm' });
     }
 });
 
-// Th�m s?n ph?m m?i
+// Thêm sản phẩm mới
 app.post('/api/products', async (req, res) => {
     try {
         const product = {
@@ -77,38 +103,42 @@ app.post('/api/products', async (req, res) => {
             createdAt: new Date()
         };
         const result = await db.collection('products').insertOne(product);
-        res.status(201).json({ ...product, _id: result.insertedId });
+        const savedProduct = { ...product, _id: result.insertedId };
+        res.status(201).json(savedProduct);
     } catch (error) {
-        res.status(400).json({ error: 'L?i khi th�m s?n ph?m' });
+        console.error('Lỗi API /api/products POST:', error);
+        res.status(400).json({ error: 'Lỗi khi thêm sản phẩm' });
     }
 });
 
-// C?p nh?t s?n ph?m
+// Cập nhật sản phẩm
 app.put('/api/products/:id', async (req, res) => {
     try {
         const result = await db.collection('products').updateOne(
             { _id: new ObjectId(req.params.id) },
-            { $set: req.body }
+            { $set: { ...req.body, updatedAt: new Date() } }
         );
-        res.json({ message: '�� c?p nh?t s?n ph?m', modifiedCount: result.modifiedCount });
+        res.json({ message: 'Đã cập nhật sản phẩm', modifiedCount: result.modifiedCount });
     } catch (error) {
-        res.status(400).json({ error: 'L?i khi c?p nh?t s?n ph?m' });
+        console.error('Lỗi API /api/products PUT:', error);
+        res.status(400).json({ error: 'Lỗi khi cập nhật sản phẩm' });
     }
 });
 
-// X�a s?n ph?m
+// Xóa sản phẩm
 app.delete('/api/products/:id', async (req, res) => {
     try {
         const result = await db.collection('products').deleteOne(
             { _id: new ObjectId(req.params.id) }
         );
-        res.json({ message: '�� x�a s?n ph?m', deletedCount: result.deletedCount });
+        res.json({ message: 'Đã xóa sản phẩm', deletedCount: result.deletedCount });
     } catch (error) {
-        res.status(400).json({ error: 'L?i khi x�a s?n ph?m' });
+        console.error('Lỗi API /api/products DELETE:', error);
+        res.status(400).json({ error: 'Lỗi khi xóa sản phẩm' });
     }
 });
 
-// Luu don h�ng
+// Lưu đơn hàng
 app.post('/api/orders', async (req, res) => {
     try {
         const order = {
@@ -117,23 +147,15 @@ app.post('/api/orders', async (req, res) => {
             createdAt: new Date()
         };
         const result = await db.collection('orders').insertOne(order);
-        res.status(201).json({ ...order, _id: result.insertedId });
+        const savedOrder = { ...order, _id: result.insertedId };
+        res.status(201).json(savedOrder);
     } catch (error) {
-        res.status(400).json({ error: 'L?i khi luu don h�ng' });
+        console.error('Lỗi API /api/orders:', error);
+        res.status(400).json({ error: 'Lỗi khi lưu đơn hàng' });
     }
 });
 
-// L?y t?t c? don h�ng
-app.get('/api/orders', async (req, res) => {
-    try {
-        const orders = await db.collection('orders').find().sort({ createdAt: -1 }).toArray();
-        res.json(orders);
-    } catch (error) {
-        res.status(500).json({ error: 'L?i khi t?i don h�ng' });
-    }
-});
-
-// Luu tin nh?n
+// Lưu tin nhắn
 app.post('/api/messages', async (req, res) => {
     try {
         const message = {
@@ -142,32 +164,36 @@ app.post('/api/messages', async (req, res) => {
             createdAt: new Date()
         };
         const result = await db.collection('messages').insertOne(message);
-        res.status(201).json({ ...message, _id: result.insertedId });
+        const savedMessage = { ...message, _id: result.insertedId };
+        res.status(201).json(savedMessage);
     } catch (error) {
-        res.status(400).json({ error: 'L?i khi luu tin nh?n' });
+        console.error('Lỗi API /api/messages:', error);
+        res.status(400).json({ error: 'Lỗi khi lưu tin nhắn' });
     }
 });
 
-// L?y t?t c? tin nh?n
+// Lấy tất cả tin nhắn
 app.get('/api/messages', async (req, res) => {
     try {
         const messages = await db.collection('messages').find().sort({ createdAt: -1 }).toArray();
         res.json(messages);
     } catch (error) {
-        res.status(500).json({ error: 'L?i khi t?i tin nh?n' });
+        console.error('Lỗi API /api/messages:', error);
+        res.status(500).json({ error: 'Lỗi khi tải tin nhắn' });
     }
 });
 
-// ��nh d?u tin nh?n d� d?c
+// Đánh dấu tin nhắn đã đọc
 app.put('/api/messages/:id/read', async (req, res) => {
     try {
         const result = await db.collection('messages').updateOne(
             { _id: new ObjectId(req.params.id) },
-            { $set: { read: true } }
+            { $set: { read: true, readAt: new Date() } }
         );
-        res.json({ message: '�� d�nh d?u d� d?c', modifiedCount: result.modifiedCount });
+        res.json({ message: 'Đã đánh dấu đã đọc', modifiedCount: result.modifiedCount });
     } catch (error) {
-        res.status(400).json({ error: 'L?i khi c?p nh?t tin nh?n' });
+        console.error('Lỗi API /api/messages/read:', error);
+        res.status(400).json({ error: 'Lỗi khi cập nhật tin nhắn' });
     }
 });
 
@@ -176,20 +202,37 @@ app.get('/api/test', async (req, res) => {
     try {
         const products = await db.collection('products').find().toArray();
         res.json({ 
-            message: 'Server dang ch?y!', 
-            database: '�� k?t n?i',
-            productsCount: products.length 
+            message: 'Server đang chạy!', 
+            database: 'Đã kết nối',
+            productsCount: products.length,
+            timestamp: new Date().toISOString()
         });
     } catch (error) {
-        res.status(500).json({ error: 'L?i database' });
+        res.status(500).json({ error: 'Lỗi database' });
     }
 });
 
-// Kh?i d?ng server
+// Serve HTML file for all other routes
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Khởi động server
 connectDB().then(() => {
     app.listen(PORT, () => {
-        console.log(`?? Server dang ch?y: http://localhost:${PORT}`);
-        console.log(`?? Database: trucdaocosmetics`);
-        console.log(`?? Truy c?p website: http://localhost:${PORT}`);
+        console.log('='.repeat(50));
+        console.log('🚀 TRÚC ĐÀO COSMETICS SERVER');
+        console.log('='.repeat(50));
+        console.log(`🌐 URL: http://localhost:${PORT}`);
+        console.log(`📊 Database: ${db.databaseName}`);
+        console.log(`🛒 API Test: http://localhost:${PORT}/api/test`);
+        console.log('='.repeat(50));
+        console.log('✅ Server đã sẵn sàng!');
     });
+});
+
+// Xử lý lỗi toàn cục
+process.on('unhandledRejection', (err) => {
+    console.error('❌ Lỗi không xử lý được:', err);
+    process.exit(1);
 });
