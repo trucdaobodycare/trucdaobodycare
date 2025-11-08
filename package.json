@@ -11,9 +11,6 @@
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "mongodb": "^6.20.0"
-  }
-}
-
-{
+  },
   "proxy": "http://localhost:3001"
 }
