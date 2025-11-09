@@ -579,7 +579,7 @@
             z-index: 999;
         }
         
-        /* Login Modal */
+        /* Login Modal - Cập nhật với nút đóng rõ ràng */
         .login-modal {
             position: fixed;
             top: 0;
@@ -600,6 +600,7 @@
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
+            position: relative;
         }
         
         .login-form h2 {
@@ -655,6 +656,18 @@
             font-size: 1.5rem;
             cursor: pointer;
             color: #777;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+        
+        .close-login:hover {
+            background-color: #f0f0f0;
+            color: var(--danger-color);
         }
         
         /* Admin Panel */
@@ -1562,10 +1575,12 @@
         </div>
     </div>
 
-    <!-- Login Modal -->
-    <div class="login-modal">
+    <!-- Login Modal - Đã cập nhật với nút đóng rõ ràng -->
+    <div class="login-modal" id="login-modal">
         <div class="login-form">
-            <button class="close-login"><i class="fas fa-times"></i></button>
+            <button class="close-login" id="close-login">
+                <i class="fas fa-times"></i>
+            </button>
             <h2>Đăng nhập Admin</h2>
             <div class="form-group">
                 <label for="username">Tên đăng nhập</label>
@@ -1885,6 +1900,34 @@
                     
                     addToCart(productId, productName, productPrice, productImage);
                 });
+            });
+            
+            // Login functionality với nút đóng rõ ràng
+            const loginBtn = document.getElementById('login-btn');
+            const loginModal = document.getElementById('login-modal');
+            const closeLogin = document.getElementById('close-login');
+            
+            loginBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                loginModal.style.display = 'flex';
+            });
+            
+            closeLogin.addEventListener('click', () => {
+                loginModal.style.display = 'none';
+            });
+            
+            // Đóng modal khi click bên ngoài
+            loginModal.addEventListener('click', (e) => {
+                if (e.target === loginModal) {
+                    loginModal.style.display = 'none';
+                }
+            });
+            
+            // Đóng modal bằng phím ESC
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    loginModal.style.display = 'none';
+                }
             });
         });
         
@@ -2210,29 +2253,21 @@
         });
         
         // Login functionality
-        const loginBtn = document.getElementById('login-btn');
-        const loginModal = document.querySelector('.login-modal');
-        const closeLogin = document.querySelector('.close-login');
         const adminLoginBtn = document.getElementById('admin-login-btn');
-        
-        loginBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            loginModal.style.display = 'flex';
-        });
-        
-        closeLogin.addEventListener('click', () => {
-            loginModal.style.display = 'none';
-        });
         
         adminLoginBtn.addEventListener('click', () => {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             
             if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-                loginModal.style.display = 'none';
+                document.getElementById('login-modal').style.display = 'none';
                 document.getElementById('admin-toggle').classList.add('active');
                 localStorage.setItem('adminLoggedIn', 'true');
                 alert('Đăng nhập admin thành công!');
+                
+                // Clear form
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
             } else {
                 alert('Tên đăng nhập hoặc mật khẩu không đúng!');
             }
@@ -2240,8 +2275,8 @@
         
         // Close modals when clicking outside
         window.addEventListener('click', (e) => {
-            if (e.target === loginModal) {
-                loginModal.style.display = 'none';
+            if (e.target === document.getElementById('login-modal')) {
+                document.getElementById('login-modal').style.display = 'none';
             }
             if (e.target === document.getElementById('payment-modal')) {
                 document.getElementById('payment-modal').style.display = 'none';
