@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3002;
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3002'],
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3001'],
   credentials: true
 }));
 app.use(express.json());
@@ -21,7 +21,7 @@ let db;
 
 MongoClient.connect(mongoUrl, { useUnifiedTopology: true })
   .then(client => {
-    console.log('? K?t n?i MongoDB th脿nh c么ng');
+    console.log('? K?t n?i MongoDB th鄋h c鬾g');
     db = client.db(dbName);
   })
   .catch(error => {
@@ -43,7 +43,7 @@ app.get('/api/products/:id', async (req, res) => {
   try {
     const product = await db.collection('products').findOne({ _id: new ObjectId(req.params.id) });
     if (!product) {
-      return res.status(404).json({ error: 'Kh么ng t矛m th?y s?n ph?m' });
+      return res.status(404).json({ error: 'Kh鬾g t靘 th?y s?n ph?m' });
     }
     res.json(product);
   } catch (error) {
@@ -56,12 +56,12 @@ app.post('/api/products', async (req, res) => {
   try {
     const result = await db.collection('products').insertOne(req.body);
     res.status(201).json({ 
-      message: 'Th锚m s?n ph?m th脿nh c么ng', 
+      message: 'Th阭 s?n ph?m th鄋h c鬾g', 
       productId: result.insertedId 
     });
   } catch (error) {
-    console.error('L?i th锚m s?n ph?m:', error);
-    res.status(500).json({ error: 'L?i server khi th锚m s?n ph?m' });
+    console.error('L?i th阭 s?n ph?m:', error);
+    res.status(500).json({ error: 'L?i server khi th阭 s?n ph?m' });
   }
 });
 
@@ -72,9 +72,9 @@ app.put('/api/products/:id', async (req, res) => {
       { $set: req.body }
     );
     if (result.matchedCount === 0) {
-      return res.status(404).json({ error: 'Kh么ng t矛m th?y s?n ph?m' });
+      return res.status(404).json({ error: 'Kh鬾g t靘 th?y s?n ph?m' });
     }
-    res.json({ message: 'C?p nh?t s?n ph?m th脿nh c么ng' });
+    res.json({ message: 'C?p nh?t s?n ph?m th鄋h c鬾g' });
   } catch (error) {
     console.error('L?i c?p nh?t s?n ph?m:', error);
     res.status(500).json({ error: 'L?i server khi c?p nh?t s?n ph?m' });
@@ -87,12 +87,12 @@ app.delete('/api/products/:id', async (req, res) => {
       _id: new ObjectId(req.params.id) 
     });
     if (result.deletedCount === 0) {
-      return res.status(404).json({ error: 'Kh么ng t矛m th?y s?n ph?m' });
+      return res.status(404).json({ error: 'Kh鬾g t靘 th?y s?n ph?m' });
     }
-    res.json({ message: 'X贸a s?n ph?m th脿nh c么ng' });
+    res.json({ message: 'X骯 s?n ph?m th鄋h c鬾g' });
   } catch (error) {
-    console.error('L?i x贸a s?n ph?m:', error);
-    res.status(500).json({ error: 'L?i server khi x贸a s?n ph?m' });
+    console.error('L?i x骯 s?n ph?m:', error);
+    res.status(500).json({ error: 'L?i server khi x骯 s?n ph?m' });
   }
 });
 
@@ -103,9 +103,8 @@ app.get('*', (req, res) => {
 
 // Kh?i d?ng server
 app.listen(PORT, () => {
-  console.log(`?? Server dang ch?y tr锚n http://localhost:${PORT}`);
+  console.log(`?? Server dang ch?y tr阯 http://localhost:${PORT}`);
   console.log(`?? API Products: http://localhost:${PORT}/api/products`);
 });
-
 
 module.exports = app;
