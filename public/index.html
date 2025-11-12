@@ -2793,3 +2793,251 @@
     </script>
 </body>
 </html>
+// ==================== UTILITY FUNCTIONS ====================
+
+// Format price function
+function formatPrice(price) {
+    if (!price) return '0đ';
+    return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
+}
+
+// Format date function
+function formatDate(date) {
+    if (!date) return '';
+    return new Date(date).toLocaleString('vi-VN');
+}
+
+// Render products in admin panel
+function renderProductsInAdmin() {
+    const productList = document.getElementById('admin-product-list');
+    if (!productList) return;
+    
+    productList.innerHTML = '';
+    
+    products.forEach(product => {
+        const discount = Math.round((1 - product.salePrice / product.originalPrice) * 100);
+        
+        const productItem = document.createElement('div');
+        productItem.className = 'admin-product-item';
+        productItem.innerHTML = `
+            <div class="admin-product-info">
+                <strong>${product.name}</strong>
+                <div>${product.category} | ${formatPrice(product.salePrice)} | -${discount}%</div>
+            </div>
+            <div class="admin-product-actions">
+                <button class="admin-btn edit" data-id="${product.id}">Sửa</button>
+                <button class="admin-btn delete" data-id="${product.id}">Xóa</button>
+            </div>
+        `;
+        
+        productList.appendChild(productItem);
+    });
+    
+    // Re-attach event listeners
+    document.querySelectorAll('.admin-btn.edit').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const productId = this.getAttribute('data-id');
+            editProduct(productId);
+        });
+    });
+    
+    document.querySelectorAll('.admin-btn.delete').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const productId = this.getAttribute('data-id');
+            deleteProduct(productId);
+        });
+    });
+}
+
+// Update product display on homepage
+function updateProductDisplay() {
+    const productsGrid = document.getElementById('products-grid');
+    if (!productsGrid) return;
+    
+    productsGrid.innerHTML = '';
+    
+    products.forEach(product => {
+        const discount = Math.round((1 - product.salePrice / product.originalPrice) * 100);
+        
+        const productCard = document.createElement('div');
+        productCard.className = 'product-card';
+        productCard.setAttribute('data-id', product.id);
+        productCard.innerHTML = `
+            <div class="sale-badge">-${discount}%</div>
+            <div class="product-image">
+                <img src="${product.image}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/300x200?text=Product+Image'">
+            </div>
+            <div class="product-info">
+                <div class="product-category">${product.category}</div>
+                <h3 class="product-name">${product.name}</h3>
+                <div class="product-price">
+                    <span class="current-price">${formatPrice(product.salePrice)}</span>
+                    <span class="original-price">${formatPrice(product.originalPrice)}</span>
+                </div>
+                <div class="product-actions">
+                    <button class="btn add-to-cart" data-id="${product.id}" data-name="${product.name}" data-price="${product.salePrice}" data-image="${product.image}">Thêm vào giỏ</button>
+                    <button class="chat-btn" data-product="${product.name}">
+                        <i class="fas fa-comment"></i> Chat
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        productsGrid.appendChild(productCard);
+    });
+    
+    // Re-attach event listeners
+    attachProductEventListeners();
+}
+
+// Attach event listeners to products
+function attachProductEventListeners() {
+    // Add to cart functionality
+    document.querySelectorAll('.add-to-cart').forEach(button => {
+        button.addEventListener('click', function() {
+            const productId = this.getAttribute('data-id');
+            const productName = this.getAttribute('data-name');
+            const productPrice = parseInt(this.getAttribute('data-price'));
+            const productImage = this.getAttribute('data-image');
+            
+            addToCart(productId, productName, productPrice, productImage);
+        });
+    });
+    
+    // Chat buttons
+    document.querySelectorAll('.chat-btn').forEach(button => {
+        button.addEventListener('click', async () => {
+            const productName = button.getAttribute('data-product');
+            chatModal.style.display = 'flex';
+            
+            document.getElementById('customer-info-form').style.display = 'block';
+            document.querySelector('.chat-body').style.display = 'none';
+            document.querySelector('.chat-footer').style.display = 'none';
+            
+            chatModal.setAttribute('data-product', productName);
+        });
+    });
+    
+    // Track product views
+    document.querySelectorAll('.product-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const productId = this.getAttribute('data-id');
+            productViews[productId] = (productViews[productId] || 0) + 1;
+            localStorage.setItem('productViews', JSON.stringify(productViews));
+            updateAnalytics();
+        });
+    });
+}
+
+// Update dashboard statistics
+function updateDashboard() {
+    try {
+        // Update statistics cards
+        document.getElementById('total-orders').textContent = orders.length;
+        document.getElementById('total-revenue').textContent = formatPrice(
+            orders.filter(o => o.status === 'completed').reduce((sum, order) => sum + order.totalAmount, 0)
+        );
+        document.getElementById('total-customers').textContent = new Set(orders.map(o => o.customerPhone)).size;
+        document.getElementById('unread-messages').textContent = messages.filter(m => !m.read && !m.isAdminReply).length;
+
+        // Update recent orders
+        const recentOrders = document.getElementById('recent-orders');
+        recentOrders.innerHTML = orders.slice(0, 5).map(order => `
+            <div style="padding: 8px; border-bottom: 1px solid #eee; font-size: 0.9rem;">
+                <div><strong>${order.customerName}</strong> - ${formatPrice(order.totalAmount)}</div>
+                <div style="color: #666; font-size: 0.8rem;">${formatDate(order.createdAt)}</div>
+            </div>
+        `).join('') || '<p style="color: #666; text-align: center;">Chưa có đơn hàng</p>';
+
+        // Update recent messages
+        const recentMessages = document.getElementById('recent-messages');
+        const recentMsgs = messages.slice(0, 5);
+        recentMessages.innerHTML = recentMsgs.map(msg => `
+            <div style="padding: 8px; border-bottom: 1px solid #eee; font-size: 0.9rem;">
+                <div><strong>${msg.customerInfo ? msg.customerInfo.name : 'Khách'}</strong></div>
+                <div style="color: #666;">${msg.text.substring(0, 50)}...</div>
+                <div style="color: #666; font-size: 0.8rem;">${formatDate(msg.timestamp)}</div>
+            </div>
+        `).join('') || '<p style="color: #666; text-align: center;">Chưa có tin nhắn</p>';
+    } catch (error) {
+        console.error('Error updating dashboard:', error);
+    }
+}
+
+// Update analytics
+function updateAnalytics() {
+    try {
+        document.getElementById('total-visitors').textContent = visitors.total.toLocaleString();
+        document.getElementById('today-visitors').textContent = visitors.today.toLocaleString();
+        document.getElementById('total-products').textContent = products.length;
+        
+        const unreadMessages = messages.filter(m => !m.read).length;
+        document.getElementById('total-messages').textContent = unreadMessages;
+        
+        // Show popular products
+        const popularProductsContainer = document.getElementById('popular-products');
+        if (popularProductsContainer) {
+            popularProductsContainer.innerHTML = '';
+            
+            // Sort products by views
+            const sortedProducts = [...products].sort((a, b) => {
+                const viewsA = productViews[a.id] || 0;
+                const viewsB = productViews[b.id] || 0;
+                return viewsB - viewsA;
+            });
+            
+            // Show top 3 popular products
+            sortedProducts.slice(0, 3).forEach(product => {
+                const views = productViews[product.id] || 0;
+                const productElement = document.createElement('div');
+                productElement.className = 'admin-product-item';
+                productElement.innerHTML = `
+                    <div class="admin-product-info">
+                        <strong>${product.name}</strong>
+                        <div>${views} lượt xem</div>
+                    </div>
+                `;
+                popularProductsContainer.appendChild(productElement);
+            });
+        }
+    } catch (error) {
+        console.error('Error updating analytics:', error);
+    }
+}
+
+// Edit product function
+function editProduct(productId) {
+    const product = products.find(p => p.id == productId);
+    if (product) {
+        document.getElementById('product-form-title').textContent = 'Sửa sản phẩm';
+        document.getElementById('product-form').style.display = 'block';
+        document.getElementById('edit-product-name').value = product.name;
+        document.getElementById('edit-product-category').value = product.category;
+        document.getElementById('edit-product-original-price').value = product.originalPrice;
+        document.getElementById('edit-product-sale-price').value = product.salePrice;
+        document.getElementById('edit-product-image-url').value = product.image;
+        document.getElementById('edit-product-description').value = product.description || '';
+        
+        // Show image preview
+        const preview = document.getElementById('image-preview');
+        preview.src = product.image;
+        preview.style.display = 'block';
+        
+        document.getElementById('save-product-btn').setAttribute('data-id', productId);
+    }
+}
+
+// Delete product function
+async function deleteProduct(productId) {
+    if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
+        const success = await deleteProductFromAPI(productId);
+        if (success) {
+            await loadProductsFromAPI();
+            alert('✅ Sản phẩm đã được xóa khỏi database!');
+        } else {
+            alert('❌ Lỗi khi xóa sản phẩm!');
+        }
+    }
+}
+
+console.log('✅ All utility functions loaded successfully!');
