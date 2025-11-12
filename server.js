@@ -11,15 +11,92 @@ const morgan = require('morgan');
 const app = express();
 const PORT = process.env.PORT || 10000;
 
+// ==================== SIMPLE DATABASE ====================
+const DB_FILE = path.join(__dirname, 'database.json');
+
+// Hàm đọc database
+function readDatabase() {
+    try {
+        if (fs.existsSync(DB_FILE)) {
+            const data = fs.readFileSync(DB_FILE, 'utf8');
+            return JSON.parse(data);
+        }
+    } catch (error) {
+        console.error('Error reading database:', error);
+    }
+    
+    // Database mặc định nếu file không tồn tại
+    return {
+        products: [
+            {
+                id: 1,
+                name: "Son lì cao cấp Luxury Matte",
+                category: "Son môi",
+                originalPrice: 399000,
+                salePrice: 299000,
+                image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
+                description: "Son lì cao cấp với công thức mềm mịn, lâu trôi"
+            },
+            {
+                id: 2,
+                name: "Bảng phấn mắt 12 màu Pro Palette",
+                category: "Trang điểm mắt",
+                originalPrice: 600000,
+                salePrice: 450000,
+                image: "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
+                description: "Bảng phấn mắt đa dạng màu sắc, dễ phối màu"
+            },
+            {
+                id: 3,
+                name: "Kem nền che khuyết điểm Full Cover",
+                category: "Trang điểm mặt",
+                originalPrice: 650000,
+                salePrice: 520000,
+                image: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
+                description: "Kem nền che phủ hoàn hảo, không gây bít tắc lỗ chân lông"
+            },
+            {
+                id: 4,
+                name: "Serum dưỡng ẩm chống lão hóa",
+                category: "Chăm sóc da",
+                originalPrice: 850000,
+                salePrice: 680000,
+                image: "https://images.unsplash.com/photo-1594035910387-fea47794261f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
+                description: "Serum dưỡng ẩm chuyên sâu, cải thiện nếp nhăn"
+            }
+        ],
+        messages: [],
+        visitors: { total: 0, today: 0, date: new Date().toDateString() },
+        settings: {
+            siteTitle: "Trúc Đào Cosmetics",
+            adminEmail: "admin@trucdaocosmetics.vn"
+        }
+    };
+}
+
+// Hàm ghi database
+function writeDatabase(data) {
+    try {
+        fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+        return true;
+    } catch (error) {
+        console.error('Error writing database:', error);
+        return false;
+    }
+}
+
+// Khởi tạo database
+let database = readDatabase();
+
 // ==================== MIDDLEWARE ====================
 app.use(helmet({
-    contentSecurityPolicy: false, // Tắt CSP để tránh block resources
+    contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false
 }));
 
 app.use(compression());
 app.use(cors({
-    origin: '*', // Cho phép tất cả domains
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
@@ -37,14 +114,13 @@ app.use(limiter);
 // Logging
 app.use(morgan('combined'));
 
-// ==================== STATIC FILES - QUAN TRỌNG ====================
+// ==================== STATIC FILES ====================
 app.use(express.static(path.join(__dirname, 'public'), {
     maxAge: '1d',
     etag: true,
     lastModified: true,
     index: 'index.html',
     setHeaders: (res, filePath) => {
-        // Set proper content type for HTML files
         if (filePath.endsWith('.html')) {
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
         }
@@ -69,7 +145,7 @@ app.get('/favicon.ico', (req, res) => {
     res.status(204).end();
 });
 
-// Home page - QUAN TRỌNG: Phục vụ index.html
+// Home page
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -94,54 +170,66 @@ app.get('/api/info', (req, res) => {
             version: '1.0.0',
             environment: process.env.NODE_ENV || 'development'
         },
+        database: {
+            products: database.products.length,
+            messages: database.messages.length,
+            unreadMessages: database.messages.filter(m => !m.read).length
+        },
         timestamp: new Date().toISOString()
     });
 });
 
-// Mock Products API - THÊM API MỚI
-let products = [
-    {
-        id: 1,
-        name: "Son lì cao cấp Luxury Matte",
-        category: "Son môi",
-        originalPrice: 399000,
-        salePrice: 299000,
-        image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-        description: "Son lì cao cấp với công thức mềm mịn, lâu trôi"
-    },
-    {
-        id: 2,
-        name: "Bảng phấn mắt 12 màu Pro Palette",
-        category: "Trang điểm mắt",
-        originalPrice: 600000,
-        salePrice: 450000,
-        image: "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-        description: "Bảng phấn mắt đa dạng màu sắc, dễ phối màu"
+// Visitor count API
+app.post('/api/visitors', (req, res) => {
+    const today = new Date().toDateString();
+    if (database.visitors.date !== today) {
+        database.visitors.today = 0;
+        database.visitors.date = today;
     }
-];
+    database.visitors.total++;
+    database.visitors.today++;
+    
+    writeDatabase(database);
+    
+    res.json(database.visitors);
+});
 
 // Products API Routes
 app.get('/api/products', (req, res) => {
-    res.json(products);
+    res.json(database.products);
 });
 
 app.post('/api/products', (req, res) => {
     const newProduct = {
-        id: products.length + 1,
+        id: Date.now(), // Sử dụng timestamp làm ID
         ...req.body,
         createdAt: new Date().toISOString()
     };
-    products.push(newProduct);
-    res.json(newProduct);
+    database.products.push(newProduct);
+    
+    if (writeDatabase(database)) {
+        res.json(newProduct);
+    } else {
+        res.status(500).json({ error: 'Failed to save product' });
+    }
 });
 
 app.put('/api/products/:id', (req, res) => {
     const productId = parseInt(req.params.id);
-    const productIndex = products.findIndex(p => p.id === productId);
+    const productIndex = database.products.findIndex(p => p.id === productId);
     
     if (productIndex !== -1) {
-        products[productIndex] = { ...products[productIndex], ...req.body };
-        res.json(products[productIndex]);
+        database.products[productIndex] = { 
+            ...database.products[productIndex], 
+            ...req.body,
+            updatedAt: new Date().toISOString()
+        };
+        
+        if (writeDatabase(database)) {
+            res.json(database.products[productIndex]);
+        } else {
+            res.status(500).json({ error: 'Failed to update product' });
+        }
     } else {
         res.status(404).json({ error: 'Product not found' });
     }
@@ -149,37 +237,107 @@ app.put('/api/products/:id', (req, res) => {
 
 app.delete('/api/products/:id', (req, res) => {
     const productId = parseInt(req.params.id);
-    products = products.filter(p => p.id !== productId);
-    res.json({ message: 'Product deleted successfully' });
+    database.products = database.products.filter(p => p.id !== productId);
+    
+    if (writeDatabase(database)) {
+        res.json({ message: 'Product deleted successfully' });
+    } else {
+        res.status(500).json({ error: 'Failed to delete product' });
+    }
 });
 
-// Messages API - THÊM API MỚI
-let messages = [];
-
+// Messages API với tính năng TRẢ LỜI
 app.get('/api/messages', (req, res) => {
-    res.json(messages);
+    res.json(database.messages);
 });
 
 app.post('/api/messages', (req, res) => {
     const newMessage = {
-        id: messages.length + 1,
-        ...req.body,
+        id: Date.now(),
+        text: req.body.text,
+        product: req.body.product || null,
         timestamp: new Date().toISOString(),
-        read: false
+        read: false,
+        isAutoResponse: req.body.isAutoResponse || false,
+        isAdminReply: req.body.isAdminReply || false,
+        originalMessageId: req.body.originalMessageId || null,
+        replies: [] // Thêm mảng replies để lưu các phản hồi
     };
-    messages.push(newMessage);
-    res.json(newMessage);
+    
+    database.messages.push(newMessage);
+    
+    if (writeDatabase(database)) {
+        res.json(newMessage);
+    } else {
+        res.status(500).json({ error: 'Failed to save message' });
+    }
+});
+
+// API để trả lời tin nhắn
+app.post('/api/messages/:id/reply', (req, res) => {
+    const messageId = parseInt(req.params.id);
+    const parentMessage = database.messages.find(m => m.id === messageId);
+    
+    if (!parentMessage) {
+        return res.status(404).json({ error: 'Message not found' });
+    }
+    
+    const replyMessage = {
+        id: Date.now(),
+        text: req.body.text,
+        timestamp: new Date().toISOString(),
+        isAdminReply: true,
+        adminName: req.body.adminName || 'Admin'
+    };
+    
+    // Thêm reply vào tin nhắn gốc
+    if (!parentMessage.replies) {
+        parentMessage.replies = [];
+    }
+    parentMessage.replies.push(replyMessage);
+    
+    // Đánh dấu tin nhắn gốc đã đọc
+    parentMessage.read = true;
+    
+    if (writeDatabase(database)) {
+        res.json({
+            parentMessage,
+            reply: replyMessage
+        });
+    } else {
+        res.status(500).json({ error: 'Failed to save reply' });
+    }
 });
 
 app.put('/api/messages/:id/read', (req, res) => {
     const messageId = parseInt(req.params.id);
-    const message = messages.find(m => m.id === messageId);
+    const message = database.messages.find(m => m.id === messageId);
     
     if (message) {
         message.read = true;
-        res.json(message);
+        
+        if (writeDatabase(database)) {
+            res.json(message);
+        } else {
+            res.status(500).json({ error: 'Failed to update message' });
+        }
     } else {
         res.status(404).json({ error: 'Message not found' });
+    }
+});
+
+// Settings API
+app.get('/api/settings', (req, res) => {
+    res.json(database.settings);
+});
+
+app.put('/api/settings', (req, res) => {
+    database.settings = { ...database.settings, ...req.body };
+    
+    if (writeDatabase(database)) {
+        res.json(database.settings);
+    } else {
+        res.status(500).json({ error: 'Failed to save settings' });
     }
 });
 
@@ -193,6 +351,19 @@ app.post('/api/contact', (req, res) => {
             message: 'Vui lòng điền đầy đủ thông tin bắt buộc'
         });
     }
+
+    // Lưu tin nhắn liên hệ
+    const contactMessage = {
+        id: Date.now(),
+        text: `Liên hệ từ: ${name} (${email}${phone ? ` - ${phone}` : ''}) - ${message}`,
+        timestamp: new Date().toISOString(),
+        read: false,
+        type: 'contact_form',
+        customerInfo: { name, email, phone }
+    };
+    
+    database.messages.push(contactMessage);
+    writeDatabase(database);
 
     console.log('Contact form submission:', { name, email, phone, message });
     
@@ -214,10 +385,9 @@ app.use('/api/*', (req, res) => {
     });
 });
 
-// 404 handler for frontend routes - QUAN TRỌNG
+// 404 handler for frontend routes
 app.use('*', (req, res) => {
     if (req.accepts('html')) {
-        // Serve index.html for all other routes (SPA behavior)
         res.sendFile(path.join(__dirname, 'public', 'index.html'));
     } else if (req.accepts('json')) {
         res.status(404).json({
@@ -275,27 +445,18 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log('='.repeat(60));
     console.log('📍 Access URLs:');
     console.log(`   📱 Local: http://localhost:${PORT}`);
-    console.log(`   🌐 Network: http://[YOUR_IP]:${PORT}`);
-    console.log(`   🌍 Render: https://trucdaobodycare.onrender.com`);
-    console.log('\n🛡️ Security Features:');
-    console.log('   ✅ Helmet.js security headers');
-    console.log('   ✅ Rate limiting (1000 req/15min)');
-    console.log('   ✅ CORS enabled');
-    console.log('   ✅ Gzip compression');
-    console.log('   ✅ Request logging');
-    console.log('\n📊 APIs Available:');
-    console.log('   GET  /api/health - Health check');
-    console.log('   GET  /api/info - Server information');
-    console.log('   GET  /api/products - Get all products');
-    console.log('   POST /api/products - Create product');
-    console.log('   PUT  /api/products/:id - Update product');
-    console.log('   DELETE /api/products/:id - Delete product');
-    console.log('   GET  /api/messages - Get all messages');
-    console.log('   POST /api/messages - Create message');
-    console.log('   POST /api/contact - Contact form');
+    console.log(`   🌍 Production: https://trucdaobodycare.onrender.com`);
+    console.log('\n💾 Database Features:');
+    console.log('   ✅ Persistent data storage');
+    console.log('   ✅ Real-time message replies');
+    console.log('   ✅ Product management');
+    console.log('   ✅ Visitor tracking');
+    console.log('\n📊 Current Stats:');
+    console.log(`   📦 Products: ${database.products.length}`);
+    console.log(`   💬 Messages: ${database.messages.length}`);
+    console.log(`   👥 Total Visitors: ${database.visitors.total}`);
     console.log('\n⏰ Server started at:', new Date().toISOString());
     console.log('💻 Environment:', process.env.NODE_ENV || 'development');
-    console.log('💾 Memory usage:', `${(process.memoryUsage().rss / 1024 / 1024).toFixed(2)} MB`);
     console.log('='.repeat(60));
 });
 
