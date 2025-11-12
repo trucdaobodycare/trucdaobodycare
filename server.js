@@ -1,302 +1,276 @@
-// Server.js - Updated with new password
 const express = require('express');
-const cors = require('cors');
-const { MongoClient, ObjectId } = require('mongodb');
 const path = require('path');
+const http = require('http');
+const os = require('os');
 const fs = require('fs');
+const compression = require('compression');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const cors = require('cors');
+const morgan = require('morgan');
 
 const app = express();
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 3001;
 
-// Middleware
-app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3001', 'http://127.0.0.1:3001', 'https://trucdaobodycare.onrender.com'],
-  credentials: true
+// ==================== MIDDLEWARE ====================
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'"],
+            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+            imgSrc: ["'self'", "data:", "https:"],
+            connectSrc: ["'self'"]
+        }
+    },
+    crossOriginEmbedderPolicy: false
 }));
-app.use(express.json({ limit: '50mb' }));
+
+app.use(compression());
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(__dirname));
 
-// Fallback data
-const fallbackProducts = [
-  {
-    id: "1",
-    name: "Son lì cao cấp Luxury Matte",
-    category: "Son môi",
-    originalPrice: 399000,
-    salePrice: 299000,
-    image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-    description: "Son lì cao cấp với công thức mềm mịn, lâu trôi"
-  },
-  {
-    id: "2",
-    name: "Bảng phấn mắt 12 màu Pro Palette",
-    category: "Trang điểm mắt", 
-    originalPrice: 600000,
-    salePrice: 450000,
-    image: "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-    description: "Bảng phấn mắt đa dạng màu sắc, dễ phối màu"
-  },
-  {
-    id: "3",
-    name: "Kem nền che khuyết điểm Full Cover",
-    category: "Trang điểm mặt",
-    originalPrice: 650000,
-    salePrice: 520000,
-    image: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-    description: "Kem nền che phủ hoàn hảo, không gây bít tắc lỗ chân lông"
-  }
-];
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 1000, // limit each IP to 1000 requests per windowMs
+    message: 'Quá nhiều yêu cầu từ IP này, vui lòng thử lại sau 15 phút.'
+});
+app.use(limiter);
 
-// Biến toàn cục
-let db = null;
-let isDatabaseConnected = false;
+// Logging
+const accessLogStream = fs.createWriteStream(
+    path.join(__dirname, 'access.log'), 
+    { flags: 'a' }
+);
+app.use(morgan('combined', { stream: accessLogStream }));
+app.use(morgan('dev'));
 
-// Hàm kết nối database
-async function connectDatabase() {
-  try {
-    console.log('🔄 Đang kết nối đến MongoDB Atlas...');
+// ==================== STATIC FILES ====================
+app.use(express.static(path.join(__dirname, 'public'), {
+    maxAge: '1d',
+    etag: true,
+    lastModified: true,
+    index: 'index.html'
+}));
+
+// ==================== SECURITY HEADERS ====================
+app.use((req, res, next) => {
+    res.header('X-Content-Type-Options', 'nosniff');
+    res.header('X-Frame-Options', 'DENY');
+    res.header('X-XSS-Protection', '1; mode=block');
+    res.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+    next();
+});
+
+// ==================== ROUTES ====================
+
+// Home page
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Health check API
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'OK',
+        message: 'Server is running smoothly',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
+        version: '1.0.0'
+    });
+});
+
+// Server info API
+app.get('/api/info', (req, res) => {
+    const networkInfo = getNetworkInfo();
+    res.json({
+        server: {
+            name: 'TrucDaoBodyCare Server',
+            version: '1.0.0',
+            environment: process.env.NODE_ENV || 'development'
+        },
+        system: {
+            platform: os.platform(),
+            arch: os.arch(),
+            cpu: os.cpus().length,
+            memory: {
+                total: `${(os.totalmem() / 1024 / 1024 / 1024).toFixed(2)} GB`,
+                free: `${(os.freemem() / 1024 / 1024 / 1024).toFixed(2)} GB`
+            },
+            uptime: `${(os.uptime() / 3600).toFixed(2)} hours`
+        },
+        network: networkInfo,
+        client: {
+            ip: req.ip,
+            userAgent: req.get('User-Agent')
+        }
+    });
+});
+
+// File upload endpoint (nếu cần)
+app.post('/api/upload', (req, res) => {
+    // Xử lý upload file ở đây
+    res.json({ message: 'Upload endpoint ready', success: true });
+});
+
+// Contact form endpoint
+app.post('/api/contact', (req, res) => {
+    const { name, email, message, phone } = req.body;
     
-    // Sử dụng connection string từ environment variable
-    const mongoUrl = process.env.MONGODB_URI;
-    
-    if (!mongoUrl) {
-      console.log('⚠️ MONGODB_URI không được set');
-      isDatabaseConnected = false;
-      return null;
+    // Validate input
+    if (!name || !email || !message) {
+        return res.status(400).json({
+            success: false,
+            message: 'Vui lòng điền đầy đủ thông tin bắt buộc'
+        });
     }
+
+    // Xử lý gửi email hoặc lưu database ở đây
+    console.log('Contact form submission:', { name, email, phone, message });
     
-    // Log connection string (ẩn password)
-    const safeLogUrl = mongoUrl.replace(/(mongodb\+srv:\/\/[^:]+:)([^@]+)(@.*)/, '$1***$3');
-    console.log('📊 Connection string:', safeLogUrl);
-    
-    // Validate connection string format
-    if (!mongoUrl.startsWith('mongodb+srv://')) {
-      console.error('❌ Lỗi: Connection string phải bắt đầu với mongodb+srv://');
-      isDatabaseConnected = false;
-      return null;
+    res.json({
+        success: true,
+        message: 'Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi sớm nhất.',
+        data: { name, email, phone }
+    });
+});
+
+// ==================== ERROR HANDLING ====================
+
+// 404 handler
+app.use('*', (req, res) => {
+    if (req.accepts('html')) {
+        res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+    } else if (req.accepts('json')) {
+        res.status(404).json({
+            success: false,
+            message: 'Route not found',
+            path: req.originalUrl
+        });
+    } else {
+        res.status(404).type('txt').send('404 Not Found');
     }
+});
+
+// Global error handler
+app.use((error, req, res, next) => {
+    console.error('Server Error:', error);
     
-    const client = new MongoClient(mongoUrl, {
-      serverSelectionTimeoutMS: 10000,
-      socketTimeoutMS: 45000,
+    const errorLog = {
+        timestamp: new Date().toISOString(),
+        url: req.originalUrl,
+        method: req.method,
+        ip: req.ip,
+        error: error.message,
+        stack: error.stack
+    };
+    
+    // Log error to file
+    fs.appendFileSync(
+        path.join(__dirname, 'error.log'), 
+        JSON.stringify(errorLog) + '\n'
+    );
+
+    res.status(500).json({
+        success: false,
+        message: 'Đã có lỗi xảy ra trên máy chủ',
+        errorId: Date.now()
+    });
+});
+
+// ==================== UTILITY FUNCTIONS ====================
+
+function getNetworkInfo() {
+    const interfaces = os.networkInterfaces();
+    const networkInfo = {};
+    
+    Object.keys(interfaces).forEach(interfaceName => {
+        interfaces[interfaceName].forEach(interface => {
+            if (interface.family === 'IPv4' && !interface.internal) {
+                networkInfo[interfaceName] = {
+                    address: interface.address,
+                    netmask: interface.netmask,
+                    mac: interface.mac
+                };
+            }
+        });
     });
     
-    await client.connect();
-    
-    const dbName = 'trucdao-cosmetics';
-    db = client.db(dbName);
-    isDatabaseConnected = true;
-    
-    console.log('✅ Kết nối MongoDB thành công!');
-    console.log('🗄️ Database:', dbName);
-    
-    // Test connection
-    await db.command({ ping: 1 });
-    console.log('🎯 Ping MongoDB thành công');
-    
-    // Khởi tạo dữ liệu mẫu
-    await initializeSampleData();
-    
-    return db;
-    
-  } catch (error) {
-    console.error('❌ Lỗi kết nối MongoDB:', error.message);
-    isDatabaseConnected = false;
-    
-    // Retry sau 10 giây
-    console.log('🔄 Thử kết nối lại sau 10 giây...');
-    setTimeout(connectDatabase, 10000);
-    return null;
-  }
+    return networkInfo;
 }
 
-// Hàm khởi tạo dữ liệu mẫu
-async function initializeSampleData() {
-  if (!db) return;
-  
-  try {
-    const productCount = await db.collection('products').countDocuments();
+function getLocalIP() {
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+        for (const interface of interfaces[name]) {
+            if (interface.family === 'IPv4' && !interface.internal) {
+                return interface.address;
+            }
+        }
+    }
+    return 'localhost';
+}
+
+// ==================== SERVER STARTUP ====================
+
+const server = http.createServer(app);
+
+// Graceful shutdown
+function gracefulShutdown(signal) {
+    console.log(`\n🛑 Received ${signal}, shutting down gracefully...`);
     
-    if (productCount === 0) {
-      console.log('🔄 Đang khởi tạo dữ liệu mẫu...');
-      await db.collection('products').insertMany(fallbackProducts);
-      console.log('✅ Đã thêm dữ liệu sản phẩm mẫu');
-    } else {
-      console.log(`📦 Đã có ${productCount} sản phẩm trong database`);
-    }
-  } catch (error) {
-    console.error('❌ Lỗi khởi tạo dữ liệu:', error.message);
-  }
+    server.close((err) => {
+        if (err) {
+            console.error('Error during shutdown:', err);
+            process.exit(1);
+        }
+        
+        console.log('✅ HTTP server closed');
+        console.log('✅ Database connections closed (if any)');
+        console.log('🔄 Process exited');
+        process.exit(0);
+    });
+
+    // Force close after 10 seconds
+    setTimeout(() => {
+        console.log('⚠️ Forcing shutdown after timeout');
+        process.exit(1);
+    }, 10000);
 }
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  const mongoUrl = process.env.MONGODB_URI;
-  const hasMongoUrl = !!mongoUrl;
-  const isMongoUrlValid = hasMongoUrl && mongoUrl.startsWith('mongodb+srv://');
-  
-  res.json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    database: {
-      connected: isDatabaseConnected,
-      hasConnectionString: hasMongoUrl,
-      connectionStringValid: isMongoUrlValid,
-      status: isDatabaseConnected ? 'Connected to MongoDB Atlas' : 'Disconnected - Using Fallback Data'
-    },
-    service: 'Trúc Đào Cosmetics API',
-    version: '1.0.0'
-  });
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+
+// Start server
+server.listen(PORT, '0.0.0.0', () => {
+    const localIP = getLocalIP();
+    console.log('\n' + '='.repeat(60));
+    console.log('🚀 TRUC DAO BODY CARE SERVER STARTED SUCCESSFULLY!');
+    console.log('='.repeat(60));
+    console.log('📍 Access URLs:');
+    console.log(`   📱 Local: http://localhost:${PORT}`);
+    console.log(`   🌐 Network: http://${localIP}:${PORT}`);
+    console.log(`   🌍 Internet: http://[YOUR_PUBLIC_IP]:${PORT}`);
+    console.log('\n🛡️ Security Features:');
+    console.log('   ✅ Helmet.js security headers');
+    console.log('   ✅ Rate limiting (1000 req/15min)');
+    console.log('   ✅ CORS enabled');
+    console.log('   ✅ Gzip compression');
+    console.log('   ✅ Request logging');
+    console.log('\n📊 APIs Available:');
+    console.log('   GET  /api/health - Health check');
+    console.log('   GET  /api/info - Server information');
+    console.log('   POST /api/contact - Contact form');
+    console.log('   POST /api/upload - File upload');
+    console.log('\n⏰ Server started at:', new Date().toISOString());
+    console.log('💻 Environment:', process.env.NODE_ENV || 'development');
+    console.log('💾 Memory usage:', `${(process.memoryUsage().rss / 1024 / 1024).toFixed(2)} MB`);
+    console.log('='.repeat(60));
 });
 
-// API Routes
-app.get('/api/products', async (req, res) => {
-  try {
-    if (isDatabaseConnected && db) {
-      const products = await db.collection('products').find().toArray();
-      const formattedProducts = products.map(product => ({
-        ...product,
-        id: product._id.toString()
-      }));
-      
-      console.log(`📦 Lấy ${products.length} sản phẩm từ MongoDB Atlas`);
-      res.json(formattedProducts);
-    } else {
-      console.log('📦 Sử dụng fallback data');
-      res.json(fallbackProducts);
-    }
-  } catch (error) {
-    console.error('Lỗi lấy sản phẩm, sử dụng fallback:', error.message);
-    res.json(fallbackProducts);
-  }
-});
-
-// Các API khác...
-app.get('/api/messages', async (req, res) => {
-  try {
-    if (isDatabaseConnected && db) {
-      const messages = await db.collection('messages').find().sort({ timestamp: -1 }).toArray();
-      const formattedMessages = messages.map(message => ({
-        ...message,
-        id: message._id.toString()
-      }));
-      res.json(formattedMessages);
-    } else {
-      res.json([]);
-    }
-  } catch (error) {
-    console.error('Lỗi lấy tin nhắn:', error);
-    res.json([]);
-  }
-});
-
-app.post('/api/messages', async (req, res) => {
-  try {
-    if (isDatabaseConnected && db) {
-      const messageData = {
-        ...req.body,
-        timestamp: new Date(),
-        read: false
-      };
-      
-      const result = await db.collection('messages').insertOne(messageData);
-      
-      res.status(201).json({ 
-        message: 'Tin nhắn đã được lưu', 
-        messageId: result.insertedId
-      });
-    } else {
-      res.status(201).json({ 
-        message: 'Tin nhắn đã được ghi nhận', 
-        messageId: 'temp-' + Date.now()
-      });
-    }
-  } catch (error) {
-    console.error('Lỗi lưu tin nhắn:', error);
-    res.status(500).json({ error: 'Lỗi server khi lưu tin nhắn' });
-  }
-});
-
-// Route cho trang chủ
-app.get('/', (req, res) => {
-  const indexPath = path.join(__dirname, 'index.html');
-  
-  if (fs.existsSync(indexPath)) {
-    res.sendFile(indexPath);
-  } else {
-    res.send(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Trúc Đào Cosmetics</title>
-        <style>
-          body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-          h1 { color: #e83e8c; }
-          .status { background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0; }
-          .success { color: green; }
-          .warning { color: orange; }
-        </style>
-      </head>
-      <body>
-        <h1>✨ Trúc Đào Cosmetics</h1>
-        <div class="status">
-          <h2>🚀 Ứng dụng đang chạy</h2>
-          <p>Backend API đã sẵn sàng!</p>
-          <p class="${isDatabaseConnected ? 'success' : 'warning'}">
-            Database: ${isDatabaseConnected ? '✅ Đã kết nối MongoDB Atlas' : '🔄 Đang kết nối...'}
-          </p>
-        </div>
-        <div>
-          <h3>📋 Các API có sẵn:</h3>
-          <ul style="list-style: none; padding: 0;">
-            <li><a href="/api/products">/api/products</a> - Danh sách sản phẩm</li>
-            <li><a href="/health">/health</a> - Health Check</li>
-            <li><a href="/api/messages">/api/messages</a> - Tin nhắn</li>
-          </ul>
-        </div>
-      </body>
-      </html>
-    `);
-  }
-});
-
-// Route mặc định cho SPA
-app.get('*', (req, res) => {
-  const requestedPath = path.join(__dirname, req.path);
-  
-  if (fs.existsSync(requestedPath)) {
-    res.sendFile(requestedPath);
-  } else {
-    const indexPath = path.join(__dirname, 'index.html');
-    if (fs.existsSync(indexPath)) {
-      res.sendFile(indexPath);
-    } else {
-      res.status(404).json({ error: 'Endpoint không tồn tại' });
-    }
-  }
-});
-
-// Khởi động server
-async function startServer() {
-  // Kết nối database
-  connectDatabase();
-  
-  app.listen(PORT, () => {
-    console.log(`🚀 Server đang chạy trên http://localhost:${PORT}`);
-    console.log(`🌐 Public URL: https://trucdaobodycare.onrender.com`);
-    console.log(`📊 Database Status: ${isDatabaseConnected ? '✅ Connected' : '🔄 Connecting...'}`);
-    console.log(`❤️ Health Check: https://trucdaobodycare.onrender.com/health`);
-  });
-}
-
-// Xử lý shutdown
-process.on('SIGTERM', () => {
-  console.log('🛑 Nhận tín hiệu SIGTERM, đóng ứng dụng...');
-  process.exit(0);
-});
-
-// Bắt đầu server
-startServer();
-
+// ==================== EXPORTS ====================
 module.exports = app;
