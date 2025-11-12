@@ -1,8 +1,9 @@
-require('dotenv').config();
+// Server.js - Fixed version for Render.com
 const express = require('express');
 const cors = require('cors');
 const { MongoClient, ObjectId } = require('mongodb');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -14,28 +15,46 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(__dirname)); // Serve static files from current directory
 
-// Kết nối MongoDB với URI từ environment variable
-const mongoUrl = process.env.MONGODB_URI || 'mongodb://localhost:27017';
-const dbName = process.env.DB_NAME || 'trucdao-cosmetics';
-let db;
+// Serve static files từ thư mục hiện tại
+app.use(express.static(__dirname));
 
-console.log('🔄 Đang kết nối đến MongoDB...');
-console.log('📊 MongoDB URI:', mongoUrl.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@')); // Ẩn thông tin nhạy cảm
+// Biến toàn cục cho database
+let db = null;
+let isDatabaseConnected = false;
 
-MongoClient.connect(mongoUrl)
-  .then(client => {
-    console.log('✅ Kết nối MongoDB thành công');
+// Hàm kết nối database với retry logic
+async function connectDatabase() {
+  try {
+    console.log('🔄 Đang kết nối đến MongoDB...');
+    
+    // Sử dụng MongoDB URI từ environment variable hoặc local fallback
+    const mongoUrl = process.env.MONGODB_URI || 'mongodb://localhost:27017';
+    const dbName = process.env.DB_NAME || 'trucdao-cosmetics';
+    
+    console.log('📊 Database URL:', mongoUrl.includes('@') ? '***[hidden]***' : mongoUrl);
+    
+    const client = new MongoClient(mongoUrl);
+    await client.connect();
+    
     db = client.db(dbName);
+    isDatabaseConnected = true;
+    
+    console.log('✅ Kết nối MongoDB thành công');
     
     // Khởi tạo dữ liệu mẫu
-    initializeSampleData();
-  })
-  .catch(error => {
+    await initializeSampleData();
+    
+    return db;
+  } catch (error) {
     console.error('❌ Lỗi kết nối MongoDB:', error.message);
-    console.log('💡 Lưu ý: Ứng dụng vẫn chạy nhưng không có kết nối database');
-  });
+    isDatabaseConnected = false;
+    
+    // Retry sau 5 giây
+    setTimeout(connectDatabase, 5000);
+    return null;
+  }
+}
 
 // Hàm khởi tạo dữ liệu mẫu
 async function initializeSampleData() {
@@ -67,6 +86,26 @@ async function initializeSampleData() {
           description: "Bảng phấn mắt đa dạng màu sắc, dễ phối màu",
           createdAt: new Date(),
           updatedAt: new Date()
+        },
+        {
+          name: "Kem nền che khuyết điểm Full Cover",
+          category: "Trang điểm mặt",
+          originalPrice: 650000,
+          salePrice: 520000,
+          image: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
+          description: "Kem nền che phủ hoàn hảo, không gây bít tắc lỗ chân lông",
+          createdAt: new Date(),
+          updatedAt: new Date()
+        },
+        {
+          name: "Serum dưỡng ẩm chống lão hóa",
+          category: "Chăm sóc da",
+          originalPrice: 850000,
+          salePrice: 680000,
+          image: "https://images.unsplash.com/photo-1594035910387-fea47794261f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
+          description: "Serum dưỡng ẩm chuyên sâu, cải thiện nếp nhăn",
+          createdAt: new Date(),
+          updatedAt: new Date()
         }
       ];
       
@@ -78,30 +117,37 @@ async function initializeSampleData() {
   }
 }
 
+// Middleware kiểm tra database connection
+function checkDatabase(req, res, next) {
+  if (!isDatabaseConnected) {
+    return res.status(503).json({ 
+      error: 'Database đang tạm thời gián đoạn. Vui lòng thử lại sau.' 
+    });
+  }
+  next();
+}
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    database: db ? 'Connected' : 'Disconnected'
+    database: isDatabaseConnected ? 'Connected' : 'Disconnected',
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
-// Routes API sản phẩm
-app.get('/api/products', async (req, res) => {
+// API Routes với database check
+app.get('/api/products', checkDatabase, async (req, res) => {
   try {
-    if (!db) {
-      return res.status(500).json({ error: 'Database chưa kết nối' });
-    }
-    
     const products = await db.collection('products').find().toArray();
-    console.log(`📦 Lấy ${products.length} sản phẩm từ database`);
     
     const formattedProducts = products.map(product => ({
       ...product,
       id: product._id.toString()
     }));
     
+    console.log(`📦 Lấy ${products.length} sản phẩm từ database`);
     res.json(formattedProducts);
   } catch (error) {
     console.error('Lỗi lấy sản phẩm:', error);
@@ -109,12 +155,8 @@ app.get('/api/products', async (req, res) => {
   }
 });
 
-app.get('/api/products/:id', async (req, res) => {
+app.get('/api/products/:id', checkDatabase, async (req, res) => {
   try {
-    if (!db) {
-      return res.status(500).json({ error: 'Database chưa kết nối' });
-    }
-    
     let product;
     
     if (ObjectId.isValid(req.params.id)) {
@@ -135,12 +177,8 @@ app.get('/api/products/:id', async (req, res) => {
   }
 });
 
-app.post('/api/products', async (req, res) => {
+app.post('/api/products', checkDatabase, async (req, res) => {
   try {
-    if (!db) {
-      return res.status(500).json({ error: 'Database chưa kết nối' });
-    }
-    
     const productData = {
       ...req.body,
       createdAt: new Date(),
@@ -171,12 +209,8 @@ app.post('/api/products', async (req, res) => {
 });
 
 // API Messages
-app.get('/api/messages', async (req, res) => {
+app.get('/api/messages', checkDatabase, async (req, res) => {
   try {
-    if (!db) {
-      return res.status(500).json({ error: 'Database chưa kết nối' });
-    }
-    
     const messages = await db.collection('messages').find().sort({ timestamp: -1 }).toArray();
     
     const formattedMessages = messages.map(message => ({
@@ -191,12 +225,8 @@ app.get('/api/messages', async (req, res) => {
   }
 });
 
-app.post('/api/messages', async (req, res) => {
+app.post('/api/messages', checkDatabase, async (req, res) => {
   try {
-    if (!db) {
-      return res.status(500).json({ error: 'Database chưa kết nối' });
-    }
-    
     const messageData = {
       ...req.body,
       timestamp: new Date(),
@@ -211,6 +241,8 @@ app.post('/api/messages', async (req, res) => {
       id: result.insertedId.toString()
     };
     
+    console.log('💬 Tin nhắn mới từ:', messageData.name || 'Ẩn danh');
+    
     res.status(201).json({ 
       message: 'Tin nhắn đã được lưu', 
       messageId: result.insertedId,
@@ -223,12 +255,8 @@ app.post('/api/messages', async (req, res) => {
 });
 
 // API Settings
-app.get('/api/settings', async (req, res) => {
+app.get('/api/settings', checkDatabase, async (req, res) => {
   try {
-    if (!db) {
-      return res.status(500).json({ error: 'Database chưa kết nối' });
-    }
-    
     const settings = await db.collection('settings').find().toArray();
     const settingsObj = {};
     settings.forEach(setting => {
@@ -241,12 +269,8 @@ app.get('/api/settings', async (req, res) => {
   }
 });
 
-app.post('/api/settings', async (req, res) => {
+app.post('/api/settings', checkDatabase, async (req, res) => {
   try {
-    if (!db) {
-      return res.status(500).json({ error: 'Database chưa kết nối' });
-    }
-    
     const settings = req.body;
     const operations = Object.keys(settings).map(key => ({
       updateOne: {
@@ -257,6 +281,7 @@ app.post('/api/settings', async (req, res) => {
     }));
     
     await db.collection('settings').bulkWrite(operations);
+    console.log('⚙️ Cài đặt đã được cập nhật');
     res.json({ message: 'Cài đặt đã được lưu' });
   } catch (error) {
     console.error('Lỗi lưu cài đặt:', error);
@@ -264,56 +289,100 @@ app.post('/api/settings', async (req, res) => {
   }
 });
 
-// API Analytics
-app.post('/api/analytics/visit', async (req, res) => {
-  try {
-    if (!db) {
-      return res.status(500).json({ error: 'Database chưa kết nối' });
-    }
-    
-    const today = new Date().toISOString().split('T')[0];
-    await db.collection('analytics').updateOne(
-      { date: today },
-      { $inc: { visits: 1 } },
-      { upsert: true }
-    );
-    
-    await db.collection('settings').updateOne(
-      { key: 'totalVisits' },
-      { $inc: { value: 1 } },
-      { upsert: true }
-    );
-    
-    res.json({ message: 'Visit recorded' });
-  } catch (error) {
-    console.error('Lỗi ghi visit:', error);
-    res.status(500).json({ error: 'Lỗi server khi ghi visit' });
-  }
-});
-
-// Route cho trang chủ - sửa đường dẫn chính xác
+// Route cho trang chủ - với fallback nếu file không tồn tại
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  const indexPath = path.join(__dirname, 'index.html');
+  
+  // Kiểm tra file có tồn tại không
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    // Fallback: trả về HTML cơ bản nếu file không tồn tại
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Trúc Đào Cosmetics</title>
+        <style>
+          body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+          h1 { color: #e83e8c; }
+          .status { background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <h1>Trúc Đào Cosmetics</h1>
+        <div class="status">
+          <h2>🚀 Ứng dụng đang chạy</h2>
+          <p>Backend API đã sẵn sàng!</p>
+          <p>Database: ${isDatabaseConnected ? '✅ Đã kết nối' : '❌ Đang kết nối...'}</p>
+        </div>
+        <div>
+          <h3>📋 Các API có sẵn:</h3>
+          <ul style="list-style: none; padding: 0;">
+            <li><a href="/api/products">/api/products</a> - Danh sách sản phẩm</li>
+            <li><a href="/api/messages">/api/messages</a> - Tin nhắn</li>
+            <li><a href="/api/settings">/api/settings</a> - Cài đặt</li>
+            <li><a href="/health">/health</a> - Health Check</li>
+          </ul>
+        </div>
+      </body>
+      </html>
+    `);
+  }
 });
 
 // Route mặc định cho frontend
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  const requestedPath = path.join(__dirname, req.path);
+  
+  // Kiểm tra file có tồn tại không
+  if (fs.existsSync(requestedPath)) {
+    res.sendFile(requestedPath);
+  } else {
+    // Fallback về trang chủ cho SPA routing
+    const indexPath = path.join(__dirname, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(404).json({ error: 'Endpoint không tồn tại' });
+    }
+  }
 });
 
-// Xử lý lỗi 404
-app.use((req, res) => {
-  res.status(404).json({ error: 'Endpoint không tồn tại' });
+// Khởi động server và kết nối database
+async function startServer() {
+  try {
+    // Kết nối database
+    await connectDatabase();
+    
+    // Khởi động server
+    app.listen(PORT, () => {
+      console.log(`🚀 Server đang chạy trên http://localhost:${PORT}`);
+      console.log(`🌐 Public URL: https://trucdaobodycare.onrender.com`);
+      console.log(`📦 API Products: https://trucdaobodycare.onrender.com/api/products`);
+      console.log(`💬 API Messages: https://trucdaobodycare.onrender.com/api/messages`);
+      console.log(`⚙️ API Settings: https://trucdaobodycare.onrender.com/api/settings`);
+      console.log(`❤️ Health Check: https://trucdaobodycare.onrender.com/health`);
+      console.log(`📊 Database Status: ${isDatabaseConnected ? '✅ Connected' : '❌ Disconnected'}`);
+    });
+  } catch (error) {
+    console.error('❌ Không thể khởi động server:', error);
+    process.exit(1);
+  }
+}
+
+// Xử lý shutdown
+process.on('SIGINT', async () => {
+  console.log('🛑 Nhận tín hiệu SIGINT, đóng ứng dụng...');
+  process.exit(0);
 });
 
-// Khởi động server
-app.listen(PORT, () => {
-  console.log(`🚀 Server đang chạy trên http://localhost:${PORT}`);
-  console.log(`🌐 Public URL: https://trucdaobodycare.onrender.com`);
-  console.log(`📦 API Products: https://trucdaobodycare.onrender.com/api/products`);
-  console.log(`💬 API Messages: https://trucdaobodycare.onrender.com/api/messages`);
-  console.log(`⚙️ API Settings: https://trucdaobodycare.onrender.com/api/settings`);
-  console.log(`❤️ Health Check: https://trucdaobodycare.onrender.com/health`);
+process.on('SIGTERM', async () => {
+  console.log('🛑 Nhận tín hiệu SIGTERM, đóng ứng dụng...');
+  process.exit(0);
 });
+
+// Bắt đầu server
+startServer();
 
 module.exports = app;
