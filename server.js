@@ -74,6 +74,7 @@ const defaultDatabase = {
         }
     ],
     messages: [],
+    orders: [],
     visitors: { 
         total: 0, 
         today: 0, 
@@ -236,6 +237,7 @@ app.get('/health', (req, res) => {
         database: {
             products: database.products.length,
             messages: database.messages.length,
+            orders: database.orders.length,
             visitors: database.visitors.total
         }
     });
@@ -255,6 +257,7 @@ app.get('/api/info', (req, res) => {
         database: {
             products: database.products.length,
             messages: database.messages.length,
+            orders: database.orders.length,
             unreadMessages: database.messages.filter(m => !m.read).length,
             visitors: database.visitors.total
         },
@@ -389,7 +392,7 @@ app.get('/api/messages', (req, res) => {
 
 app.post('/api/messages', async (req, res) => {
     try {
-        const { text, product, isAutoResponse, isAdminReply, originalMessageId } = req.body;
+        const { text, product, isAutoResponse, isAdminReply, originalMessageId, customerInfo } = req.body;
         
         if (!text) {
             return res.status(400).json({ error: 'Nội dung tin nhắn không được để trống' });
@@ -404,6 +407,7 @@ app.post('/api/messages', async (req, res) => {
             isAutoResponse: isAutoResponse || false,
             isAdminReply: isAdminReply || false,
             originalMessageId: originalMessageId || null,
+            customerInfo: customerInfo || null,
             replies: []
         };
         
@@ -480,6 +484,148 @@ app.post('/api/messages/:id/reply', (req, res) => {
     }
 });
 
+// Mark all messages as read for a customer
+app.put('/api/messages/customer/:phone/read-all', (req, res) => {
+    try {
+        const customerPhone = req.params.phone;
+        let updatedCount = 0;
+        
+        database.messages.forEach(message => {
+            if (message.customerInfo && 
+                message.customerInfo.phone === customerPhone && 
+                !message.read && 
+                !message.isAdminReply) {
+                message.read = true;
+                updatedCount++;
+            }
+        });
+        
+        writeDatabase(database);
+        
+        res.json({
+            success: true,
+            message: `Đã đánh dấu ${updatedCount} tin nhắn là đã đọc`,
+            updatedCount
+        });
+    } catch (error) {
+        console.error('Error marking all messages as read:', error);
+        res.status(500).json({ error: 'Lỗi server' });
+    }
+});
+
+// Orders API
+app.get('/api/orders', (req, res) => {
+    res.json(database.orders || []);
+});
+
+app.post('/api/orders', (req, res) => {
+    try {
+        const { customerName, customerPhone, customerAddress, products, totalAmount, paymentScreenshot } = req.body;
+        
+        if (!customerName || !customerPhone || !customerAddress || !products || !totalAmount) {
+            return res.status(400).json({
+                error: 'Thiếu thông tin đơn hàng bắt buộc'
+            });
+        }
+        
+        const newOrder = {
+            id: Date.now(),
+            customerName,
+            customerPhone,
+            customerAddress,
+            products: Array.isArray(products) ? products : [],
+            totalAmount: parseInt(totalAmount),
+            status: 'pending',
+            paymentMethod: 'bank_transfer',
+            paymentScreenshot: paymentScreenshot || '',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        
+        if (!database.orders) {
+            database.orders = [];
+        }
+        
+        database.orders.push(newOrder);
+        writeDatabase(database);
+        
+        // Update statistics
+        updateOrderStatistics();
+        
+        res.status(201).json(newOrder);
+    } catch (error) {
+        console.error('Error creating order:', error);
+        res.status(500).json({ error: 'Lỗi server khi tạo đơn hàng' });
+    }
+});
+
+app.put('/api/orders/:id/status', (req, res) => {
+    try {
+        const orderId = parseInt(req.params.id);
+        const { status } = req.body;
+        
+        if (!database.orders) {
+            return res.status(404).json({ error: 'Không tìm thấy đơn hàng' });
+        }
+        
+        const orderIndex = database.orders.findIndex(o => o.id === orderId);
+        
+        if (orderIndex === -1) {
+            return res.status(404).json({ error: 'Không tìm thấy đơn hàng' });
+        }
+        
+        const validStatuses = ['pending', 'completed', 'cancelled'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ error: 'Trạng thái không hợp lệ' });
+        }
+        
+        database.orders[orderIndex].status = status;
+        database.orders[orderIndex].updatedAt = new Date().toISOString();
+        
+        writeDatabase(database);
+        
+        // Update statistics
+        updateOrderStatistics();
+        
+        res.json(database.orders[orderIndex]);
+    } catch (error) {
+        console.error('Error updating order status:', error);
+        res.status(500).json({ error: 'Lỗi server khi cập nhật trạng thái đơn hàng' });
+    }
+});
+
+// Get order statistics
+app.get('/api/orders/statistics', (req, res) => {
+    try {
+        if (!database.orders) {
+            database.orders = [];
+        }
+        
+        const totalOrders = database.orders.length;
+        const pendingOrders = database.orders.filter(o => o.status === 'pending').length;
+        const completedOrders = database.orders.filter(o => o.status === 'completed').length;
+        const cancelledOrders = database.orders.filter(o => o.status === 'cancelled').length;
+        const totalRevenue = database.orders
+            .filter(o => o.status === 'completed')
+            .reduce((sum, order) => sum + order.totalAmount, 0);
+        
+        const uniqueCustomers = new Set(database.orders.map(o => o.customerPhone)).size;
+        
+        res.json({
+            totalOrders,
+            pendingOrders,
+            completedOrders,
+            cancelledOrders,
+            totalRevenue,
+            uniqueCustomers,
+            averageOrderValue: completedOrders > 0 ? Math.round(totalRevenue / completedOrders) : 0
+        });
+    } catch (error) {
+        console.error('Error getting order statistics:', error);
+        res.status(500).json({ error: 'Lỗi server khi lấy thống kê đơn hàng' });
+    }
+});
+
 // Contact form
 app.post('/api/contact', (req, res) => {
     try {
@@ -544,11 +690,138 @@ app.get('/api/statistics', (req, res) => {
         totalMessages: database.messages.length,
         unreadMessages: database.messages.filter(m => !m.read).length,
         totalVisitors: database.visitors.total,
-        todayVisitors: database.visitors.today
+        todayVisitors: database.visitors.today,
+        totalOrders: database.orders ? database.orders.length : 0,
+        completedOrders: database.orders ? database.orders.filter(o => o.status === 'completed').length : 0,
+        totalRevenue: database.orders ? 
+            database.orders.filter(o => o.status === 'completed').reduce((sum, order) => sum + order.totalAmount, 0) : 0
     };
     
     res.json(statistics);
 });
+
+// Dashboard API - Tổng hợp tất cả thông tin cho dashboard
+app.get('/api/dashboard', (req, res) => {
+    try {
+        // Order statistics
+        const totalOrders = database.orders ? database.orders.length : 0;
+        const pendingOrders = database.orders ? database.orders.filter(o => o.status === 'pending').length : 0;
+        const completedOrders = database.orders ? database.orders.filter(o => o.status === 'completed').length : 0;
+        const totalRevenue = database.orders ? 
+            database.orders.filter(o => o.status === 'completed').reduce((sum, order) => sum + order.totalAmount, 0) : 0;
+        
+        // Customer statistics
+        const uniqueCustomers = database.orders ? new Set(database.orders.map(o => o.customerPhone)).size : 0;
+        
+        // Message statistics
+        const unreadMessages = database.messages.filter(m => !m.read && !m.isAdminReply).length;
+        
+        // Recent orders (last 5)
+        const recentOrders = database.orders ? 
+            database.orders
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                .slice(0, 5)
+                .map(order => ({
+                    id: order.id,
+                    customerName: order.customerName,
+                    customerPhone: order.customerPhone,
+                    totalAmount: order.totalAmount,
+                    status: order.status,
+                    createdAt: order.createdAt
+                })) : [];
+        
+        // Recent messages (last 5)
+        const recentMessages = database.messages
+            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+            .slice(0, 5)
+            .map(message => ({
+                id: message.id,
+                customerName: message.customerInfo ? message.customerInfo.name : 'Khách hàng',
+                text: message.text.length > 50 ? message.text.substring(0, 50) + '...' : message.text,
+                timestamp: message.timestamp,
+                read: message.read
+            }));
+        
+        // Popular products (based on orders)
+        const productSales = {};
+        if (database.orders) {
+            database.orders.forEach(order => {
+                if (order.status === 'completed') {
+                    order.products.forEach(product => {
+                        const productId = product.id || product.name;
+                        if (!productSales[productId]) {
+                            productSales[productId] = {
+                                name: product.name,
+                                quantity: 0,
+                                revenue: 0
+                            };
+                        }
+                        productSales[productId].quantity += product.quantity || 1;
+                        productSales[productId].revenue += (product.price || 0) * (product.quantity || 1);
+                    });
+                }
+            });
+        }
+        
+        const popularProducts = Object.values(productSales)
+            .sort((a, b) => b.quantity - a.quantity)
+            .slice(0, 5);
+        
+        res.json({
+            overview: {
+                totalOrders,
+                pendingOrders,
+                completedOrders,
+                totalRevenue,
+                uniqueCustomers,
+                unreadMessages,
+                totalProducts: database.products.length,
+                totalVisitors: database.visitors.total
+            },
+            recentOrders,
+            recentMessages,
+            popularProducts
+        });
+    } catch (error) {
+        console.error('Error getting dashboard data:', error);
+        res.status(500).json({ error: 'Lỗi server khi lấy dữ liệu dashboard' });
+    }
+});
+
+// ==================== HELPER FUNCTIONS ====================
+
+// Update order statistics
+function updateOrderStatistics() {
+    if (!database.orders) return;
+    
+    const completedOrders = database.orders.filter(o => o.status === 'completed');
+    
+    database.statistics.totalSales = completedOrders.length;
+    database.statistics.totalRevenue = completedOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+    
+    // Update popular products
+    const productSales = {};
+    completedOrders.forEach(order => {
+        order.products.forEach(product => {
+            const productId = product.id || product.name;
+            if (!productSales[productId]) {
+                productSales[productId] = {
+                    name: product.name,
+                    quantity: 0,
+                    revenue: 0
+                };
+            }
+            productSales[productId].quantity += product.quantity || 1;
+            productSales[productId].revenue += (product.price || 0) * (product.quantity || 1);
+        });
+    });
+    
+    database.statistics.popularProducts = Object.values(productSales)
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, 10);
+    
+    writeDatabase(database);
+}
 
 // ==================== ERROR HANDLING ====================
 
@@ -568,10 +841,16 @@ app.use('/api/*', (req, res) => {
             'POST /api/messages',
             'PUT /api/messages/:id/read',
             'POST /api/messages/:id/reply',
+            'PUT /api/messages/customer/:phone/read-all',
+            'GET /api/orders',
+            'POST /api/orders',
+            'PUT /api/orders/:id/status',
+            'GET /api/orders/statistics',
             'POST /api/contact',
             'GET /api/settings',
             'PUT /api/settings',
             'GET /api/statistics',
+            'GET /api/dashboard',
             'POST /api/visitors'
         ]
     });
@@ -649,6 +928,7 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log('\n💾 Database Status:');
     console.log(`   📦 Products: ${database.products.length}`);
     console.log(`   💬 Messages: ${database.messages.length}`);
+    console.log(`   📋 Orders: ${database.orders ? database.orders.length : 0}`);
     console.log(`   👥 Total Visitors: ${database.visitors.total}`);
     console.log(`   📊 Today Visitors: ${database.visitors.today}`);
     console.log('\n🛡️ Security Features:');
