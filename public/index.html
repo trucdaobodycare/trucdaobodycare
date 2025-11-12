@@ -6,7 +6,7 @@
     <title>Trúc Đào Cosmetics - Mỹ phẩm cao cấp</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Reset và biến CSS */
+        /* CSS giữ nguyên như bạn đã cung cấp */
         :root {
             --primary-color: #e83e8c;
             --secondary-color: #ffc107;
@@ -1134,6 +1134,83 @@
             display: block;
         }
 
+        /* THÊM CSS CHO TÍNH NĂNG TRẢ LỜI TIN NHẮN */
+        .message-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .message-actions .btn {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+        
+        .reply-section {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .reply-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        
+        .reply-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .reply-btn {
+            padding: 6px 12px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: var(--transition);
+        }
+        
+        .reply-btn:hover {
+            background-color: #d81b60;
+        }
+        
+        .reply-btn.cancel {
+            background-color: #6c757d;
+        }
+        
+        .reply-btn.cancel:hover {
+            background-color: #5a6268;
+        }
+        
+        .admin-response {
+            background-color: #e7f3ff;
+            border-left: 3px solid #007bff;
+            padding: 8px 12px;
+            margin-top: 5px;
+            border-radius: 4px;
+        }
+        
+        .message-meta {
+            font-size: 0.7rem;
+            color: #666;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
         /* Responsive */
         @media (max-width: 1024px) {
             .hero h1 {
@@ -1263,6 +1340,10 @@
             .bank-info-label {
                 width: 100%;
                 margin-bottom: 5px;
+            }
+
+            .message-actions {
+                flex-direction: column;
             }
         }
         
@@ -1807,54 +1888,213 @@
         const API_BASE = 'http://localhost:10000/api';
 
         // Data storage
-        let products = [
-            {
-                id: 1,
-                name: "Son lì cao cấp Luxury Matte",
-                category: "Son môi",
-                originalPrice: 399000,
-                salePrice: 299000,
-                image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-                description: "Son lì cao cấp với công thức mềm mịn, lâu trôi"
-            },
-            {
-                id: 2,
-                name: "Bảng phấn mắt 12 màu Pro Palette",
-                category: "Trang điểm mắt",
-                originalPrice: 600000,
-                salePrice: 450000,
-                image: "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-                description: "Bảng phấn mắt đa dạng màu sắc, dễ phối màu"
-            },
-            {
-                id: 3,
-                name: "Kem nền che khuyết điểm Full Cover",
-                category: "Trang điểm mặt",
-                originalPrice: 650000,
-                salePrice: 520000,
-                image: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-                description: "Kem nền che phủ hoàn hảo, không gây bít tắc lỗ chân lông"
-            },
-            {
-                id: 4,
-                name: "Serum dưỡng ẩm chống lão hóa",
-                category: "Chăm sóc da",
-                originalPrice: 850000,
-                salePrice: 680000,
-                image: "https://images.unsplash.com/photo-1594035910387-fea47794261f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-                description: "Serum dưỡng ẩm chuyên sâu, cải thiện nếp nhăn"
-            }
-        ];
-        
+        let products = [];
         let messages = [];
-        let visitors = JSON.parse(localStorage.getItem('visitors')) || { total: 0, today: 0, date: new Date().toDateString() };
-        let productViews = JSON.parse(localStorage.getItem('productViews')) || {};
+        let visitors = { total: 0, today: 0, date: new Date().toDateString() };
+        let productViews = {};
         let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+        // ==================== API FUNCTIONS ====================
+
+        // Hàm gọi API để lấy sản phẩm
+        async function loadProductsFromAPI() {
+            try {
+                console.log('🔄 Đang tải sản phẩm từ API...');
+                const response = await fetch(`${API_BASE}/products`);
+                if (response.ok) {
+                    const apiProducts = await response.json();
+                    console.log(`✅ Đã tải ${apiProducts.length} sản phẩm từ database`);
+                    
+                    // Cập nhật danh sách sản phẩm từ API
+                    if (apiProducts && apiProducts.length > 0) {
+                        products = apiProducts;
+                        renderProductsInAdmin();
+                        updateProductDisplay();
+                    }
+                } else {
+                    console.warn('⚠️ Không thể tải sản phẩm từ API');
+                }
+            } catch (error) {
+                console.error('❌ Lỗi khi tải sản phẩm từ API:', error);
+            }
+        }
+
+        // Hàm lưu sản phẩm lên API
+        async function saveProductToAPI(product) {
+            try {
+                const productData = {
+                    name: product.name,
+                    category: product.category,
+                    originalPrice: product.originalPrice,
+                    salePrice: product.salePrice,
+                    image: product.image,
+                    description: product.description
+                };
+
+                let response;
+                if (product.id) {
+                    // Update existing product
+                    response = await fetch(`${API_BASE}/products/${product.id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(productData)
+                    });
+                } else {
+                    // Add new product
+                    response = await fetch(`${API_BASE}/products`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(productData)
+                    });
+                }
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('✅ Sản phẩm đã được lưu vào database');
+                    return result;
+                }
+            } catch (error) {
+                console.error('❌ Lỗi khi lưu sản phẩm:', error);
+            }
+            return null;
+        }
+
+        // Hàm xóa sản phẩm từ API
+        async function deleteProductFromAPI(productId) {
+            try {
+                const response = await fetch(`${API_BASE}/products/${productId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    console.log('✅ Sản phẩm đã được xóa khỏi database');
+                    return true;
+                }
+            } catch (error) {
+                console.error('❌ Lỗi khi xóa sản phẩm:', error);
+            }
+            return false;
+        }
+
+        // Hàm lấy tin nhắn từ API
+        async function loadMessagesFromAPI() {
+            try {
+                const response = await fetch(`${API_BASE}/messages`);
+                if (response.ok) {
+                    const apiMessages = await response.json();
+                    messages = apiMessages;
+                    updateMessagesInAdmin();
+                    return apiMessages;
+                }
+            } catch (error) {
+                console.error('Lỗi khi tải tin nhắn:', error);
+            }
+            return [];
+        }
+
+        // Hàm lưu tin nhắn lên API
+        async function saveMessageToAPI(message) {
+            try {
+                const response = await fetch(`${API_BASE}/messages`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(message)
+                });
+                
+                return response.ok;
+            } catch (error) {
+                console.error('Lỗi khi lưu tin nhắn:', error);
+                return false;
+            }
+        }
+
+        // Hàm đánh dấu tin nhắn đã đọc
+        async function markMessageAsRead(messageId) {
+            try {
+                const response = await fetch(`${API_BASE}/messages/${messageId}/read`, {
+                    method: 'PUT'
+                });
+                return response.ok;
+            } catch (error) {
+                console.error('Lỗi khi đánh dấu tin nhắn:', error);
+                return false;
+            }
+        }
+
+        // Hàm trả lời tin nhắn
+        async function replyToMessage(messageId, replyText) {
+            try {
+                const response = await fetch(`${API_BASE}/messages/${messageId}/reply`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: replyText,
+                        adminName: 'Admin'
+                    })
+                });
+                
+                if (response.ok) {
+                    await loadMessagesFromAPI();
+                    return true;
+                }
+            } catch (error) {
+                console.error('Lỗi khi gửi phản hồi:', error);
+            }
+            return false;
+        }
+
+        // Hàm cập nhật lượt truy cập
+        async function updateVisitorCountAPI() {
+            try {
+                const response = await fetch(`${API_BASE}/visitors`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (response.ok) {
+                    const visitorData = await response.json();
+                    visitors = visitorData;
+                    updateAnalytics();
+                }
+            } catch (error) {
+                console.error('Lỗi khi cập nhật lượt truy cập:', error);
+            }
+        }
+
+        // ==================== TÍNH NĂNG TRẢ LỜI TIN NHẮN ====================
+
+        // Hàm hiển thị form trả lời
+        function showReplyForm(messageId) {
+            // Ẩn tất cả form trả lời khác
+            document.querySelectorAll('.reply-section').forEach(form => {
+                form.style.display = 'none';
+            });
+            
+            // Hiển thị form trả lời cho tin nhắn này
+            const replySection = document.getElementById(`reply-section-${messageId}`);
+            if (replySection) {
+                replySection.style.display = 'block';
+                replySection.querySelector('.reply-input').focus();
+            }
+        }
+
+        // ==================== KHỞI ĐỘNG ====================
 
         // Khởi tạo
         document.addEventListener('DOMContentLoaded', function() {
-            updateVisitorCount();
-            renderProductsInAdmin();
+            updateVisitorCountAPI();
+            loadProductsFromAPI();
+            loadMessagesFromAPI();
             updateAnalytics();
             updateCartCount();
             renderCartItems();
@@ -1932,18 +2172,6 @@
             });
         });
 
-        // Update visitor count
-        function updateVisitorCount() {
-            const today = new Date().toDateString();
-            if (visitors.date !== today) {
-                visitors.today = 0;
-                visitors.date = today;
-            }
-            visitors.total++;
-            visitors.today++;
-            localStorage.setItem('visitors', JSON.stringify(visitors));
-        }
-        
         // Cart functionality
         function addToCart(id, name, price, image) {
             const existingItem = cart.find(item => item.id === id);
@@ -2189,7 +2417,7 @@
             }
         });
         
-        function sendMessage() {
+        async function sendMessage() {
             const message = chatInput.value.trim();
             if (message) {
                 const messageElement = document.createElement('div');
@@ -2197,42 +2425,42 @@
                 messageElement.textContent = message;
                 chatBody.appendChild(messageElement);
                 
-                // Save message
-                messages.push({
+                // Save message to API
+                await saveMessageToAPI({
                     text: message,
                     timestamp: new Date(),
                     read: false
                 });
                 
-                updateMessagesInAdmin();
+                await loadMessagesFromAPI();
                 
                 chatInput.value = '';
                 chatBody.scrollTop = chatBody.scrollHeight;
                 
                 // Simulate response
-                setTimeout(() => {
+                setTimeout(async () => {
                     const responseElement = document.createElement('div');
                     responseElement.classList.add('message', 'received');
                     responseElement.textContent = 'Cảm ơn bạn đã liên hệ. Chúng tôi sẽ phản hồi sớm nhất có thể.';
                     chatBody.appendChild(responseElement);
                     chatBody.scrollTop = chatBody.scrollHeight;
                     
-                    // Save auto-response
-                    messages.push({
+                    // Save auto-response to API
+                    await saveMessageToAPI({
                         text: 'Cảm ơn bạn đã liên hệ. Chúng tôi sẽ phản hồi sớm nhất có thể.',
                         timestamp: new Date(),
                         read: false,
                         isAutoResponse: true
                     });
                     
-                    updateMessagesInAdmin();
+                    await loadMessagesFromAPI();
                 }, 1000);
             }
         }
         
         // Open chat with product info when clicking chat button on product
         chatButtons.forEach(button => {
-            button.addEventListener('click', () => {
+            button.addEventListener('click', async () => {
                 const productName = button.getAttribute('data-product');
                 chatModal.style.display = 'flex';
                 
@@ -2242,34 +2470,34 @@
                 productMessage.textContent = `Tôi quan tâm đến sản phẩm: ${productName}`;
                 chatBody.appendChild(productMessage);
                 
-                // Save message
-                messages.push({
+                // Save message to API
+                await saveMessageToAPI({
                     text: `Hỏi về sản phẩm: ${productName}`,
                     timestamp: new Date(),
                     read: false
                 });
                 
-                updateMessagesInAdmin();
+                await loadMessagesFromAPI();
                 
                 chatBody.scrollTop = chatBody.scrollHeight;
                 
                 // Simulate response
-                setTimeout(() => {
+                setTimeout(async () => {
                     const responseElement = document.createElement('div');
                     responseElement.classList.add('message', 'received');
                     responseElement.textContent = `Cảm ơn bạn đã quan tâm đến sản phẩm ${productName}. Tôi có thể tư vấn gì thêm cho bạn về sản phẩm này?`;
                     chatBody.appendChild(responseElement);
                     chatBody.scrollTop = chatBody.scrollHeight;
                     
-                    // Save auto-response
-                    messages.push({
+                    // Save auto-response to API
+                    await saveMessageToAPI({
                         text: `Cảm ơn bạn đã quan tâm đến sản phẩm ${productName}. Tôi có thể tư vấn gì thêm cho bạn về sản phẩm này?`,
                         timestamp: new Date(),
                         read: false,
                         isAutoResponse: true
                     });
                     
-                    updateMessagesInAdmin();
+                    await loadMessagesFromAPI();
                 }, 1000);
             });
         });
@@ -2341,6 +2569,13 @@
                         content.classList.add('active');
                     }
                 });
+                
+                // Refresh data if needed
+                if (tabId === 'messages') {
+                    loadMessagesFromAPI();
+                } else if (tabId === 'analytics') {
+                    updateAnalytics();
+                }
             });
         });
         
@@ -2396,9 +2631,7 @@
             document.getElementById('image-preview').style.display = 'none';
             document.getElementById('edit-product-description').value = '';
             
-            // Set next available ID
-            const nextId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
-            document.getElementById('save-product-btn').setAttribute('data-id', nextId);
+            document.getElementById('save-product-btn').removeAttribute('data-id');
         });
         
         // Edit product
@@ -2424,16 +2657,20 @@
         }
         
         // Delete product
-        function deleteProduct(productId) {
+        async function deleteProduct(productId) {
             if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
-                products = products.filter(p => p.id != productId);
-                renderProductsInAdmin();
-                alert('Sản phẩm đã được xóa!');
+                const success = await deleteProductFromAPI(productId);
+                if (success) {
+                    await loadProductsFromAPI();
+                    alert('✅ Sản phẩm đã được xóa khỏi database!');
+                } else {
+                    alert('❌ Lỗi khi xóa sản phẩm!');
+                }
             }
         }
         
         // Save product
-        document.getElementById('save-product-btn').addEventListener('click', function() {
+        document.getElementById('save-product-btn').addEventListener('click', async function() {
             const productId = this.getAttribute('data-id');
             const name = document.getElementById('edit-product-name').value;
             const category = document.getElementById('edit-product-category').value;
@@ -2443,38 +2680,40 @@
             const description = document.getElementById('edit-product-description').value;
             
             if (name && category && originalPrice && salePrice && image) {
-                const existingProduct = products.find(p => p.id == productId);
+                const productData = {
+                    name,
+                    category,
+                    originalPrice,
+                    salePrice,
+                    image,
+                    description
+                };
                 
-                if (existingProduct) {
-                    // Update existing product
-                    existingProduct.name = name;
-                    existingProduct.category = category;
-                    existingProduct.originalPrice = originalPrice;
-                    existingProduct.salePrice = salePrice;
-                    existingProduct.image = image;
-                    existingProduct.description = description;
-                } else {
-                    // Add new product
-                    products.push({
-                        id: productId,
-                        name: name,
-                        category: category,
-                        originalPrice: originalPrice,
-                        salePrice: salePrice,
-                        image: image,
-                        description: description
-                    });
+                if (productId) {
+                    productData.id = parseInt(productId);
                 }
                 
-                renderProductsInAdmin();
-                document.getElementById('product-form').style.display = 'none';
-                alert('Sản phẩm đã được lưu thành công!');
+                const result = await saveProductToAPI(productData);
+                if (result) {
+                    await loadProductsFromAPI();
+                    document.getElementById('product-form').style.display = 'none';
+                    alert('✅ Sản phẩm đã được lưu thành công vào database!');
+                } else {
+                    alert('❌ Lỗi khi lưu sản phẩm!');
+                }
             } else {
-                alert('Vui lòng điền đầy đủ thông tin sản phẩm!');
+                alert('⚠️ Vui lòng điền đầy đủ thông tin sản phẩm!');
             }
         });
         
-        // Update messages in admin
+        // Update product display on frontend
+        function updateProductDisplay() {
+            // This function would update the frontend product display
+            // For now, we'll just log it
+            console.log('Products updated:', products);
+        }
+        
+        // Update messages in admin - PHIÊN BẢN MỚI VỚI TÍNH NĂNG TRẢ LỜI
         function updateMessagesInAdmin() {
             const messageList = document.getElementById('admin-message-list');
             messageList.innerHTML = '';
@@ -2487,22 +2726,69 @@
             // Sắp xếp tin nhắn mới nhất lên đầu
             const sortedMessages = [...messages].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
             
-            sortedMessages.forEach((message, index) => {
+            sortedMessages.forEach((message) => {
+                const messageId = message.id;
+                const isAdminReply = message.isAdminReply;
+                const isAutoResponse = message.isAutoResponse;
+                
                 const messageItem = document.createElement('div');
                 messageItem.className = `admin-message-item ${message.read ? '' : 'unread'}`;
                 messageItem.innerHTML = `
                     <div class="message-preview">
                         <strong>${message.text.substring(0, 50)}${message.text.length > 50 ? '...' : ''}</strong>
-                        <div>${formatDate(message.timestamp)}</div>
+                        <div class="message-meta">
+                            ${formatDate(message.timestamp)}
+                            ${isAdminReply ? ' • <span style="color: #007bff;">[Phản hồi Admin]</span>' : ''}
+                            ${isAutoResponse ? ' • <span style="color: #28a745;">[Tự động]</span>' : ''}
+                            ${message.read ? ' • <span style="color: #6c757d;">Đã đọc</span>' : ' • <span style="color: #dc3545;">Chưa đọc</span>'}
+                        </div>
                     </div>
-                    <div class="admin-message-content" id="message-content-${index}">
-                        <p>${message.text}</p>
-                        <div><strong>Thời gian:</strong> ${formatDate(message.timestamp)}</div>
-                        ${!message.isAutoResponse ? `
-                            <div style="margin-top: 10px;">
-                                <button class="admin-btn" onclick="markAsRead(${index})">
+                    <div class="admin-message-content" id="message-content-${messageId}">
+                        <p><strong>Nội dung:</strong> ${message.text}</p>
+                        ${message.customerInfo ? `
+                            <p><strong>Thông tin khách hàng:</strong> ${message.customerInfo.name} - ${message.customerInfo.email}${message.customerInfo.phone ? ` - ${message.customerInfo.phone}` : ''}</p>
+                        ` : ''}
+                        <div class="message-meta">
+                            <strong>Thời gian:</strong> ${formatDate(message.timestamp)}
+                        </div>
+                        
+                        <!-- Hiển thị các phản hồi -->
+                        ${message.replies && message.replies.length > 0 ? `
+                            <div class="replies-section" style="margin-top: 15px;">
+                                <h5>Phản hồi:</h5>
+                                ${message.replies.map(reply => `
+                                    <div class="admin-response">
+                                        <strong>${reply.adminName}:</strong> ${reply.text}
+                                        <div class="message-meta">${formatDate(reply.timestamp)}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        
+                        <!-- Nút hành động -->
+                        ${!isAdminReply && !isAutoResponse ? `
+                            <div class="message-actions">
+                                <button class="btn mark-read-btn" data-id="${messageId}">
                                     ${message.read ? 'Đánh dấu chưa đọc' : 'Đánh dấu đã đọc'}
                                 </button>
+                                <button class="btn reply-btn" data-id="${messageId}" style="background-color: #28a745;">
+                                    <i class="fas fa-reply"></i> Trả lời
+                                </button>
+                            </div>
+                        ` : ''}
+                        
+                        <!-- Form trả lời -->
+                        ${!isAdminReply && !isAutoResponse ? `
+                            <div class="reply-section" id="reply-section-${messageId}" style="display: none; margin-top: 10px;">
+                                <textarea class="reply-input" id="reply-input-${messageId}" placeholder="Nhập phản hồi của bạn..." rows="3" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+                                <div class="reply-actions" style="margin-top: 8px;">
+                                    <button class="btn send-reply-btn" data-id="${messageId}" style="background-color: #28a745;">
+                                        <i class="fas fa-paper-plane"></i> Gửi phản hồi
+                                    </button>
+                                    <button class="btn cancel-reply-btn" data-id="${messageId}" style="background-color: #6c757d;">
+                                        Hủy
+                                    </button>
+                                </div>
                             </div>
                         ` : ''}
                     </div>
@@ -2512,19 +2798,69 @@
                 
                 // Toggle message content
                 messageItem.querySelector('.message-preview').addEventListener('click', function() {
-                    const content = document.getElementById(`message-content-${index}`);
+                    const content = document.getElementById(`message-content-${messageId}`);
                     content.classList.toggle('active');
                 });
+                
+                // Mark as read/unread
+                const markReadBtn = messageItem.querySelector('.mark-read-btn');
+                if (markReadBtn) {
+                    markReadBtn.addEventListener('click', async function(e) {
+                        e.stopPropagation();
+                        const msgId = this.getAttribute('data-id');
+                        const success = await markMessageAsRead(msgId);
+                        if (success) {
+                            await loadMessagesFromAPI();
+                        }
+                    });
+                }
+                
+                // Reply button
+                const replyBtn = messageItem.querySelector('.reply-btn');
+                if (replyBtn) {
+                    replyBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const msgId = this.getAttribute('data-id');
+                        showReplyForm(msgId);
+                    });
+                }
+                
+                // Send reply
+                const sendReplyBtn = messageItem.querySelector('.send-reply-btn');
+                if (sendReplyBtn) {
+                    sendReplyBtn.addEventListener('click', async function(e) {
+                        e.stopPropagation();
+                        const msgId = this.getAttribute('data-id');
+                        const replyText = document.getElementById(`reply-input-${msgId}`).value.trim();
+                        
+                        if (replyText) {
+                            const success = await replyToMessage(msgId, replyText);
+                            if (success) {
+                                document.getElementById(`reply-section-${msgId}`).style.display = 'none';
+                                document.getElementById(`reply-input-${msgId}`).value = '';
+                                alert('✅ Đã gửi phản hồi thành công!');
+                            } else {
+                                alert('❌ Lỗi khi gửi phản hồi!');
+                            }
+                        } else {
+                            alert('⚠️ Vui lòng nhập nội dung phản hồi!');
+                        }
+                    });
+                }
+                
+                // Cancel reply
+                const cancelReplyBtn = messageItem.querySelector('.cancel-reply-btn');
+                if (cancelReplyBtn) {
+                    cancelReplyBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const msgId = this.getAttribute('data-id');
+                        document.getElementById(`reply-section-${msgId}`).style.display = 'none';
+                    });
+                }
             });
             
             // Update message count in analytics
             updateAnalytics();
-        }
-        
-        // Mark message as read/unread
-        function markAsRead(index) {
-            messages[index].read = !messages[index].read;
-            updateMessagesInAdmin();
         }
         
         // Update analytics
