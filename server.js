@@ -1,7 +1,6 @@
 const express = require('express');
 const path = require('path');
 const http = require('http');
-const os = require('os');
 const fs = require('fs');
 const compression = require('compression');
 const helmet = require('helmet');
@@ -14,21 +13,16 @@ const PORT = process.env.PORT || 10000;
 
 // ==================== MIDDLEWARE ====================
 app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-            scriptSrc: ["'self'", "'unsafe-inline'"],
-            fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'"]
-        }
-    },
+    contentSecurityPolicy: false, // Tắt CSP để tránh block resources
     crossOriginEmbedderPolicy: false
 }));
 
 app.use(compression());
-app.use(cors());
+app.use(cors({
+    origin: '*', // Cho phép tất cả domains
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -40,23 +34,21 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// Logging - chỉ log trong production
-if (process.env.NODE_ENV === 'production') {
-    const accessLogStream = fs.createWriteStream(
-        path.join(__dirname, 'access.log'), 
-        { flags: 'a' }
-    );
-    app.use(morgan('combined', { stream: accessLogStream }));
-} else {
-    app.use(morgan('dev'));
-}
+// Logging
+app.use(morgan('combined'));
 
-// ==================== STATIC FILES ====================
+// ==================== STATIC FILES - QUAN TRỌNG ====================
 app.use(express.static(path.join(__dirname, 'public'), {
     maxAge: '1d',
     etag: true,
     lastModified: true,
-    index: 'index.html'
+    index: 'index.html',
+    setHeaders: (res, filePath) => {
+        // Set proper content type for HTML files
+        if (filePath.endsWith('.html')) {
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        }
+    }
 }));
 
 // ==================== SECURITY HEADERS ====================
@@ -65,17 +57,19 @@ app.use((req, res, next) => {
     res.header('X-Frame-Options', 'DENY');
     res.header('X-XSS-Protection', '1; mode=block');
     res.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     next();
 });
 
 // ==================== ROUTES ====================
 
-// Favicon handler - FIX LỖI FAVICON
+// Favicon handler
 app.get('/favicon.ico', (req, res) => {
-    res.status(204).end(); // No content
+    res.status(204).end();
 });
 
-// Home page
+// Home page - QUAN TRỌNG: Phục vụ index.html
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -94,29 +88,99 @@ app.get('/api/health', (req, res) => {
 
 // Server info API
 app.get('/api/info', (req, res) => {
-    const networkInfo = getNetworkInfo();
     res.json({
         server: {
-            name: 'TrucDaoBodyCare Server',
+            name: 'Trúc Đào Cosmetics Server',
             version: '1.0.0',
             environment: process.env.NODE_ENV || 'development'
         },
-        system: {
-            platform: os.platform(),
-            arch: os.arch(),
-            cpu: os.cpus().length,
-            memory: {
-                total: `${(os.totalmem() / 1024 / 1024 / 1024).toFixed(2)} GB`,
-                free: `${(os.freemem() / 1024 / 1024 / 1024).toFixed(2)} GB`
-            },
-            uptime: `${(os.uptime() / 3600).toFixed(2)} hours`
-        },
-        network: networkInfo,
-        client: {
-            ip: req.ip,
-            userAgent: req.get('User-Agent')
-        }
+        timestamp: new Date().toISOString()
     });
+});
+
+// Mock Products API - THÊM API MỚI
+let products = [
+    {
+        id: 1,
+        name: "Son lì cao cấp Luxury Matte",
+        category: "Son môi",
+        originalPrice: 399000,
+        salePrice: 299000,
+        image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
+        description: "Son lì cao cấp với công thức mềm mịn, lâu trôi"
+    },
+    {
+        id: 2,
+        name: "Bảng phấn mắt 12 màu Pro Palette",
+        category: "Trang điểm mắt",
+        originalPrice: 600000,
+        salePrice: 450000,
+        image: "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
+        description: "Bảng phấn mắt đa dạng màu sắc, dễ phối màu"
+    }
+];
+
+// Products API Routes
+app.get('/api/products', (req, res) => {
+    res.json(products);
+});
+
+app.post('/api/products', (req, res) => {
+    const newProduct = {
+        id: products.length + 1,
+        ...req.body,
+        createdAt: new Date().toISOString()
+    };
+    products.push(newProduct);
+    res.json(newProduct);
+});
+
+app.put('/api/products/:id', (req, res) => {
+    const productId = parseInt(req.params.id);
+    const productIndex = products.findIndex(p => p.id === productId);
+    
+    if (productIndex !== -1) {
+        products[productIndex] = { ...products[productIndex], ...req.body };
+        res.json(products[productIndex]);
+    } else {
+        res.status(404).json({ error: 'Product not found' });
+    }
+});
+
+app.delete('/api/products/:id', (req, res) => {
+    const productId = parseInt(req.params.id);
+    products = products.filter(p => p.id !== productId);
+    res.json({ message: 'Product deleted successfully' });
+});
+
+// Messages API - THÊM API MỚI
+let messages = [];
+
+app.get('/api/messages', (req, res) => {
+    res.json(messages);
+});
+
+app.post('/api/messages', (req, res) => {
+    const newMessage = {
+        id: messages.length + 1,
+        ...req.body,
+        timestamp: new Date().toISOString(),
+        read: false
+    };
+    messages.push(newMessage);
+    res.json(newMessage);
+});
+
+app.put('/api/messages/:id/read', (req, res) => {
+    const messageId = parseInt(req.params.id);
+    const message = messages.find(m => m.id === messageId);
+    
+    if (message) {
+        message.read = true;
+        res.json(message);
+    } else {
+        res.status(404).json({ error: 'Message not found' });
+    }
 });
 
 // Contact form endpoint
@@ -141,28 +205,20 @@ app.post('/api/contact', (req, res) => {
 
 // ==================== ERROR HANDLING ====================
 
-// 404 handler - FIX LỖI 404.HTML
+// 404 handler for API routes
+app.use('/api/*', (req, res) => {
+    res.status(404).json({
+        success: false,
+        message: 'API route not found',
+        path: req.originalUrl
+    });
+});
+
+// 404 handler for frontend routes - QUAN TRỌNG
 app.use('*', (req, res) => {
     if (req.accepts('html')) {
-        // Trả về HTML đơn giản thay vì file
-        res.status(404).send(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>404 - Page Not Found</title>
-                <style>
-                    body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-                    h1 { color: #333; }
-                    p { color: #666; }
-                </style>
-            </head>
-            <body>
-                <h1>404 - Page Not Found</h1>
-                <p>The requested URL ${req.originalUrl} was not found on this server.</p>
-                <a href="/">Return to Homepage</a>
-            </body>
-            </html>
-        `);
+        // Serve index.html for all other routes (SPA behavior)
+        res.sendFile(path.join(__dirname, 'public', 'index.html'));
     } else if (req.accepts('json')) {
         res.status(404).json({
             success: false,
@@ -178,61 +234,12 @@ app.use('*', (req, res) => {
 app.use((error, req, res, next) => {
     console.error('Server Error:', error);
     
-    const errorLog = {
-        timestamp: new Date().toISOString(),
-        url: req.originalUrl,
-        method: req.method,
-        ip: req.ip,
-        error: error.message
-    };
-    
-    // Chỉ log trong production
-    if (process.env.NODE_ENV === 'production') {
-        fs.appendFileSync(
-            path.join(__dirname, 'error.log'), 
-            JSON.stringify(errorLog) + '\n'
-        );
-    }
-
     res.status(500).json({
         success: false,
         message: 'Đã có lỗi xảy ra trên máy chủ',
         errorId: Date.now()
     });
 });
-
-// ==================== UTILITY FUNCTIONS ====================
-
-function getNetworkInfo() {
-    const interfaces = os.networkInterfaces();
-    const networkInfo = {};
-    
-    Object.keys(interfaces).forEach(interfaceName => {
-        interfaces[interfaceName].forEach(interface => {
-            if (interface.family === 'IPv4' && !interface.internal) {
-                networkInfo[interfaceName] = {
-                    address: interface.address,
-                    netmask: interface.netmask,
-                    mac: interface.mac
-                };
-            }
-        });
-    });
-    
-    return networkInfo;
-}
-
-function getLocalIP() {
-    const interfaces = os.networkInterfaces();
-    for (const name of Object.keys(interfaces)) {
-        for (const interface of interfaces[name]) {
-            if (interface.family === 'IPv4' && !interface.internal) {
-                return interface.address;
-            }
-        }
-    }
-    return 'localhost';
-}
 
 // ==================== SERVER STARTUP ====================
 
@@ -263,14 +270,13 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
 // Start server
 server.listen(PORT, '0.0.0.0', () => {
-    const localIP = getLocalIP();
     console.log('\n' + '='.repeat(60));
-    console.log('🚀 TRUC DAO BODY CARE SERVER STARTED SUCCESSFULLY!');
+    console.log('🚀 TRÚC ĐÀO COSMETICS SERVER STARTED SUCCESSFULLY!');
     console.log('='.repeat(60));
     console.log('📍 Access URLs:');
     console.log(`   📱 Local: http://localhost:${PORT}`);
-    console.log(`   🌐 Network: http://${localIP}:${PORT}`);
-    console.log(`   🌍 Internet: http://[YOUR_PUBLIC_IP]:${PORT}`);
+    console.log(`   🌐 Network: http://[YOUR_IP]:${PORT}`);
+    console.log(`   🌍 Render: https://trucdaobodycare.onrender.com`);
     console.log('\n🛡️ Security Features:');
     console.log('   ✅ Helmet.js security headers');
     console.log('   ✅ Rate limiting (1000 req/15min)');
@@ -280,8 +286,13 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log('\n📊 APIs Available:');
     console.log('   GET  /api/health - Health check');
     console.log('   GET  /api/info - Server information');
+    console.log('   GET  /api/products - Get all products');
+    console.log('   POST /api/products - Create product');
+    console.log('   PUT  /api/products/:id - Update product');
+    console.log('   DELETE /api/products/:id - Delete product');
+    console.log('   GET  /api/messages - Get all messages');
+    console.log('   POST /api/messages - Create message');
     console.log('   POST /api/contact - Contact form');
-    console.log('   POST /api/upload - File upload');
     console.log('\n⏰ Server started at:', new Date().toISOString());
     console.log('💻 Environment:', process.env.NODE_ENV || 'development');
     console.log('💾 Memory usage:', `${(process.memoryUsage().rss / 1024 / 1024).toFixed(2)} MB`);
