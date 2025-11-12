@@ -270,7 +270,7 @@ app.get('/api/info', (req, res) => {
             products: database.products.length,
             messages: database.messages.length,
             orders: database.orders.length,
-            unreadMessages: database.messages.filter(m => !m.read).length,
+            unreadMessages: database.messages.filter(m => !m.read && !m.isAdminReply).length,
             visitors: database.visitors.total
         },
         timestamp: new Date().toISOString()
@@ -421,13 +421,32 @@ app.delete('/api/products/:id', (req, res) => {
     }
 });
 
-// Messages API
+// Messages API - CẬP NHẬT QUAN TRỌNG
 app.get('/api/messages', (req, res) => {
     try {
-        res.json(database.messages);
+        // Sắp xếp tin nhắn theo thời gian (mới nhất trước)
+        const sortedMessages = database.messages.sort((a, b) => 
+            new Date(b.timestamp) - new Date(a.timestamp)
+        );
+        res.json(sortedMessages);
     } catch (error) {
         console.error('Error getting messages:', error);
         res.status(500).json({ error: 'Lỗi server khi lấy tin nhắn' });
+    }
+});
+
+// Lấy tin nhắn theo số điện thoại khách hàng
+app.get('/api/messages/customer/:phone', (req, res) => {
+    try {
+        const customerPhone = req.params.phone;
+        const customerMessages = database.messages.filter(m => 
+            m.customerInfo && m.customerInfo.phone === customerPhone
+        ).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        
+        res.json(customerMessages);
+    } catch (error) {
+        console.error('Error getting customer messages:', error);
+        res.status(500).json({ error: 'Lỗi server khi lấy tin nhắn khách hàng' });
     }
 });
 
@@ -444,7 +463,7 @@ app.post('/api/messages', async (req, res) => {
             text: text.trim(),
             product: product || null,
             timestamp: new Date().toISOString(),
-            read: false,
+            read: isAdminReply ? true : false, // Tin nhắn admin tự động đánh dấu đã đọc
             isAutoResponse: isAutoResponse || false,
             isAdminReply: isAdminReply || false,
             originalMessageId: originalMessageId || null,
@@ -484,7 +503,7 @@ app.put('/api/messages/:id/read', (req, res) => {
     }
 });
 
-// Reply to message
+// Reply to message - CẬP NHẬT QUAN TRỌNG: Tạo tin nhắn mới thay vì thêm vào replies
 app.post('/api/messages/:id/reply', (req, res) => {
     try {
         const messageId = parseInt(req.params.id);
@@ -500,19 +519,22 @@ app.post('/api/messages/:id/reply', (req, res) => {
             return res.status(404).json({ error: 'Không tìm thấy tin nhắn' });
         }
         
+        // Tạo tin nhắn phản hồi mới (như một tin nhắn độc lập)
         const replyMessage = {
             id: Date.now(),
             text: text.trim(),
             timestamp: new Date().toISOString(),
+            read: true, // Tin nhắn admin tự động đánh dấu đã đọc
             isAdminReply: true,
-            adminName: adminName || 'Admin'
+            adminName: adminName || 'Admin',
+            customerInfo: parentMessage.customerInfo, // Giữ nguyên thông tin khách hàng
+            originalMessageId: messageId // Liên kết với tin nhắn gốc
         };
         
-        if (!parentMessage.replies) {
-            parentMessage.replies = [];
-        }
+        // Thêm tin nhắn phản hồi vào database
+        database.messages.push(replyMessage);
         
-        parentMessage.replies.push(replyMessage);
+        // Đánh dấu tin nhắn gốc là đã đọc
         parentMessage.read = true;
         
         writeDatabase(database);
@@ -520,7 +542,8 @@ app.post('/api/messages/:id/reply', (req, res) => {
         console.log('📤 Admin replied to message:', messageId);
         
         res.json({
-            parentMessage,
+            success: true,
+            message: 'Đã gửi phản hồi thành công',
             reply: replyMessage
         });
     } catch (error) {
@@ -746,7 +769,7 @@ app.get('/api/statistics', (req, res) => {
             ...database.statistics,
             totalProducts: database.products.length,
             totalMessages: database.messages.length,
-            unreadMessages: database.messages.filter(m => !m.read).length,
+            unreadMessages: database.messages.filter(m => !m.read && !m.isAdminReply).length,
             totalVisitors: database.visitors.total,
             todayVisitors: database.visitors.today,
             totalOrders: database.orders.length,
@@ -793,8 +816,9 @@ app.get('/api/dashboard', (req, res) => {
                 createdAt: order.createdAt
             }));
         
-        // Recent messages (last 5)
+        // Recent messages (last 5) - CHỈ LẤY TIN NHẮN CỦA KHÁCH HÀNG
         const recentMessages = database.messages
+            .filter(m => !m.isAdminReply && m.customerInfo) // Chỉ lấy tin nhắn từ khách hàng
             .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
             .slice(0, 5)
             .map(message => ({
@@ -902,6 +926,7 @@ app.use('/api/*', (req, res) => {
             'PUT /api/products/:id',
             'DELETE /api/products/:id',
             'GET /api/messages',
+            'GET /api/messages/customer/:phone',
             'POST /api/messages',
             'PUT /api/messages/:id/read',
             'POST /api/messages/:id/reply',
