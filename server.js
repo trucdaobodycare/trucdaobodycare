@@ -10,7 +10,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 10000;
 
 // ==================== MIDDLEWARE ====================
 app.use(helmet({
@@ -34,19 +34,22 @@ app.use(express.urlencoded({ extended: true }));
 
 // Rate limiting
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 1000, // limit each IP to 1000 requests per windowMs
+    windowMs: 15 * 60 * 1000,
+    max: 1000,
     message: 'Quá nhiều yêu cầu từ IP này, vui lòng thử lại sau 15 phút.'
 });
 app.use(limiter);
 
-// Logging
-const accessLogStream = fs.createWriteStream(
-    path.join(__dirname, 'access.log'), 
-    { flags: 'a' }
-);
-app.use(morgan('combined', { stream: accessLogStream }));
-app.use(morgan('dev'));
+// Logging - chỉ log trong production
+if (process.env.NODE_ENV === 'production') {
+    const accessLogStream = fs.createWriteStream(
+        path.join(__dirname, 'access.log'), 
+        { flags: 'a' }
+    );
+    app.use(morgan('combined', { stream: accessLogStream }));
+} else {
+    app.use(morgan('dev'));
+}
 
 // ==================== STATIC FILES ====================
 app.use(express.static(path.join(__dirname, 'public'), {
@@ -66,6 +69,11 @@ app.use((req, res, next) => {
 });
 
 // ==================== ROUTES ====================
+
+// Favicon handler - FIX LỖI FAVICON
+app.get('/favicon.ico', (req, res) => {
+    res.status(204).end(); // No content
+});
 
 // Home page
 app.get('/', (req, res) => {
@@ -111,17 +119,10 @@ app.get('/api/info', (req, res) => {
     });
 });
 
-// File upload endpoint (nếu cần)
-app.post('/api/upload', (req, res) => {
-    // Xử lý upload file ở đây
-    res.json({ message: 'Upload endpoint ready', success: true });
-});
-
 // Contact form endpoint
 app.post('/api/contact', (req, res) => {
     const { name, email, message, phone } = req.body;
     
-    // Validate input
     if (!name || !email || !message) {
         return res.status(400).json({
             success: false,
@@ -129,7 +130,6 @@ app.post('/api/contact', (req, res) => {
         });
     }
 
-    // Xử lý gửi email hoặc lưu database ở đây
     console.log('Contact form submission:', { name, email, phone, message });
     
     res.json({
@@ -141,10 +141,28 @@ app.post('/api/contact', (req, res) => {
 
 // ==================== ERROR HANDLING ====================
 
-// 404 handler
+// 404 handler - FIX LỖI 404.HTML
 app.use('*', (req, res) => {
     if (req.accepts('html')) {
-        res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+        // Trả về HTML đơn giản thay vì file
+        res.status(404).send(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>404 - Page Not Found</title>
+                <style>
+                    body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+                    h1 { color: #333; }
+                    p { color: #666; }
+                </style>
+            </head>
+            <body>
+                <h1>404 - Page Not Found</h1>
+                <p>The requested URL ${req.originalUrl} was not found on this server.</p>
+                <a href="/">Return to Homepage</a>
+            </body>
+            </html>
+        `);
     } else if (req.accepts('json')) {
         res.status(404).json({
             success: false,
@@ -165,15 +183,16 @@ app.use((error, req, res, next) => {
         url: req.originalUrl,
         method: req.method,
         ip: req.ip,
-        error: error.message,
-        stack: error.stack
+        error: error.message
     };
     
-    // Log error to file
-    fs.appendFileSync(
-        path.join(__dirname, 'error.log'), 
-        JSON.stringify(errorLog) + '\n'
-    );
+    // Chỉ log trong production
+    if (process.env.NODE_ENV === 'production') {
+        fs.appendFileSync(
+            path.join(__dirname, 'error.log'), 
+            JSON.stringify(errorLog) + '\n'
+        );
+    }
 
     res.status(500).json({
         success: false,
@@ -230,12 +249,9 @@ function gracefulShutdown(signal) {
         }
         
         console.log('✅ HTTP server closed');
-        console.log('✅ Database connections closed (if any)');
-        console.log('🔄 Process exited');
         process.exit(0);
     });
 
-    // Force close after 10 seconds
     setTimeout(() => {
         console.log('⚠️ Forcing shutdown after timeout');
         process.exit(1);
@@ -272,5 +288,4 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log('='.repeat(60));
 });
 
-// ==================== EXPORTS ====================
 module.exports = app;
