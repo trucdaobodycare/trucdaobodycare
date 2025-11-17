@@ -26,8 +26,10 @@ console.log('🚀 Environment:', isProduction ? 'production' : 'development');
 console.log('📍 Port:', PORT);
 console.log('🌍 Base URL:', getBaseUrl());
 
-// ==================== DATABASE SETUP ====================
-const DB_FILE = path.join(__dirname, 'database.json');
+// ==================== DATABASE SETUP - FIXED FOR RENDER.COM ====================
+// Sử dụng thư mục /tmp trên Render.com để lưu database
+const DB_DIR = isProduction ? '/tmp' : __dirname;
+const DB_FILE = path.join(DB_DIR, 'database.json');
 
 // Initialize default database
 const defaultDatabase = {
@@ -97,12 +99,16 @@ const defaultDatabase = {
     }
 };
 
-// Database functions
+// Database functions với backup mechanism
 function readDatabase() {
     try {
+        console.log(`📂 Reading database from: ${DB_FILE}`);
+        
         if (fs.existsSync(DB_FILE)) {
             const data = fs.readFileSync(DB_FILE, 'utf8');
             const database = JSON.parse(data);
+            
+            console.log(`✅ Database loaded: ${database.products.length} products, ${database.messages.length} messages, ${database.orders.length} orders`);
             
             // Đảm bảo tất cả các trường cần thiết tồn tại
             if (!database.orders) database.orders = [];
@@ -120,33 +126,67 @@ function readDatabase() {
             }
             
             return database;
+        } else {
+            console.log('📂 Database file not found, creating new one with default data');
         }
     } catch (error) {
         console.error('❌ Error reading database:', error);
+        console.log('🔄 Creating new database due to error');
     }
     
-    console.log('📂 Creating new database with default data');
-    return JSON.parse(JSON.stringify(defaultDatabase));
+    // Tạo database mới với dữ liệu mặc định
+    const newDatabase = JSON.parse(JSON.stringify(defaultDatabase));
+    writeDatabase(newDatabase);
+    return newDatabase;
 }
 
 function writeDatabase(data) {
     try {
+        // Đảm bảo thư mục tồn tại
+        const dir = path.dirname(DB_FILE);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        
         fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
-        console.log('💾 Database saved successfully');
+        console.log(`💾 Database saved successfully to: ${DB_FILE}`);
+        console.log(`📊 Stats: ${data.products.length} products, ${data.messages.length} messages, ${data.orders.length} orders`);
+        
+        // Tạo backup trong memory (fallback)
+        global.databaseBackup = JSON.parse(JSON.stringify(data));
+        
         return true;
     } catch (error) {
         console.error('❌ Error writing database:', error);
+        
+        // Fallback: lưu vào memory nếu ghi file thất bại
+        console.log('🔄 Falling back to in-memory storage');
+        global.databaseBackup = JSON.parse(JSON.stringify(data));
         return false;
     }
 }
 
-// Initialize database
+// Khởi tạo database
 let database = readDatabase();
 
-// Auto-save database every 5 minutes
+// Auto-save database every 2 minutes (tăng tần suất lưu)
 setInterval(() => {
+    console.log('🔄 Auto-saving database...');
     writeDatabase(database);
-}, 5 * 60 * 1000);
+}, 2 * 60 * 1000);
+
+// Backup database khi process kết thúc
+process.on('SIGINT', () => {
+    console.log('💾 Saving database before shutdown...');
+    writeDatabase(database);
+    process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+    console.log('💾 Saving database before termination...');
+    writeDatabase(database);
+    process.exit(0);
+});
 
 // ==================== MIDDLEWARE SETUP ====================
 app.use(helmet({
@@ -239,19 +279,36 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Health check endpoint
+// Health check endpoint với database status
 app.get('/health', (req, res) => {
+    const dbStatus = fs.existsSync(DB_FILE) ? 'healthy' : 'file_not_found';
+    
     res.json({
         status: 'OK',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
         memory: process.memoryUsage(),
         database: {
+            status: dbStatus,
+            file: DB_FILE,
             products: database.products.length,
             messages: database.messages.length,
             orders: database.orders.length,
             visitors: database.visitors.total
         }
+    });
+});
+
+// Database info endpoint (để debug)
+app.get('/api/debug/database', (req, res) => {
+    res.json({
+        file: DB_FILE,
+        exists: fs.existsSync(DB_FILE),
+        products: database.products.length,
+        messages: database.messages.length,
+        orders: database.orders.length,
+        visitors: database.visitors.total,
+        inMemoryBackup: !!global.databaseBackup
     });
 });
 
@@ -264,13 +321,14 @@ app.get('/api/info', (req, res) => {
             name: 'Trúc Đào Cosmetics API',
             version: '1.0.0',
             environment: isProduction ? 'production' : 'development',
-            baseUrl: getBaseUrl()
+            baseUrl: getBaseUrl(),
+            databaseFile: DB_FILE
         },
         database: {
             products: database.products.length,
             messages: database.messages.length,
             orders: database.orders.length,
-            unreadMessages: database.messages.filter(m => !m.read && !m.isAdminReply).length,
+            unreadMessages: database.messages.filter(m => !m.read).length,
             visitors: database.visitors.total
         },
         timestamp: new Date().toISOString()
@@ -316,7 +374,7 @@ app.post('/api/visitors', (req, res) => {
     }
 });
 
-// Products API
+// Products API - ĐÃ FIX: Đảm bảo lưu database sau mỗi thay đổi
 app.get('/api/products', (req, res) => {
     try {
         res.json(database.products);
@@ -349,9 +407,12 @@ app.post('/api/products', (req, res) => {
         };
         
         database.products.push(newProduct);
-        writeDatabase(database);
+        
+        // FIX: Đảm bảo lưu database ngay lập tức
+        const saveResult = writeDatabase(database);
         
         console.log('✅ New product created:', newProduct.name);
+        console.log('💾 Save result:', saveResult ? 'success' : 'failed');
         
         res.status(201).json(newProduct);
     } catch (error) {
@@ -383,9 +444,12 @@ app.put('/api/products/:id', (req, res) => {
         };
         
         database.products[productIndex] = updatedProduct;
-        writeDatabase(database);
+        
+        // FIX: Đảm bảo lưu database ngay lập tức
+        const saveResult = writeDatabase(database);
         
         console.log('✅ Product updated:', updatedProduct.name);
+        console.log('💾 Save result:', saveResult ? 'success' : 'failed');
         
         res.json(updatedProduct);
     } catch (error) {
@@ -407,9 +471,11 @@ app.delete('/api/products/:id', (req, res) => {
             return res.status(404).json({ error: 'Không tìm thấy sản phẩm' });
         }
         
-        writeDatabase(database);
+        // FIX: Đảm bảo lưu database ngay lập tức
+        const saveResult = writeDatabase(database);
         
         console.log('✅ Product deleted:', productToDelete?.name);
+        console.log('💾 Save result:', saveResult ? 'success' : 'failed');
         
         res.json({ 
             message: 'Đã xóa sản phẩm thành công',
@@ -421,32 +487,13 @@ app.delete('/api/products/:id', (req, res) => {
     }
 });
 
-// Messages API - CẬP NHẬT QUAN TRỌNG
+// Messages API - ĐÃ FIX: Đảm bảo lưu database
 app.get('/api/messages', (req, res) => {
     try {
-        // Sắp xếp tin nhắn theo thời gian (mới nhất trước)
-        const sortedMessages = database.messages.sort((a, b) => 
-            new Date(b.timestamp) - new Date(a.timestamp)
-        );
-        res.json(sortedMessages);
+        res.json(database.messages);
     } catch (error) {
         console.error('Error getting messages:', error);
         res.status(500).json({ error: 'Lỗi server khi lấy tin nhắn' });
-    }
-});
-
-// Lấy tin nhắn theo số điện thoại khách hàng
-app.get('/api/messages/customer/:phone', (req, res) => {
-    try {
-        const customerPhone = req.params.phone;
-        const customerMessages = database.messages.filter(m => 
-            m.customerInfo && m.customerInfo.phone === customerPhone
-        ).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-        
-        res.json(customerMessages);
-    } catch (error) {
-        console.error('Error getting customer messages:', error);
-        res.status(500).json({ error: 'Lỗi server khi lấy tin nhắn khách hàng' });
     }
 });
 
@@ -463,7 +510,7 @@ app.post('/api/messages', async (req, res) => {
             text: text.trim(),
             product: product || null,
             timestamp: new Date().toISOString(),
-            read: isAdminReply ? true : false, // Tin nhắn admin tự động đánh dấu đã đọc
+            read: false,
             isAutoResponse: isAutoResponse || false,
             isAdminReply: isAdminReply || false,
             originalMessageId: originalMessageId || null,
@@ -472,6 +519,8 @@ app.post('/api/messages', async (req, res) => {
         };
         
         database.messages.push(newMessage);
+        
+        // FIX: Đảm bảo lưu database ngay lập tức
         writeDatabase(database);
         
         console.log('💬 New message received from:', customerInfo?.name || 'Unknown');
@@ -503,7 +552,7 @@ app.put('/api/messages/:id/read', (req, res) => {
     }
 });
 
-// Reply to message - CẬP NHẬT QUAN TRỌNG: Tạo tin nhắn mới thay vì thêm vào replies
+// Reply to message
 app.post('/api/messages/:id/reply', (req, res) => {
     try {
         const messageId = parseInt(req.params.id);
@@ -519,22 +568,19 @@ app.post('/api/messages/:id/reply', (req, res) => {
             return res.status(404).json({ error: 'Không tìm thấy tin nhắn' });
         }
         
-        // Tạo tin nhắn phản hồi mới (như một tin nhắn độc lập)
         const replyMessage = {
             id: Date.now(),
             text: text.trim(),
             timestamp: new Date().toISOString(),
-            read: true, // Tin nhắn admin tự động đánh dấu đã đọc
             isAdminReply: true,
-            adminName: adminName || 'Admin',
-            customerInfo: parentMessage.customerInfo, // Giữ nguyên thông tin khách hàng
-            originalMessageId: messageId // Liên kết với tin nhắn gốc
+            adminName: adminName || 'Admin'
         };
         
-        // Thêm tin nhắn phản hồi vào database
-        database.messages.push(replyMessage);
+        if (!parentMessage.replies) {
+            parentMessage.replies = [];
+        }
         
-        // Đánh dấu tin nhắn gốc là đã đọc
+        parentMessage.replies.push(replyMessage);
         parentMessage.read = true;
         
         writeDatabase(database);
@@ -542,8 +588,7 @@ app.post('/api/messages/:id/reply', (req, res) => {
         console.log('📤 Admin replied to message:', messageId);
         
         res.json({
-            success: true,
-            message: 'Đã gửi phản hồi thành công',
+            parentMessage,
             reply: replyMessage
         });
     } catch (error) {
@@ -583,7 +628,7 @@ app.put('/api/messages/customer/:phone/read-all', (req, res) => {
     }
 });
 
-// Orders API
+// Orders API - ĐÃ FIX: Đảm bảo lưu database
 app.get('/api/orders', (req, res) => {
     try {
         res.json(database.orders);
@@ -618,6 +663,8 @@ app.post('/api/orders', (req, res) => {
         };
         
         database.orders.push(newOrder);
+        
+        // FIX: Đảm bảo lưu database ngay lập tức
         writeDatabase(database);
         
         // Update statistics
@@ -769,7 +816,7 @@ app.get('/api/statistics', (req, res) => {
             ...database.statistics,
             totalProducts: database.products.length,
             totalMessages: database.messages.length,
-            unreadMessages: database.messages.filter(m => !m.read && !m.isAdminReply).length,
+            unreadMessages: database.messages.filter(m => !m.read).length,
             totalVisitors: database.visitors.total,
             todayVisitors: database.visitors.today,
             totalOrders: database.orders.length,
@@ -816,9 +863,8 @@ app.get('/api/dashboard', (req, res) => {
                 createdAt: order.createdAt
             }));
         
-        // Recent messages (last 5) - CHỈ LẤY TIN NHẮN CỦA KHÁCH HÀNG
+        // Recent messages (last 5)
         const recentMessages = database.messages
-            .filter(m => !m.isAdminReply && m.customerInfo) // Chỉ lấy tin nhắn từ khách hàng
             .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
             .slice(0, 5)
             .map(message => ({
@@ -926,7 +972,6 @@ app.use('/api/*', (req, res) => {
             'PUT /api/products/:id',
             'DELETE /api/products/:id',
             'GET /api/messages',
-            'GET /api/messages/customer/:phone',
             'POST /api/messages',
             'PUT /api/messages/:id/read',
             'POST /api/messages/:id/reply',
@@ -940,7 +985,8 @@ app.use('/api/*', (req, res) => {
             'PUT /api/settings',
             'GET /api/statistics',
             'GET /api/dashboard',
-            'POST /api/visitors'
+            'POST /api/visitors',
+            'GET /api/debug/database'
         ]
     });
 });
@@ -981,6 +1027,7 @@ function gracefulShutdown(signal) {
     console.log(`\n🛑 Received ${signal}, shutting down gracefully...`);
     
     // Save database before shutdown
+    console.log('💾 Saving database before shutdown...');
     writeDatabase(database);
     
     server.close((err) => {
@@ -1015,6 +1062,7 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log(`   🌐 Network: http://[YOUR_IP]:${PORT}`);
     console.log(`   🌍 Production: https://trucdaobodycare.onrender.com`);
     console.log('\n💾 Database Status:');
+    console.log(`   📁 Database File: ${DB_FILE}`);
     console.log(`   📦 Products: ${database.products.length}`);
     console.log(`   💬 Messages: ${database.messages.length}`);
     console.log(`   📋 Orders: ${database.orders.length}`);
