@@ -383,11 +383,23 @@ app.post('/api/visitors', async (req, res) => {
     }
 });
 
-// Products API
+// Products API - FIXED: Sử dụng ObjectId
 app.get('/api/products', async (req, res) => {
     try {
         const products = await Product.find().sort({ createdAt: -1 });
-        res.json(products);
+        // Chuyển đổi _id thành id để tương thích với frontend
+        const formattedProducts = products.map(product => ({
+            id: product._id.toString(),
+            name: product.name,
+            category: product.category,
+            originalPrice: product.originalPrice,
+            salePrice: product.salePrice,
+            image: product.image,
+            description: product.description,
+            createdAt: product.createdAt,
+            updatedAt: product.updatedAt
+        }));
+        res.json(formattedProducts);
     } catch (error) {
         console.error('Error getting products:', error);
         res.status(500).json({ error: 'Lỗi server khi lấy sản phẩm' });
@@ -417,7 +429,20 @@ app.post('/api/products', async (req, res) => {
         
         console.log('✅ New product created:', newProduct.name);
         
-        res.status(201).json(newProduct);
+        // Trả về sản phẩm với id thay vì _id
+        const responseProduct = {
+            id: newProduct._id.toString(),
+            name: newProduct.name,
+            category: newProduct.category,
+            originalPrice: newProduct.originalPrice,
+            salePrice: newProduct.salePrice,
+            image: newProduct.image,
+            description: newProduct.description,
+            createdAt: newProduct.createdAt,
+            updatedAt: newProduct.updatedAt
+        };
+        
+        res.status(201).json(responseProduct);
     } catch (error) {
         console.error('Error creating product:', error);
         res.status(500).json({ error: 'Lỗi server khi tạo sản phẩm' });
@@ -428,6 +453,11 @@ app.put('/api/products/:id', async (req, res) => {
     try {
         const productId = req.params.id;
         const { name, category, originalPrice, salePrice, image, description } = req.body;
+        
+        // FIX: Sử dụng ObjectId để tìm kiếm
+        if (!mongoose.Types.ObjectId.isValid(productId)) {
+            return res.status(400).json({ error: 'ID sản phẩm không hợp lệ' });
+        }
         
         const updatedProduct = await Product.findByIdAndUpdate(
             productId,
@@ -449,7 +479,20 @@ app.put('/api/products/:id', async (req, res) => {
         
         console.log('✅ Product updated:', updatedProduct.name);
         
-        res.json(updatedProduct);
+        // Trả về sản phẩm với id thay vì _id
+        const responseProduct = {
+            id: updatedProduct._id.toString(),
+            name: updatedProduct.name,
+            category: updatedProduct.category,
+            originalPrice: updatedProduct.originalPrice,
+            salePrice: updatedProduct.salePrice,
+            image: updatedProduct.image,
+            description: updatedProduct.description,
+            createdAt: updatedProduct.createdAt,
+            updatedAt: updatedProduct.updatedAt
+        };
+        
+        res.json(responseProduct);
     } catch (error) {
         console.error('Error updating product:', error);
         res.status(500).json({ error: 'Lỗi server khi cập nhật sản phẩm' });
@@ -459,6 +502,12 @@ app.put('/api/products/:id', async (req, res) => {
 app.delete('/api/products/:id', async (req, res) => {
     try {
         const productId = req.params.id;
+        
+        // FIX: Sử dụng ObjectId để tìm kiếm
+        if (!mongoose.Types.ObjectId.isValid(productId)) {
+            return res.status(400).json({ error: 'ID sản phẩm không hợp lệ' });
+        }
+        
         const deletedProduct = await Product.findByIdAndDelete(productId);
         
         if (!deletedProduct) {
@@ -469,7 +518,10 @@ app.delete('/api/products/:id', async (req, res) => {
         
         res.json({ 
             message: 'Đã xóa sản phẩm thành công',
-            deletedProduct: deletedProduct
+            deletedProduct: {
+                id: deletedProduct._id.toString(),
+                name: deletedProduct.name
+            }
         });
     } catch (error) {
         console.error('Error deleting product:', error);
@@ -477,11 +529,24 @@ app.delete('/api/products/:id', async (req, res) => {
     }
 });
 
-// Messages API
+// Messages API - FIXED: Sử dụng ObjectId
 app.get('/api/messages', async (req, res) => {
     try {
         const messages = await Message.find().sort({ timestamp: -1 });
-        res.json(messages);
+        // Chuyển đổi _id thành id để tương thích với frontend
+        const formattedMessages = messages.map(message => ({
+            id: message._id.toString(),
+            text: message.text,
+            product: message.product,
+            timestamp: message.timestamp,
+            read: message.read,
+            isAutoResponse: message.isAutoResponse,
+            isAdminReply: message.isAdminReply,
+            originalMessageId: message.originalMessageId,
+            customerInfo: message.customerInfo,
+            replies: message.replies
+        }));
+        res.json(formattedMessages);
     } catch (error) {
         console.error('Error getting messages:', error);
         res.status(500).json({ error: 'Lỗi server khi lấy tin nhắn' });
@@ -509,7 +574,21 @@ app.post('/api/messages', async (req, res) => {
         
         console.log('💬 New message received from:', customerInfo?.name || 'Unknown');
         
-        res.status(201).json(newMessage);
+        // Trả về message với id thay vì _id
+        const responseMessage = {
+            id: newMessage._id.toString(),
+            text: newMessage.text,
+            product: newMessage.product,
+            timestamp: newMessage.timestamp,
+            read: newMessage.read,
+            isAutoResponse: newMessage.isAutoResponse,
+            isAdminReply: newMessage.isAdminReply,
+            originalMessageId: newMessage.originalMessageId,
+            customerInfo: newMessage.customerInfo,
+            replies: newMessage.replies
+        };
+        
+        res.status(201).json(responseMessage);
     } catch (error) {
         console.error('Error creating message:', error);
         res.status(500).json({ error: 'Lỗi server khi gửi tin nhắn' });
@@ -520,6 +599,12 @@ app.post('/api/messages', async (req, res) => {
 app.put('/api/messages/:id/read', async (req, res) => {
     try {
         const messageId = req.params.id;
+        
+        // FIX: Sử dụng ObjectId để tìm kiếm
+        if (!mongoose.Types.ObjectId.isValid(messageId)) {
+            return res.status(400).json({ error: 'ID tin nhắn không hợp lệ' });
+        }
+        
         const message = await Message.findByIdAndUpdate(
             messageId,
             { read: true },
@@ -530,7 +615,13 @@ app.put('/api/messages/:id/read', async (req, res) => {
             return res.status(404).json({ error: 'Không tìm thấy tin nhắn' });
         }
         
-        res.json(message);
+        res.json({
+            id: message._id.toString(),
+            text: message.text,
+            timestamp: message.timestamp,
+            read: message.read,
+            customerInfo: message.customerInfo
+        });
     } catch (error) {
         console.error('Error marking message as read:', error);
         res.status(500).json({ error: 'Lỗi server' });
@@ -545,6 +636,11 @@ app.post('/api/messages/:id/reply', async (req, res) => {
         
         if (!text || text.trim() === '') {
             return res.status(400).json({ error: 'Nội dung phản hồi không được để trống' });
+        }
+        
+        // FIX: Sử dụng ObjectId để tìm kiếm
+        if (!mongoose.Types.ObjectId.isValid(messageId)) {
+            return res.status(400).json({ error: 'ID tin nhắn không hợp lệ' });
         }
         
         const parentMessage = await Message.findById(messageId);
@@ -570,7 +666,14 @@ app.post('/api/messages/:id/reply', async (req, res) => {
         console.log('📤 Admin replied to message:', messageId);
         
         res.json({
-            parentMessage,
+            parentMessage: {
+                id: parentMessage._id.toString(),
+                text: parentMessage.text,
+                timestamp: parentMessage.timestamp,
+                read: parentMessage.read,
+                customerInfo: parentMessage.customerInfo,
+                replies: parentMessage.replies
+            },
             reply: replyMessage
         });
     } catch (error) {
@@ -606,11 +709,25 @@ app.put('/api/messages/customer/:phone/read-all', async (req, res) => {
     }
 });
 
-// Orders API
+// Orders API - FIXED: Sử dụng ObjectId
 app.get('/api/orders', async (req, res) => {
     try {
         const orders = await Order.find().sort({ createdAt: -1 });
-        res.json(orders);
+        // Chuyển đổi _id thành id để tương thích với frontend
+        const formattedOrders = orders.map(order => ({
+            id: order._id.toString(),
+            customerName: order.customerName,
+            customerPhone: order.customerPhone,
+            customerAddress: order.customerAddress,
+            products: order.products,
+            totalAmount: order.totalAmount,
+            status: order.status,
+            paymentMethod: order.paymentMethod,
+            paymentScreenshot: order.paymentScreenshot,
+            createdAt: order.createdAt,
+            updatedAt: order.updatedAt
+        }));
+        res.json(formattedOrders);
     } catch (error) {
         console.error('Error getting orders:', error);
         res.status(500).json({ error: 'Lỗi server khi lấy đơn hàng' });
@@ -643,7 +760,22 @@ app.post('/api/orders', async (req, res) => {
         
         console.log('🛒 New order created:', `${customerName} - ${formatPrice(totalAmount)}`);
         
-        res.status(201).json(newOrder);
+        // Trả về order với id thay vì _id
+        const responseOrder = {
+            id: newOrder._id.toString(),
+            customerName: newOrder.customerName,
+            customerPhone: newOrder.customerPhone,
+            customerAddress: newOrder.customerAddress,
+            products: newOrder.products,
+            totalAmount: newOrder.totalAmount,
+            status: newOrder.status,
+            paymentMethod: newOrder.paymentMethod,
+            paymentScreenshot: newOrder.paymentScreenshot,
+            createdAt: newOrder.createdAt,
+            updatedAt: newOrder.updatedAt
+        };
+        
+        res.status(201).json(responseOrder);
     } catch (error) {
         console.error('Error creating order:', error);
         res.status(500).json({ error: 'Lỗi server khi tạo đơn hàng' });
@@ -658,6 +790,11 @@ app.put('/api/orders/:id/status', async (req, res) => {
         const validStatuses = ['pending', 'completed', 'cancelled'];
         if (!validStatuses.includes(status)) {
             return res.status(400).json({ error: 'Trạng thái không hợp lệ' });
+        }
+        
+        // FIX: Sử dụng ObjectId để tìm kiếm
+        if (!mongoose.Types.ObjectId.isValid(orderId)) {
+            return res.status(400).json({ error: 'ID đơn hàng không hợp lệ' });
         }
         
         const updatedOrder = await Order.findByIdAndUpdate(
@@ -678,7 +815,14 @@ app.put('/api/orders/:id/status', async (req, res) => {
         
         console.log(`✅ Order ${orderId} status changed to: ${status}`);
         
-        res.json(updatedOrder);
+        res.json({
+            id: updatedOrder._id.toString(),
+            customerName: updatedOrder.customerName,
+            customerPhone: updatedOrder.customerPhone,
+            totalAmount: updatedOrder.totalAmount,
+            status: updatedOrder.status,
+            updatedAt: updatedOrder.updatedAt
+        });
     } catch (error) {
         console.error('Error updating order status:', error);
         res.status(500).json({ error: 'Lỗi server khi cập nhật trạng thái đơn hàng' });
