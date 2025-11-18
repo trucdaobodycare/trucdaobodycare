@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const http = require('http');
-const fs = require('fs');
+const mongoose = require('mongoose');
 const compression = require('compression');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -14,179 +14,180 @@ const app = express();
 const isProduction = process.env.NODE_ENV === 'production';
 const PORT = process.env.PORT || 10000;
 
-// Get base URL for Render.com
-const getBaseUrl = () => {
-    if (process.env.RENDER_EXTERNAL_URL) {
-        return process.env.RENDER_EXTERNAL_URL;
-    }
-    return `http://localhost:${PORT}`;
-};
+// MongoDB Connection String - THAY THẾ BẰNG URL CỦA BẠN
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/trucdao-cosmetics?retryWrites=true&w=majority';
 
 console.log('🚀 Environment:', isProduction ? 'production' : 'development');
 console.log('📍 Port:', PORT);
-console.log('🌍 Base URL:', getBaseUrl());
 
-// ==================== DATABASE SETUP - FIXED FOR RENDER.COM ====================
-// Sử dụng thư mục /tmp trên Render.com để lưu database
-const DB_DIR = isProduction ? '/tmp' : __dirname;
-const DB_FILE = path.join(DB_DIR, 'database.json');
+// ==================== MONGODB MODELS ====================
 
-// Initialize default database
-const defaultDatabase = {
-    products: [
-        {
-            id: 1,
-            name: "Son lì cao cấp Luxury Matte",
-            category: "Son môi",
-            originalPrice: 399000,
-            salePrice: 299000,
-            image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-            description: "Son lì cao cấp với công thức mềm mịn, lâu trôi",
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        },
-        {
-            id: 2,
-            name: "Bảng phấn mắt 12 màu Pro Palette",
-            category: "Trang điểm mắt",
-            originalPrice: 600000,
-            salePrice: 450000,
-            image: "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-            description: "Bảng phấn mắt đa dạng màu sắc, dễ phối màu",
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        },
-        {
-            id: 3,
-            name: "Kem nền che khuyết điểm Full Cover",
-            category: "Trang điểm mặt",
-            originalPrice: 650000,
-            salePrice: 520000,
-            image: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-            description: "Kem nền che phủ hoàn hảo, không gây bít tắc lỗ chân lông",
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        },
-        {
-            id: 4,
-            name: "Serum dưỡng ẩm chống lão hóa",
-            category: "Chăm sóc da",
-            originalPrice: 850000,
-            salePrice: 680000,
-            image: "https://images.unsplash.com/photo-1594035910387-fea47794261f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-            description: "Serum dưỡng ẩm chuyên sâu, cải thiện nếp nhăn",
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        }
-    ],
-    messages: [],
-    orders: [],
-    visitors: { 
-        total: 0, 
-        today: 0, 
-        date: new Date().toDateString(),
-        history: []
-    },
-    settings: {
-        siteTitle: "Trúc Đào Cosmetics",
-        adminEmail: "admin@trucdaocosmetics.vn",
-        maintenanceMode: false
-    },
-    statistics: {
-        totalSales: 0,
-        totalRevenue: 0,
-        popularProducts: []
-    }
-};
-
-// Database functions với backup mechanism
-function readDatabase() {
-    try {
-        console.log(`📂 Reading database from: ${DB_FILE}`);
-        
-        if (fs.existsSync(DB_FILE)) {
-            const data = fs.readFileSync(DB_FILE, 'utf8');
-            const database = JSON.parse(data);
-            
-            console.log(`✅ Database loaded: ${database.products.length} products, ${database.messages.length} messages, ${database.orders.length} orders`);
-            
-            // Đảm bảo tất cả các trường cần thiết tồn tại
-            if (!database.orders) database.orders = [];
-            if (!database.messages) database.messages = [];
-            if (!database.products) database.products = defaultDatabase.products;
-            if (!database.visitors) database.visitors = defaultDatabase.visitors;
-            if (!database.settings) database.settings = defaultDatabase.settings;
-            if (!database.statistics) database.statistics = defaultDatabase.statistics;
-            
-            // Update visitor date if needed
-            const today = new Date().toDateString();
-            if (database.visitors.date !== today) {
-                database.visitors.today = 0;
-                database.visitors.date = today;
-            }
-            
-            return database;
-        } else {
-            console.log('📂 Database file not found, creating new one with default data');
-        }
-    } catch (error) {
-        console.error('❌ Error reading database:', error);
-        console.log('🔄 Creating new database due to error');
-    }
-    
-    // Tạo database mới với dữ liệu mặc định
-    const newDatabase = JSON.parse(JSON.stringify(defaultDatabase));
-    writeDatabase(newDatabase);
-    return newDatabase;
-}
-
-function writeDatabase(data) {
-    try {
-        // Đảm bảo thư mục tồn tại
-        const dir = path.dirname(DB_FILE);
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-        }
-        
-        fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
-        console.log(`💾 Database saved successfully to: ${DB_FILE}`);
-        console.log(`📊 Stats: ${data.products.length} products, ${data.messages.length} messages, ${data.orders.length} orders`);
-        
-        // Tạo backup trong memory (fallback)
-        global.databaseBackup = JSON.parse(JSON.stringify(data));
-        
-        return true;
-    } catch (error) {
-        console.error('❌ Error writing database:', error);
-        
-        // Fallback: lưu vào memory nếu ghi file thất bại
-        console.log('🔄 Falling back to in-memory storage');
-        global.databaseBackup = JSON.parse(JSON.stringify(data));
-        return false;
-    }
-}
-
-// Khởi tạo database
-let database = readDatabase();
-
-// Auto-save database every 2 minutes (tăng tần suất lưu)
-setInterval(() => {
-    console.log('🔄 Auto-saving database...');
-    writeDatabase(database);
-}, 2 * 60 * 1000);
-
-// Backup database khi process kết thúc
-process.on('SIGINT', () => {
-    console.log('💾 Saving database before shutdown...');
-    writeDatabase(database);
-    process.exit(0);
+// Product Model
+const productSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    category: { type: String, required: true },
+    originalPrice: { type: Number, required: true },
+    salePrice: { type: Number, required: true },
+    image: { type: String, required: true },
+    description: { type: String, default: '' },
+    views: { type: Number, default: 0 },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
 });
 
-process.on('SIGTERM', () => {
-    console.log('💾 Saving database before termination...');
-    writeDatabase(database);
-    process.exit(0);
+const Product = mongoose.model('Product', productSchema);
+
+// Message Model
+const messageSchema = new mongoose.Schema({
+    text: { type: String, required: true },
+    product: { type: String, default: null },
+    timestamp: { type: Date, default: Date.now },
+    read: { type: Boolean, default: false },
+    isAutoResponse: { type: Boolean, default: false },
+    isAdminReply: { type: Boolean, default: false },
+    originalMessageId: { type: String, default: null },
+    customerInfo: {
+        name: String,
+        phone: String,
+        email: String
+    },
+    replies: [{
+        text: String,
+        timestamp: { type: Date, default: Date.now },
+        isAdminReply: { type: Boolean, default: true },
+        adminName: { type: String, default: 'Admin' }
+    }]
 });
+
+const Message = mongoose.model('Message', messageSchema);
+
+// Order Model
+const orderSchema = new mongoose.Schema({
+    customerName: { type: String, required: true },
+    customerPhone: { type: String, required: true },
+    customerAddress: { type: String, required: true },
+    products: [{
+        id: String,
+        name: String,
+        price: Number,
+        quantity: Number,
+        image: String
+    }],
+    totalAmount: { type: Number, required: true },
+    status: { type: String, default: 'pending' },
+    paymentMethod: { type: String, default: 'bank_transfer' },
+    paymentScreenshot: { type: String, default: '' },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
+});
+
+const Order = mongoose.model('Order', orderSchema);
+
+// Visitor Model
+const visitorSchema = new mongoose.Schema({
+    total: { type: Number, default: 0 },
+    today: { type: Number, default: 0 },
+    date: { type: String, default: new Date().toDateString() },
+    history: [{
+        timestamp: Date,
+        ip: String,
+        userAgent: String
+    }]
+});
+
+const Visitor = mongoose.model('Visitor', visitorSchema);
+
+// Settings Model
+const settingsSchema = new mongoose.Schema({
+    siteTitle: { type: String, default: 'Trúc Đào Cosmetics' },
+    adminEmail: { type: String, default: 'admin@trucdaocosmetics.vn' },
+    maintenanceMode: { type: Boolean, default: false }
+});
+
+const Settings = mongoose.model('Settings', settingsSchema);
+
+// Statistics Model
+const statisticsSchema = new mongoose.Schema({
+    totalSales: { type: Number, default: 0 },
+    totalRevenue: { type: Number, default: 0 },
+    popularProducts: [{
+        name: String,
+        quantity: Number,
+        revenue: Number
+    }]
+});
+
+const Statistics = mongoose.model('Statistics', statisticsSchema);
+
+// ==================== DATABASE INITIALIZATION ====================
+
+async function initializeDatabase() {
+    try {
+        console.log('🔄 Initializing database...');
+        
+        // Kiểm tra và tạo dữ liệu mặc định nếu cần
+        const visitorCount = await Visitor.countDocuments();
+        if (visitorCount === 0) {
+            await Visitor.create({});
+            console.log('✅ Default visitor record created');
+        }
+        
+        const settingsCount = await Settings.countDocuments();
+        if (settingsCount === 0) {
+            await Settings.create({});
+            console.log('✅ Default settings created');
+        }
+        
+        const statisticsCount = await Statistics.countDocuments();
+        if (statisticsCount === 0) {
+            await Statistics.create({});
+            console.log('✅ Default statistics created');
+        }
+        
+        const productCount = await Product.countDocuments();
+        if (productCount === 0) {
+            await Product.insertMany([
+                {
+                    name: "Son lì cao cấp Luxury Matte",
+                    category: "Son môi",
+                    originalPrice: 399000,
+                    salePrice: 299000,
+                    image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
+                    description: "Son lì cao cấp với công thức mềm mịn, lâu trôi"
+                },
+                {
+                    name: "Bảng phấn mắt 12 màu Pro Palette",
+                    category: "Trang điểm mắt",
+                    originalPrice: 600000,
+                    salePrice: 450000,
+                    image: "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
+                    description: "Bảng phấn mắt đa dạng màu sắc, dễ phối màu"
+                },
+                {
+                    name: "Kem nền che khuyết điểm Full Cover",
+                    category: "Trang điểm mặt",
+                    originalPrice: 650000,
+                    salePrice: 520000,
+                    image: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
+                    description: "Kem nền che phủ hoàn hảo, không gây bít tắc lỗ chân lông"
+                },
+                {
+                    name: "Serum dưỡng ẩm chống lão hóa",
+                    category: "Chăm sóc da",
+                    originalPrice: 850000,
+                    salePrice: 680000,
+                    image: "https://images.unsplash.com/photo-1594035910387-fea47794261f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
+                    description: "Serum dưỡng ẩm chuyên sâu, cải thiện nếp nhăn"
+                }
+            ]);
+            console.log('✅ Default products created');
+        }
+        
+        console.log('✅ Database initialization completed');
+    } catch (error) {
+        console.error('❌ Database initialization error:', error);
+    }
+}
 
 // ==================== MIDDLEWARE SETUP ====================
 app.use(helmet({
@@ -199,7 +200,6 @@ app.use(compression());
 // CORS configuration
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
         
         const allowedOrigins = [
@@ -227,8 +227,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // Rate limiting
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: isProduction ? 500 : 1000, // Lower limit in production
+    windowMs: 15 * 60 * 1000,
+    max: isProduction ? 500 : 1000,
     message: {
         error: 'Quá nhiều yêu cầu từ IP này, vui lòng thử lại sau 15 phút.',
         retryAfter: 900
@@ -279,94 +279,103 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Health check endpoint với database status
-app.get('/health', (req, res) => {
-    const dbStatus = fs.existsSync(DB_FILE) ? 'healthy' : 'file_not_found';
-    
-    res.json({
-        status: 'OK',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        memory: process.memoryUsage(),
-        database: {
-            status: dbStatus,
-            file: DB_FILE,
-            products: database.products.length,
-            messages: database.messages.length,
-            orders: database.orders.length,
-            visitors: database.visitors.total
-        }
-    });
-});
-
-// Database info endpoint (để debug)
-app.get('/api/debug/database', (req, res) => {
-    res.json({
-        file: DB_FILE,
-        exists: fs.existsSync(DB_FILE),
-        products: database.products.length,
-        messages: database.messages.length,
-        orders: database.orders.length,
-        visitors: database.visitors.total,
-        inMemoryBackup: !!global.databaseBackup
-    });
+// Health check endpoint
+app.get('/health', async (req, res) => {
+    try {
+        const productCount = await Product.countDocuments();
+        const messageCount = await Message.countDocuments();
+        const orderCount = await Order.countDocuments();
+        const visitorData = await Visitor.findOne();
+        
+        res.json({
+            status: 'OK',
+            timestamp: new Date().toISOString(),
+            uptime: process.uptime(),
+            memory: process.memoryUsage(),
+            database: {
+                status: 'connected',
+                products: productCount,
+                messages: messageCount,
+                orders: orderCount,
+                visitors: visitorData?.total || 0
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: 'ERROR',
+            error: error.message
+        });
+    }
 });
 
 // ==================== API ROUTES ====================
 
 // API info
-app.get('/api/info', (req, res) => {
-    res.json({
-        server: {
-            name: 'Trúc Đào Cosmetics API',
-            version: '1.0.0',
-            environment: isProduction ? 'production' : 'development',
-            baseUrl: getBaseUrl(),
-            databaseFile: DB_FILE
-        },
-        database: {
-            products: database.products.length,
-            messages: database.messages.length,
-            orders: database.orders.length,
-            unreadMessages: database.messages.filter(m => !m.read).length,
-            visitors: database.visitors.total
-        },
-        timestamp: new Date().toISOString()
-    });
+app.get('/api/info', async (req, res) => {
+    try {
+        const productCount = await Product.countDocuments();
+        const messageCount = await Message.countDocuments();
+        const orderCount = await Order.countDocuments();
+        const unreadMessages = await Message.countDocuments({ read: false });
+        const visitorData = await Visitor.findOne();
+        
+        res.json({
+            server: {
+                name: 'Trúc Đào Cosmetics API',
+                version: '2.0.0',
+                environment: isProduction ? 'production' : 'development',
+                database: 'MongoDB'
+            },
+            database: {
+                products: productCount,
+                messages: messageCount,
+                orders: orderCount,
+                unreadMessages: unreadMessages,
+                visitors: visitorData?.total || 0
+            },
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Lỗi server' });
+    }
 });
 
 // Visitor tracking
-app.post('/api/visitors', (req, res) => {
+app.post('/api/visitors', async (req, res) => {
     try {
+        let visitorData = await Visitor.findOne();
+        if (!visitorData) {
+            visitorData = new Visitor();
+        }
+        
         const today = new Date().toDateString();
         const now = new Date();
         
-        if (database.visitors.date !== today) {
-            database.visitors.today = 0;
-            database.visitors.date = today;
+        if (visitorData.date !== today) {
+            visitorData.today = 0;
+            visitorData.date = today;
         }
         
-        database.visitors.total++;
-        database.visitors.today++;
+        visitorData.total++;
+        visitorData.today++;
         
-        // Add to history
-        database.visitors.history.push({
+        visitorData.history.push({
             timestamp: now.toISOString(),
             ip: req.ip,
             userAgent: req.get('User-Agent')
         });
         
         // Keep only last 1000 records
-        if (database.visitors.history.length > 1000) {
-            database.visitors.history = database.visitors.history.slice(-1000);
+        if (visitorData.history.length > 1000) {
+            visitorData.history = visitorData.history.slice(-1000);
         }
         
-        writeDatabase(database);
+        await visitorData.save();
         
         res.json({
-            total: database.visitors.total,
-            today: database.visitors.today,
-            date: database.visitors.date
+            total: visitorData.total,
+            today: visitorData.today,
+            date: visitorData.date
         });
     } catch (error) {
         console.error('Error tracking visitor:', error);
@@ -374,17 +383,18 @@ app.post('/api/visitors', (req, res) => {
     }
 });
 
-// Products API - ĐÃ FIX: Đảm bảo lưu database sau mỗi thay đổi
-app.get('/api/products', (req, res) => {
+// Products API
+app.get('/api/products', async (req, res) => {
     try {
-        res.json(database.products);
+        const products = await Product.find().sort({ createdAt: -1 });
+        res.json(products);
     } catch (error) {
         console.error('Error getting products:', error);
         res.status(500).json({ error: 'Lỗi server khi lấy sản phẩm' });
     }
 });
 
-app.post('/api/products', (req, res) => {
+app.post('/api/products', async (req, res) => {
     try {
         const { name, category, originalPrice, salePrice, image, description } = req.body;
         
@@ -394,25 +404,18 @@ app.post('/api/products', (req, res) => {
             });
         }
         
-        const newProduct = {
-            id: Date.now(),
+        const newProduct = new Product({
             name: name.trim(),
             category: category.trim(),
             originalPrice: parseInt(originalPrice),
             salePrice: parseInt(salePrice),
             image: image.trim(),
-            description: (description || '').trim(),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        };
+            description: (description || '').trim()
+        });
         
-        database.products.push(newProduct);
-        
-        // FIX: Đảm bảo lưu database ngay lập tức
-        const saveResult = writeDatabase(database);
+        await newProduct.save();
         
         console.log('✅ New product created:', newProduct.name);
-        console.log('💾 Save result:', saveResult ? 'success' : 'failed');
         
         res.status(201).json(newProduct);
     } catch (error) {
@@ -421,35 +424,30 @@ app.post('/api/products', (req, res) => {
     }
 });
 
-app.put('/api/products/:id', (req, res) => {
+app.put('/api/products/:id', async (req, res) => {
     try {
-        const productId = parseInt(req.params.id);
-        const productIndex = database.products.findIndex(p => p.id === productId);
+        const productId = req.params.id;
+        const { name, category, originalPrice, salePrice, image, description } = req.body;
         
-        if (productIndex === -1) {
+        const updatedProduct = await Product.findByIdAndUpdate(
+            productId,
+            {
+                ...(name && { name: name.trim() }),
+                ...(category && { category: category.trim() }),
+                ...(originalPrice && { originalPrice: parseInt(originalPrice) }),
+                ...(salePrice && { salePrice: parseInt(salePrice) }),
+                ...(image && { image: image.trim() }),
+                ...(description && { description: description.trim() }),
+                updatedAt: new Date()
+            },
+            { new: true }
+        );
+        
+        if (!updatedProduct) {
             return res.status(404).json({ error: 'Không tìm thấy sản phẩm' });
         }
         
-        const { name, category, originalPrice, salePrice, image, description } = req.body;
-        
-        const updatedProduct = {
-            ...database.products[productIndex],
-            ...(name && { name: name.trim() }),
-            ...(category && { category: category.trim() }),
-            ...(originalPrice && { originalPrice: parseInt(originalPrice) }),
-            ...(salePrice && { salePrice: parseInt(salePrice) }),
-            ...(image && { image: image.trim() }),
-            ...(description && { description: description.trim() }),
-            updatedAt: new Date().toISOString()
-        };
-        
-        database.products[productIndex] = updatedProduct;
-        
-        // FIX: Đảm bảo lưu database ngay lập tức
-        const saveResult = writeDatabase(database);
-        
         console.log('✅ Product updated:', updatedProduct.name);
-        console.log('💾 Save result:', saveResult ? 'success' : 'failed');
         
         res.json(updatedProduct);
     } catch (error) {
@@ -458,28 +456,20 @@ app.put('/api/products/:id', (req, res) => {
     }
 });
 
-app.delete('/api/products/:id', (req, res) => {
+app.delete('/api/products/:id', async (req, res) => {
     try {
-        const productId = parseInt(req.params.id);
-        const initialLength = database.products.length;
+        const productId = req.params.id;
+        const deletedProduct = await Product.findByIdAndDelete(productId);
         
-        const productToDelete = database.products.find(p => p.id === productId);
-        
-        database.products = database.products.filter(p => p.id !== productId);
-        
-        if (database.products.length === initialLength) {
+        if (!deletedProduct) {
             return res.status(404).json({ error: 'Không tìm thấy sản phẩm' });
         }
         
-        // FIX: Đảm bảo lưu database ngay lập tức
-        const saveResult = writeDatabase(database);
-        
-        console.log('✅ Product deleted:', productToDelete?.name);
-        console.log('💾 Save result:', saveResult ? 'success' : 'failed');
+        console.log('✅ Product deleted:', deletedProduct.name);
         
         res.json({ 
             message: 'Đã xóa sản phẩm thành công',
-            deletedProduct: productToDelete
+            deletedProduct: deletedProduct
         });
     } catch (error) {
         console.error('Error deleting product:', error);
@@ -487,10 +477,11 @@ app.delete('/api/products/:id', (req, res) => {
     }
 });
 
-// Messages API - ĐÃ FIX: Đảm bảo lưu database
-app.get('/api/messages', (req, res) => {
+// Messages API
+app.get('/api/messages', async (req, res) => {
     try {
-        res.json(database.messages);
+        const messages = await Message.find().sort({ timestamp: -1 });
+        res.json(messages);
     } catch (error) {
         console.error('Error getting messages:', error);
         res.status(500).json({ error: 'Lỗi server khi lấy tin nhắn' });
@@ -505,23 +496,16 @@ app.post('/api/messages', async (req, res) => {
             return res.status(400).json({ error: 'Nội dung tin nhắn không được để trống' });
         }
         
-        const newMessage = {
-            id: Date.now(),
+        const newMessage = new Message({
             text: text.trim(),
             product: product || null,
-            timestamp: new Date().toISOString(),
-            read: false,
             isAutoResponse: isAutoResponse || false,
             isAdminReply: isAdminReply || false,
             originalMessageId: originalMessageId || null,
-            customerInfo: customerInfo || null,
-            replies: []
-        };
+            customerInfo: customerInfo || null
+        });
         
-        database.messages.push(newMessage);
-        
-        // FIX: Đảm bảo lưu database ngay lập tức
-        writeDatabase(database);
+        await newMessage.save();
         
         console.log('💬 New message received from:', customerInfo?.name || 'Unknown');
         
@@ -533,17 +517,18 @@ app.post('/api/messages', async (req, res) => {
 });
 
 // Mark message as read
-app.put('/api/messages/:id/read', (req, res) => {
+app.put('/api/messages/:id/read', async (req, res) => {
     try {
-        const messageId = parseInt(req.params.id);
-        const message = database.messages.find(m => m.id === messageId);
+        const messageId = req.params.id;
+        const message = await Message.findByIdAndUpdate(
+            messageId,
+            { read: true },
+            { new: true }
+        );
         
         if (!message) {
             return res.status(404).json({ error: 'Không tìm thấy tin nhắn' });
         }
-        
-        message.read = true;
-        writeDatabase(database);
         
         res.json(message);
     } catch (error) {
@@ -553,26 +538,23 @@ app.put('/api/messages/:id/read', (req, res) => {
 });
 
 // Reply to message
-app.post('/api/messages/:id/reply', (req, res) => {
+app.post('/api/messages/:id/reply', async (req, res) => {
     try {
-        const messageId = parseInt(req.params.id);
+        const messageId = req.params.id;
         const { text, adminName } = req.body;
         
         if (!text || text.trim() === '') {
             return res.status(400).json({ error: 'Nội dung phản hồi không được để trống' });
         }
         
-        const parentMessage = database.messages.find(m => m.id === messageId);
+        const parentMessage = await Message.findById(messageId);
         
         if (!parentMessage) {
             return res.status(404).json({ error: 'Không tìm thấy tin nhắn' });
         }
         
         const replyMessage = {
-            id: Date.now(),
             text: text.trim(),
-            timestamp: new Date().toISOString(),
-            isAdminReply: true,
             adminName: adminName || 'Admin'
         };
         
@@ -583,7 +565,7 @@ app.post('/api/messages/:id/reply', (req, res) => {
         parentMessage.replies.push(replyMessage);
         parentMessage.read = true;
         
-        writeDatabase(database);
+        await parentMessage.save();
         
         console.log('📤 Admin replied to message:', messageId);
         
@@ -598,29 +580,25 @@ app.post('/api/messages/:id/reply', (req, res) => {
 });
 
 // Mark all messages as read for a customer
-app.put('/api/messages/customer/:phone/read-all', (req, res) => {
+app.put('/api/messages/customer/:phone/read-all', async (req, res) => {
     try {
         const customerPhone = req.params.phone;
-        let updatedCount = 0;
         
-        database.messages.forEach(message => {
-            if (message.customerInfo && 
-                message.customerInfo.phone === customerPhone && 
-                !message.read && 
-                !message.isAdminReply) {
-                message.read = true;
-                updatedCount++;
-            }
-        });
+        const result = await Message.updateMany(
+            { 
+                'customerInfo.phone': customerPhone,
+                read: false,
+                isAdminReply: false
+            },
+            { read: true }
+        );
         
-        writeDatabase(database);
-        
-        console.log(`✅ Marked ${updatedCount} messages as read for customer: ${customerPhone}`);
+        console.log(`✅ Marked ${result.modifiedCount} messages as read for customer: ${customerPhone}`);
         
         res.json({
             success: true,
-            message: `Đã đánh dấu ${updatedCount} tin nhắn là đã đọc`,
-            updatedCount
+            message: `Đã đánh dấu ${result.modifiedCount} tin nhắn là đã đọc`,
+            updatedCount: result.modifiedCount
         });
     } catch (error) {
         console.error('Error marking all messages as read:', error);
@@ -628,17 +606,18 @@ app.put('/api/messages/customer/:phone/read-all', (req, res) => {
     }
 });
 
-// Orders API - ĐÃ FIX: Đảm bảo lưu database
-app.get('/api/orders', (req, res) => {
+// Orders API
+app.get('/api/orders', async (req, res) => {
     try {
-        res.json(database.orders);
+        const orders = await Order.find().sort({ createdAt: -1 });
+        res.json(orders);
     } catch (error) {
         console.error('Error getting orders:', error);
         res.status(500).json({ error: 'Lỗi server khi lấy đơn hàng' });
     }
 });
 
-app.post('/api/orders', (req, res) => {
+app.post('/api/orders', async (req, res) => {
     try {
         const { customerName, customerPhone, customerAddress, products, totalAmount, paymentScreenshot } = req.body;
         
@@ -648,27 +627,19 @@ app.post('/api/orders', (req, res) => {
             });
         }
         
-        const newOrder = {
-            id: Date.now(),
+        const newOrder = new Order({
             customerName: customerName.trim(),
             customerPhone: customerPhone.trim(),
             customerAddress: customerAddress.trim(),
             products: Array.isArray(products) ? products : [],
             totalAmount: parseInt(totalAmount),
-            status: 'pending',
-            paymentMethod: 'bank_transfer',
-            paymentScreenshot: paymentScreenshot || '',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        };
+            paymentScreenshot: paymentScreenshot || ''
+        });
         
-        database.orders.push(newOrder);
-        
-        // FIX: Đảm bảo lưu database ngay lập tức
-        writeDatabase(database);
+        await newOrder.save();
         
         // Update statistics
-        updateOrderStatistics();
+        await updateOrderStatistics();
         
         console.log('🛒 New order created:', `${customerName} - ${formatPrice(totalAmount)}`);
         
@@ -679,34 +650,35 @@ app.post('/api/orders', (req, res) => {
     }
 });
 
-app.put('/api/orders/:id/status', (req, res) => {
+app.put('/api/orders/:id/status', async (req, res) => {
     try {
-        const orderId = parseInt(req.params.id);
+        const orderId = req.params.id;
         const { status } = req.body;
-        
-        const orderIndex = database.orders.findIndex(o => o.id === orderId);
-        
-        if (orderIndex === -1) {
-            return res.status(404).json({ error: 'Không tìm thấy đơn hàng' });
-        }
         
         const validStatuses = ['pending', 'completed', 'cancelled'];
         if (!validStatuses.includes(status)) {
             return res.status(400).json({ error: 'Trạng thái không hợp lệ' });
         }
         
-        const oldStatus = database.orders[orderIndex].status;
-        database.orders[orderIndex].status = status;
-        database.orders[orderIndex].updatedAt = new Date().toISOString();
+        const updatedOrder = await Order.findByIdAndUpdate(
+            orderId,
+            { 
+                status: status,
+                updatedAt: new Date()
+            },
+            { new: true }
+        );
         
-        writeDatabase(database);
+        if (!updatedOrder) {
+            return res.status(404).json({ error: 'Không tìm thấy đơn hàng' });
+        }
         
         // Update statistics
-        updateOrderStatistics();
+        await updateOrderStatistics();
         
-        console.log(`✅ Order ${orderId} status changed: ${oldStatus} → ${status}`);
+        console.log(`✅ Order ${orderId} status changed to: ${status}`);
         
-        res.json(database.orders[orderIndex]);
+        res.json(updatedOrder);
     } catch (error) {
         console.error('Error updating order status:', error);
         res.status(500).json({ error: 'Lỗi server khi cập nhật trạng thái đơn hàng' });
@@ -714,17 +686,17 @@ app.put('/api/orders/:id/status', (req, res) => {
 });
 
 // Get order statistics
-app.get('/api/orders/statistics', (req, res) => {
+app.get('/api/orders/statistics', async (req, res) => {
     try {
-        const totalOrders = database.orders.length;
-        const pendingOrders = database.orders.filter(o => o.status === 'pending').length;
-        const completedOrders = database.orders.filter(o => o.status === 'completed').length;
-        const cancelledOrders = database.orders.filter(o => o.status === 'cancelled').length;
-        const totalRevenue = database.orders
-            .filter(o => o.status === 'completed')
-            .reduce((sum, order) => sum + order.totalAmount, 0);
+        const totalOrders = await Order.countDocuments();
+        const pendingOrders = await Order.countDocuments({ status: 'pending' });
+        const completedOrders = await Order.countDocuments({ status: 'completed' });
+        const cancelledOrders = await Order.countDocuments({ status: 'cancelled' });
         
-        const uniqueCustomers = new Set(database.orders.map(o => o.customerPhone)).size;
+        const completedOrdersData = await Order.find({ status: 'completed' });
+        const totalRevenue = completedOrdersData.reduce((sum, order) => sum + order.totalAmount, 0);
+        
+        const uniqueCustomers = await Order.distinct('customerPhone');
         
         res.json({
             totalOrders,
@@ -732,7 +704,7 @@ app.get('/api/orders/statistics', (req, res) => {
             completedOrders,
             cancelledOrders,
             totalRevenue,
-            uniqueCustomers,
+            uniqueCustomers: uniqueCustomers.length,
             averageOrderValue: completedOrders > 0 ? Math.round(totalRevenue / completedOrders) : 0
         });
     } catch (error) {
@@ -742,7 +714,7 @@ app.get('/api/orders/statistics', (req, res) => {
 });
 
 // Contact form
-app.post('/api/contact', (req, res) => {
+app.post('/api/contact', async (req, res) => {
     try {
         const { name, email, message, phone } = req.body;
         
@@ -753,21 +725,17 @@ app.post('/api/contact', (req, res) => {
             });
         }
         
-        const contactMessage = {
-            id: Date.now(),
+        const contactMessage = new Message({
             text: `Liên hệ từ: ${name} (${email}${phone ? ` - ${phone}` : ''}) - ${message}`,
-            timestamp: new Date().toISOString(),
-            read: false,
             type: 'contact_form',
             customerInfo: { 
                 name: name.trim(), 
                 email: email.trim(), 
                 phone: phone ? phone.trim() : '' 
             }
-        };
+        });
         
-        database.messages.push(contactMessage);
-        writeDatabase(database);
+        await contactMessage.save();
         
         console.log('📧 Contact form submission:', { name, email, phone });
         
@@ -786,23 +754,33 @@ app.post('/api/contact', (req, res) => {
 });
 
 // Settings API
-app.get('/api/settings', (req, res) => {
+app.get('/api/settings', async (req, res) => {
     try {
-        res.json(database.settings);
+        let settings = await Settings.findOne();
+        if (!settings) {
+            settings = await Settings.create({});
+        }
+        res.json(settings);
     } catch (error) {
         console.error('Error getting settings:', error);
         res.status(500).json({ error: 'Lỗi server khi lấy cài đặt' });
     }
 });
 
-app.put('/api/settings', (req, res) => {
+app.put('/api/settings', async (req, res) => {
     try {
-        database.settings = { ...database.settings, ...req.body };
-        writeDatabase(database);
+        let settings = await Settings.findOne();
+        if (!settings) {
+            settings = new Settings(req.body);
+        } else {
+            settings = Object.assign(settings, req.body);
+        }
+        
+        await settings.save();
         
         console.log('⚙️ Settings updated');
         
-        res.json(database.settings);
+        res.json(settings);
     } catch (error) {
         console.error('Error updating settings:', error);
         res.status(500).json({ error: 'Lỗi server khi cập nhật cài đặt' });
@@ -810,88 +788,86 @@ app.put('/api/settings', (req, res) => {
 });
 
 // Statistics API
-app.get('/api/statistics', (req, res) => {
+app.get('/api/statistics', async (req, res) => {
     try {
-        const statistics = {
-            ...database.statistics,
-            totalProducts: database.products.length,
-            totalMessages: database.messages.length,
-            unreadMessages: database.messages.filter(m => !m.read).length,
-            totalVisitors: database.visitors.total,
-            todayVisitors: database.visitors.today,
-            totalOrders: database.orders.length,
-            completedOrders: database.orders.filter(o => o.status === 'completed').length,
-            totalRevenue: database.orders
-                .filter(o => o.status === 'completed')
-                .reduce((sum, order) => sum + order.totalAmount, 0)
+        const productCount = await Product.countDocuments();
+        const messageCount = await Message.countDocuments();
+        const unreadMessages = await Message.countDocuments({ read: false });
+        const visitorData = await Visitor.findOne();
+        const orderCount = await Order.countDocuments();
+        const completedOrders = await Order.countDocuments({ status: 'completed' });
+        
+        const completedOrdersData = await Order.find({ status: 'completed' });
+        const totalRevenue = completedOrdersData.reduce((sum, order) => sum + order.totalAmount, 0);
+        
+        let statistics = await Statistics.findOne();
+        if (!statistics) {
+            statistics = await Statistics.create({});
+        }
+        
+        const result = {
+            ...statistics.toObject(),
+            totalProducts: productCount,
+            totalMessages: messageCount,
+            unreadMessages: unreadMessages,
+            totalVisitors: visitorData?.total || 0,
+            todayVisitors: visitorData?.today || 0,
+            totalOrders: orderCount,
+            completedOrders: completedOrders,
+            totalRevenue: totalRevenue
         };
         
-        res.json(statistics);
+        res.json(result);
     } catch (error) {
         console.error('Error getting statistics:', error);
         res.status(500).json({ error: 'Lỗi server khi lấy thống kê' });
     }
 });
 
-// Dashboard API - Tổng hợp tất cả thông tin cho dashboard
-app.get('/api/dashboard', (req, res) => {
+// Dashboard API
+app.get('/api/dashboard', async (req, res) => {
     try {
-        // Order statistics
-        const totalOrders = database.orders.length;
-        const pendingOrders = database.orders.filter(o => o.status === 'pending').length;
-        const completedOrders = database.orders.filter(o => o.status === 'completed').length;
-        const totalRevenue = database.orders
-            .filter(o => o.status === 'completed')
-            .reduce((sum, order) => sum + order.totalAmount, 0);
+        const totalOrders = await Order.countDocuments();
+        const pendingOrders = await Order.countDocuments({ status: 'pending' });
+        const completedOrders = await Order.countDocuments({ status: 'completed' });
         
-        // Customer statistics
-        const uniqueCustomers = new Set(database.orders.map(o => o.customerPhone)).size;
+        const completedOrdersData = await Order.find({ status: 'completed' });
+        const totalRevenue = completedOrdersData.reduce((sum, order) => sum + order.totalAmount, 0);
         
-        // Message statistics
-        const unreadMessages = database.messages.filter(m => !m.read && !m.isAdminReply).length;
+        const uniqueCustomers = await Order.distinct('customerPhone');
+        const unreadMessages = await Message.countDocuments({ read: false, isAdminReply: false });
+        const productCount = await Product.countDocuments();
+        const visitorData = await Visitor.findOne();
         
         // Recent orders (last 5)
-        const recentOrders = database.orders
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-            .slice(0, 5)
-            .map(order => ({
-                id: order.id,
-                customerName: order.customerName,
-                customerPhone: order.customerPhone,
-                totalAmount: order.totalAmount,
-                status: order.status,
-                createdAt: order.createdAt
-            }));
+        const recentOrders = await Order.find()
+            .sort({ createdAt: -1 })
+            .limit(5)
+            .select('id customerName customerPhone totalAmount status createdAt');
         
         // Recent messages (last 5)
-        const recentMessages = database.messages
-            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-            .slice(0, 5)
-            .map(message => ({
-                id: message.id,
-                customerName: message.customerInfo ? message.customerInfo.name : 'Khách hàng',
-                text: message.text.length > 50 ? message.text.substring(0, 50) + '...' : message.text,
-                timestamp: message.timestamp,
-                read: message.read
-            }));
+        const recentMessages = await Message.find()
+            .sort({ timestamp: -1 })
+            .limit(5)
+            .select('id customerInfo text timestamp read');
         
         // Popular products (based on orders)
+        const completedOrdersForProducts = await Order.find({ status: 'completed' });
         const productSales = {};
-        database.orders.forEach(order => {
-            if (order.status === 'completed') {
-                order.products.forEach(product => {
-                    const productId = product.id || product.name;
-                    if (!productSales[productId]) {
-                        productSales[productId] = {
-                            name: product.name,
-                            quantity: 0,
-                            revenue: 0
-                        };
-                    }
-                    productSales[productId].quantity += product.quantity || 1;
-                    productSales[productId].revenue += (product.price || 0) * (product.quantity || 1);
-                });
-            }
+        
+        completedOrdersForProducts.forEach(order => {
+            order.products.forEach(product => {
+                const productId = product.id || product.name;
+                if (!productSales[productId]) {
+                    productSales[productId] = {
+                        name: product.name,
+                        quantity: 0,
+                        revenue: 0
+                    };
+                }
+                productSales[productId].quantity += product.quantity || 1;
+                productSales[productId].revenue += (product.price || 0) * (product.quantity || 1);
+            });
         });
         
         const popularProducts = Object.values(productSales)
@@ -904,10 +880,10 @@ app.get('/api/dashboard', (req, res) => {
                 pendingOrders,
                 completedOrders,
                 totalRevenue,
-                uniqueCustomers,
+                uniqueCustomers: uniqueCustomers.length,
                 unreadMessages,
-                totalProducts: database.products.length,
-                totalVisitors: database.visitors.total
+                totalProducts: productCount,
+                totalVisitors: visitorData?.total || 0
             },
             recentOrders,
             recentMessages,
@@ -927,34 +903,51 @@ function formatPrice(price) {
 }
 
 // Update order statistics
-function updateOrderStatistics() {
-    const completedOrders = database.orders.filter(o => o.status === 'completed');
-    
-    database.statistics.totalSales = completedOrders.length;
-    database.statistics.totalRevenue = completedOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-    
-    // Update popular products
-    const productSales = {};
-    completedOrders.forEach(order => {
-        order.products.forEach(product => {
-            const productId = product.id || product.name;
-            if (!productSales[productId]) {
-                productSales[productId] = {
-                    name: product.name,
-                    quantity: 0,
-                    revenue: 0
-                };
-            }
-            productSales[productId].quantity += product.quantity || 1;
-            productSales[productId].revenue += (product.price || 0) * (product.quantity || 1);
+async function updateOrderStatistics() {
+    try {
+        const completedOrders = await Order.find({ status: 'completed' });
+        
+        const totalSales = completedOrders.length;
+        const totalRevenue = completedOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+        
+        // Update popular products
+        const productSales = {};
+        completedOrders.forEach(order => {
+            order.products.forEach(product => {
+                const productId = product.id || product.name;
+                if (!productSales[productId]) {
+                    productSales[productId] = {
+                        name: product.name,
+                        quantity: 0,
+                        revenue: 0
+                    };
+                }
+                productSales[productId].quantity += product.quantity || 1;
+                productSales[productId].revenue += (product.price || 0) * (product.quantity || 1);
+            });
         });
-    });
-    
-    database.statistics.popularProducts = Object.values(productSales)
-        .sort((a, b) => b.quantity - a.quantity)
-        .slice(0, 10);
-    
-    writeDatabase(database);
+        
+        const popularProducts = Object.values(productSales)
+            .sort((a, b) => b.quantity - a.quantity)
+            .slice(0, 10);
+        
+        let statistics = await Statistics.findOne();
+        if (!statistics) {
+            statistics = new Statistics({
+                totalSales,
+                totalRevenue,
+                popularProducts
+            });
+        } else {
+            statistics.totalSales = totalSales;
+            statistics.totalRevenue = totalRevenue;
+            statistics.popularProducts = popularProducts;
+        }
+        
+        await statistics.save();
+    } catch (error) {
+        console.error('Error updating statistics:', error);
+    }
 }
 
 // ==================== ERROR HANDLING ====================
@@ -963,43 +956,18 @@ function updateOrderStatistics() {
 app.use('/api/*', (req, res) => {
     res.status(404).json({
         success: false,
-        message: 'API endpoint không tồn tại',
-        path: req.originalUrl,
-        availableEndpoints: [
-            'GET /api/info',
-            'GET /api/products',
-            'POST /api/products',
-            'PUT /api/products/:id',
-            'DELETE /api/products/:id',
-            'GET /api/messages',
-            'POST /api/messages',
-            'PUT /api/messages/:id/read',
-            'POST /api/messages/:id/reply',
-            'PUT /api/messages/customer/:phone/read-all',
-            'GET /api/orders',
-            'POST /api/orders',
-            'PUT /api/orders/:id/status',
-            'GET /api/orders/statistics',
-            'POST /api/contact',
-            'GET /api/settings',
-            'PUT /api/settings',
-            'GET /api/statistics',
-            'GET /api/dashboard',
-            'POST /api/visitors',
-            'GET /api/debug/database'
-        ]
+        message: 'API endpoint không tồn tại'
     });
 });
 
-// SPA fallback - serve index.html for all other routes
+// SPA fallback
 app.use('*', (req, res) => {
     if (req.accepts('html')) {
         res.sendFile(path.join(__dirname, 'public', 'index.html'));
     } else if (req.accepts('json')) {
         res.status(404).json({
             success: false,
-            message: 'Route không tồn tại',
-            path: req.originalUrl
+            message: 'Route không tồn tại'
         });
     } else {
         res.status(404).type('txt').send('404 Not Found');
@@ -1018,66 +986,48 @@ app.use((error, req, res, next) => {
     });
 });
 
-// ==================== SERVER STARTUP ====================
+// ==================== DATABASE CONNECTION & SERVER STARTUP ====================
 
-const server = http.createServer(app);
-
-// Graceful shutdown
-function gracefulShutdown(signal) {
-    console.log(`\n🛑 Received ${signal}, shutting down gracefully...`);
-    
-    // Save database before shutdown
-    console.log('💾 Saving database before shutdown...');
-    writeDatabase(database);
-    
-    server.close((err) => {
-        if (err) {
-            console.error('❌ Error during shutdown:', err);
-            process.exit(1);
-        }
+async function startServer() {
+    try {
+        console.log('🔗 Connecting to MongoDB...');
+        await mongoose.connect(MONGODB_URI, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        });
         
-        console.log('✅ HTTP server closed');
-        console.log('💾 Database saved');
-        console.log('🔄 Process exited');
-        process.exit(0);
-    });
-
-    // Force close after 8 seconds
-    setTimeout(() => {
-        console.log('⚠️ Forcing shutdown after timeout');
+        console.log('✅ Connected to MongoDB successfully');
+        
+        // Khởi tạo database
+        await initializeDatabase();
+        
+        const server = http.createServer(app);
+        
+        server.listen(PORT, '0.0.0.0', () => {
+            console.log('\n' + '='.repeat(70));
+            console.log('🚀 TRÚC ĐÀO COSMETICS SERVER STARTED SUCCESSFULLY!');
+            console.log('='.repeat(70));
+            console.log('📍 Port:', PORT);
+            console.log('🌍 Environment:', isProduction ? 'production' : 'development');
+            console.log('💾 Database: MongoDB Atlas');
+            console.log('⏰ Server started at:', new Date().toISOString());
+            console.log('='.repeat(70));
+        });
+        
+        // Graceful shutdown
+        process.on('SIGINT', async () => {
+            console.log('\n🛑 Shutting down gracefully...');
+            await mongoose.connection.close();
+            console.log('✅ MongoDB connection closed');
+            process.exit(0);
+        });
+        
+    } catch (error) {
+        console.error('❌ Failed to start server:', error);
         process.exit(1);
-    }, 8000);
+    }
 }
 
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-
-// Start server
-server.listen(PORT, '0.0.0.0', () => {
-    console.log('\n' + '='.repeat(70));
-    console.log('🚀 TRÚC ĐÀO COSMETICS SERVER STARTED SUCCESSFULLY!');
-    console.log('='.repeat(70));
-    console.log('📍 Access URLs:');
-    console.log(`   📱 Local: http://localhost:${PORT}`);
-    console.log(`   🌐 Network: http://[YOUR_IP]:${PORT}`);
-    console.log(`   🌍 Production: https://trucdaobodycare.onrender.com`);
-    console.log('\n💾 Database Status:');
-    console.log(`   📁 Database File: ${DB_FILE}`);
-    console.log(`   📦 Products: ${database.products.length}`);
-    console.log(`   💬 Messages: ${database.messages.length}`);
-    console.log(`   📋 Orders: ${database.orders.length}`);
-    console.log(`   👥 Total Visitors: ${database.visitors.total}`);
-    console.log(`   📊 Today Visitors: ${database.visitors.today}`);
-    console.log('\n🛡️ Security Features:');
-    console.log('   ✅ Helmet.js security headers');
-    console.log('   ✅ Rate limiting enabled');
-    console.log('   ✅ CORS configured');
-    console.log('   ✅ Gzip compression');
-    console.log('   ✅ Request logging');
-    console.log('\n⏰ Server started at:', new Date().toISOString());
-    console.log('💻 Environment:', isProduction ? 'production' : 'development');
-    console.log('💾 Memory usage:', `${(process.memoryUsage().rss / 1024 / 1024).toFixed(2)} MB`);
-    console.log('='.repeat(70));
-});
+startServer();
 
 module.exports = app;
