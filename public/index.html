@@ -1841,6 +1841,7 @@
             <li><a href="#"><i class="fas fa-tag"></i> Khuyến mãi</a></li>
             <li><a href="#"><i class="fas fa-crown"></i> Thương hiệu</a></li>
             <li><a href="#"><i class="fas fa-phone"></i> Liên hệ</a></li>
+            <li id="admin-nav-mobile" style="display: none;"><a href="#"><i class="fas fa-cog"></i> Admin Panel</a></li>
         </ul>
     </div>
     
@@ -1888,6 +1889,7 @@
                     <li><a href="#"><i class="fas fa-tag"></i> Khuyến mãi</a></li>
                     <li><a href="#"><i class="fas fa-crown"></i> Thương hiệu</a></li>
                     <li><a href="#"><i class="fas fa-phone"></i> Liên hệ</a></li>
+                    <li id="admin-nav-desktop" style="display: none;"><a href="#" id="admin-panel-link"><i class="fas fa-cog"></i> Admin Panel</a></li>
                 </ul>
             </div>
         </nav>
@@ -2178,8 +2180,6 @@
     </div>
 
     <!-- Admin Panel -->
-    <button class="admin-toggle" id="admin-toggle"><i class="fas fa-cog"></i> Admin Panel</button>
-    
     <div class="admin-panel" id="admin-panel">
         <div class="admin-sidebar">
             <div class="admin-logo">
@@ -3127,7 +3127,7 @@
                         document.getElementById('customer-phone').value = '';
                         document.getElementById('customer-address').value = '';
                         document.getElementById('payment-screenshot').value = '';
-                        document.getElementById('payment-preview').style.display = 'none';
+                        document.getElementById('payment-preview').style.display = '';
                         
                         // Reload orders
                         await loadOrdersFromAPI();
@@ -3274,9 +3274,12 @@
             
             if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
                 document.getElementById('login-modal').style.display = 'none';
-                document.getElementById('admin-toggle').classList.add('active');
                 localStorage.setItem('adminLoggedIn', 'true');
                 showNotification('Đăng nhập admin thành công!', 'success');
+                
+                // Show admin panel in navigation
+                document.getElementById('admin-nav-desktop').style.display = 'block';
+                document.getElementById('admin-nav-mobile').style.display = 'block';
                 
                 // Clear form
                 document.getElementById('username').value = '';
@@ -3301,7 +3304,7 @@
         });
         
         // Admin Panel Functionality
-        const adminToggle = document.getElementById('admin-toggle');
+        const adminPanelLink = document.getElementById('admin-panel-link');
         const adminPanel = document.getElementById('admin-panel');
         const closeAdmin = document.getElementById('close-admin');
         const adminNavItems = document.querySelectorAll('.admin-nav-item');
@@ -3309,11 +3312,23 @@
         
         // Check if admin is already logged in
         if (localStorage.getItem('adminLoggedIn') === 'true') {
-            adminToggle.classList.add('active');
+            document.getElementById('admin-nav-desktop').style.display = 'block';
+            document.getElementById('admin-nav-mobile').style.display = 'block';
         }
         
-        adminToggle.addEventListener('click', () => {
+        adminPanelLink.addEventListener('click', (e) => {
+            e.preventDefault();
             adminPanel.classList.add('active');
+        });
+        
+        // Mobile admin panel link
+        document.getElementById('admin-nav-mobile').addEventListener('click', (e) => {
+            e.preventDefault();
+            adminPanel.classList.add('active');
+            // Close mobile nav
+            document.getElementById('mobile-nav').classList.remove('active');
+            document.getElementById('mobile-nav-overlay').classList.remove('active');
+            document.body.style.overflow = '';
         });
         
         closeAdmin.addEventListener('click', () => {
@@ -4144,7 +4159,8 @@
         document.getElementById('logout-admin').addEventListener('click', function() {
             if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
                 localStorage.removeItem('adminLoggedIn');
-                document.getElementById('admin-toggle').classList.remove('active');
+                document.getElementById('admin-nav-desktop').style.display = 'none';
+                document.getElementById('admin-nav-mobile').style.display = 'none';
                 adminPanel.classList.remove('active');
                 showNotification('Đã đăng xuất khỏi admin!', 'success');
             }
