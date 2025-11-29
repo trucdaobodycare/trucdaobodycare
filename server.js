@@ -383,7 +383,7 @@ app.post('/api/visitors', async (req, res) => {
     }
 });
 
-// Products API - FIXED: Xử lý cả ID số và ObjectId
+// Products API - FIXED COMPLETELY
 app.get('/api/products', async (req, res) => {
     try {
         const products = await Product.find().sort({ createdAt: -1 });
@@ -410,8 +410,11 @@ app.post('/api/products', async (req, res) => {
     try {
         const { name, category, originalPrice, salePrice, image, description } = req.body;
         
+        console.log('📦 Creating new product:', { name, category, originalPrice, salePrice });
+        
         if (!name || !category || !originalPrice || !salePrice || !image) {
             return res.status(400).json({
+                success: false,
                 error: 'Thiếu thông tin sản phẩm bắt buộc'
             });
         }
@@ -442,46 +445,55 @@ app.post('/api/products', async (req, res) => {
             updatedAt: newProduct.updatedAt
         };
         
-        res.status(201).json(responseProduct);
+        res.status(201).json({
+            success: true,
+            message: 'Tạo sản phẩm thành công',
+            product: responseProduct
+        });
     } catch (error) {
-        console.error('Error creating product:', error);
-        res.status(500).json({ error: 'Lỗi server khi tạo sản phẩm' });
+        console.error('❌ Error creating product:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Lỗi server khi tạo sản phẩm: ' + error.message 
+        });
     }
 });
 
+// FIXED: Cập nhật sản phẩm - Xử lý đúng ID từ frontend
 app.put('/api/products/:id', async (req, res) => {
     try {
         const productId = req.params.id;
         const { name, category, originalPrice, salePrice, image, description } = req.body;
         
-        console.log('🔄 Updating product:', { productId, name, category });
+        console.log('🔄 Updating product:', { 
+            productId, 
+            name, 
+            category, 
+            originalPrice, 
+            salePrice 
+        });
         
-        // FIX: Tìm sản phẩm bằng cả ID số và ObjectId
-        let product;
-        
-        // Thử tìm bằng ObjectId trước
-        if (mongoose.Types.ObjectId.isValid(productId)) {
-            product = await Product.findById(productId);
-        }
-        
-        // Nếu không tìm thấy bằng ObjectId, thử tìm bằng ID số (cho dữ liệu cũ)
-        if (!product) {
-            // Tìm sản phẩm có ID tương ứng trong description hoặc tạo query khác
-            product = await Product.findOne({ 
-                $or: [
-                    { _id: productId },
-                    { name: new RegExp(productId, 'i') }
-                ]
+        // FIX: Luôn sử dụng ObjectId để tìm kiếm
+        if (!mongoose.Types.ObjectId.isValid(productId)) {
+            console.log('❌ Invalid product ID format:', productId);
+            return res.status(400).json({ 
+                success: false,
+                error: 'ID sản phẩm không hợp lệ: ' + productId 
             });
         }
         
+        // Tìm sản phẩm bằng ObjectId
+        const product = await Product.findById(productId);
+        
         if (!product) {
-            console.log('❌ Product not found:', productId);
+            console.log('❌ Product not found with ID:', productId);
             return res.status(404).json({ 
                 success: false,
                 error: 'Không tìm thấy sản phẩm với ID: ' + productId 
             });
         }
+        
+        console.log('✅ Found product:', product.name);
         
         // Cập nhật thông tin sản phẩm
         const updateData = {
@@ -496,7 +508,7 @@ app.put('/api/products/:id', async (req, res) => {
         if (description !== undefined) updateData.description = description.trim();
         
         const updatedProduct = await Product.findByIdAndUpdate(
-            product._id,
+            productId,
             updateData,
             { new: true, runValidators: true }
         );
@@ -536,33 +548,23 @@ app.delete('/api/products/:id', async (req, res) => {
         
         console.log('🗑️ Deleting product:', productId);
         
-        // FIX: Tìm sản phẩm bằng cả ID số và ObjectId
-        let product;
-        
-        // Thử tìm bằng ObjectId trước
-        if (mongoose.Types.ObjectId.isValid(productId)) {
-            product = await Product.findById(productId);
-        }
-        
-        // Nếu không tìm thấy bằng ObjectId, thử tìm bằng ID số (cho dữ liệu cũ)
-        if (!product) {
-            product = await Product.findOne({ 
-                $or: [
-                    { _id: productId },
-                    { name: new RegExp(productId, 'i') }
-                ]
+        // FIX: Sử dụng ObjectId để xóa
+        if (!mongoose.Types.ObjectId.isValid(productId)) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'ID sản phẩm không hợp lệ' 
             });
         }
         
-        if (!product) {
+        const deletedProduct = await Product.findByIdAndDelete(productId);
+        
+        if (!deletedProduct) {
             console.log('❌ Product not found for deletion:', productId);
             return res.status(404).json({ 
                 success: false,
                 error: 'Không tìm thấy sản phẩm để xóa' 
             });
         }
-        
-        const deletedProduct = await Product.findByIdAndDelete(product._id);
         
         console.log('✅ Product deleted:', deletedProduct.name);
         
@@ -583,7 +585,7 @@ app.delete('/api/products/:id', async (req, res) => {
     }
 });
 
-// Messages API - FIXED: Sử dụng ObjectId
+// Messages API
 app.get('/api/messages', async (req, res) => {
     try {
         const messages = await Message.find().sort({ timestamp: -1 });
@@ -763,7 +765,7 @@ app.put('/api/messages/customer/:phone/read-all', async (req, res) => {
     }
 });
 
-// Orders API - FIXED: Sử dụng ObjectId
+// Orders API
 app.get('/api/orders', async (req, res) => {
     try {
         const orders = await Order.find().sort({ createdAt: -1 });
