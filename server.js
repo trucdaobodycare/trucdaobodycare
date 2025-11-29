@@ -248,7 +248,7 @@ app.use((req, res, next) => {
     res.header('X-XSS-Protection', '1; mode=block');
     res.header('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    res.header('Access-Control-Allow-Headers', 'Content-Type', 'Authorization', 'X-Requested-With');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     next();
 });
@@ -383,7 +383,7 @@ app.post('/api/visitors', async (req, res) => {
     }
 });
 
-// Products API - FIXED COMPLETELY
+// Products API - FIXED: Hỗ trợ cả ID số và ObjectId
 app.get('/api/products', async (req, res) => {
     try {
         const products = await Product.find().sort({ createdAt: -1 });
@@ -459,7 +459,7 @@ app.post('/api/products', async (req, res) => {
     }
 });
 
-// FIXED: Cập nhật sản phẩm - Xử lý đúng ID từ frontend
+// FIXED: Cập nhật sản phẩm - Hỗ trợ cả ID số và ObjectId
 app.put('/api/products/:id', async (req, res) => {
     try {
         const productId = req.params.id;
@@ -473,17 +473,38 @@ app.put('/api/products/:id', async (req, res) => {
             salePrice 
         });
         
-        // FIX: Luôn sử dụng ObjectId để tìm kiếm
-        if (!mongoose.Types.ObjectId.isValid(productId)) {
-            console.log('❌ Invalid product ID format:', productId);
-            return res.status(400).json({ 
-                success: false,
-                error: 'ID sản phẩm không hợp lệ: ' + productId 
-            });
+        let product;
+        
+        // THỬ 1: Tìm bằng ObjectId (cho sản phẩm mới)
+        if (mongoose.Types.ObjectId.isValid(productId)) {
+            product = await Product.findById(productId);
+            if (product) {
+                console.log('✅ Found product by ObjectId:', product.name);
+            }
         }
         
-        // Tìm sản phẩm bằng ObjectId
-        const product = await Product.findById(productId);
+        // THỬ 2: Nếu không tìm thấy, tìm bằng ID số (cho sản phẩm cũ)
+        if (!product) {
+            console.log('🔍 Trying to find product by numeric ID:', productId);
+            
+            // Lấy tất cả sản phẩm và tìm theo index
+            const allProducts = await Product.find().sort({ createdAt: 1 });
+            const productIndex = parseInt(productId) - 1; // Giả sử ID bắt đầu từ 1
+            
+            if (productIndex >= 0 && productIndex < allProducts.length) {
+                product = allProducts[productIndex];
+                console.log('✅ Found product by index:', product.name);
+            }
+        }
+        
+        // THỬ 3: Tìm bằng tên sản phẩm (fallback)
+        if (!product && name) {
+            console.log('🔍 Trying to find product by name:', name);
+            product = await Product.findOne({ name: new RegExp(name, 'i') });
+            if (product) {
+                console.log('✅ Found product by name:', product.name);
+            }
+        }
         
         if (!product) {
             console.log('❌ Product not found with ID:', productId);
@@ -508,7 +529,7 @@ app.put('/api/products/:id', async (req, res) => {
         if (description !== undefined) updateData.description = description.trim();
         
         const updatedProduct = await Product.findByIdAndUpdate(
-            productId,
+            product._id, // Sử dụng ObjectId thực tế
             updateData,
             { new: true, runValidators: true }
         );
@@ -548,23 +569,32 @@ app.delete('/api/products/:id', async (req, res) => {
         
         console.log('🗑️ Deleting product:', productId);
         
-        // FIX: Sử dụng ObjectId để xóa
-        if (!mongoose.Types.ObjectId.isValid(productId)) {
-            return res.status(400).json({ 
-                success: false,
-                error: 'ID sản phẩm không hợp lệ' 
-            });
+        let product;
+        
+        // Tìm sản phẩm bằng ObjectId hoặc ID số
+        if (mongoose.Types.ObjectId.isValid(productId)) {
+            product = await Product.findById(productId);
         }
         
-        const deletedProduct = await Product.findByIdAndDelete(productId);
+        if (!product) {
+            // Tìm bằng ID số
+            const allProducts = await Product.find().sort({ createdAt: 1 });
+            const productIndex = parseInt(productId) - 1;
+            
+            if (productIndex >= 0 && productIndex < allProducts.length) {
+                product = allProducts[productIndex];
+            }
+        }
         
-        if (!deletedProduct) {
+        if (!product) {
             console.log('❌ Product not found for deletion:', productId);
             return res.status(404).json({ 
                 success: false,
                 error: 'Không tìm thấy sản phẩm để xóa' 
             });
         }
+        
+        const deletedProduct = await Product.findByIdAndDelete(product._id);
         
         console.log('✅ Product deleted:', deletedProduct.name);
         
@@ -581,6 +611,73 @@ app.delete('/api/products/:id', async (req, res) => {
         res.status(500).json({ 
             success: false,
             error: 'Lỗi server khi xóa sản phẩm: ' + error.message 
+        });
+    }
+});
+
+// Reset products endpoint - ĐỂ FIX LỖI ID
+app.delete('/api/products-reset', async (req, res) => {
+    try {
+        console.log('🔄 Resetting all products...');
+        
+        // Xóa tất cả sản phẩm
+        const deleteResult = await Product.deleteMany({});
+        console.log(`✅ Deleted ${deleteResult.deletedCount} products`);
+        
+        // Tạo lại sản phẩm mặc định với ObjectId
+        await Product.insertMany([
+            {
+                name: "Son lì cao cấp Luxury Matte",
+                category: "Son môi",
+                originalPrice: 399000,
+                salePrice: 299000,
+                image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
+                description: "Son lì cao cấp với công thức mềm mịn, lâu trôi"
+            },
+            {
+                name: "Bảng phấn mắt 12 màu Pro Palette",
+                category: "Trang điểm mắt",
+                originalPrice: 600000,
+                salePrice: 450000,
+                image: "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
+                description: "Bảng phấn mắt đa dạng màu sắc, dễ phối màu"
+            },
+            {
+                name: "Kem nền che khuyết điểm Full Cover",
+                category: "Trang điểm mặt",
+                originalPrice: 650000,
+                salePrice: 520000,
+                image: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
+                description: "Kem nền che phủ hoàn hảo, không gây bít tắc lỗ chân lông"
+            },
+            {
+                name: "Serum dưỡng ẩm chống lão hóa",
+                category: "Chăm sóc da",
+                originalPrice: 850000,
+                salePrice: 680000,
+                image: "https://images.unsplash.com/photo-1594035910387-fea47794261f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
+                description: "Serum dưỡng ẩm chuyên sâu, cải thiện nếp nhăn"
+            }
+        ]);
+        
+        console.log('✅ Created new products with ObjectId');
+        
+        const newProducts = await Product.find();
+        const productsWithIds = newProducts.map(product => ({
+            id: product._id.toString(),
+            name: product.name
+        }));
+        
+        res.json({
+            success: true,
+            message: 'Đã xóa và tạo lại tất cả sản phẩm với ObjectId mới',
+            products: productsWithIds
+        });
+    } catch (error) {
+        console.error('❌ Error resetting products:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Lỗi khi reset sản phẩm: ' + error.message 
         });
     }
 });
