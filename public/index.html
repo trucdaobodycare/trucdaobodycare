@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Trúc Đào Cosmetics - Mỹ phẩm cao cấp</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -45,6 +45,9 @@
             color: var(--gray-800);
             line-height: 1.6;
             overflow-x: hidden;
+            /* Ngăn chặn zoom trên mobile */
+            touch-action: pan-y;
+            -webkit-text-size-adjust: 100%;
         }
         
         a {
@@ -181,6 +184,8 @@
             background-color: var(--gray-100);
             transition: var(--transition);
             font-size: 0.9rem;
+            /* Ngăn chặn zoom trên iOS */
+            font-size: 16px;
         }
         
         .search-bar input:focus {
@@ -801,6 +806,8 @@
             border-radius: 30px;
             outline: none;
             transition: var(--transition);
+            /* Ngăn chặn zoom trên iOS */
+            font-size: 16px;
         }
         
         .chat-footer input:focus {
@@ -889,6 +896,8 @@
             border-radius: var(--border-radius);
             outline: none;
             transition: var(--transition);
+            /* Ngăn chặn zoom trên iOS */
+            font-size: 16px;
         }
         
         .form-group input:focus {
@@ -960,8 +969,8 @@
         .admin-panel {
             position: fixed;
             top: 0;
-            left: -400px;
-            width: 400px;
+            left: -600px;
+            width: 600px;
             height: 100vh;
             background-color: white;
             box-shadow: 5px 0 15px rgba(0, 0, 0, 0.1);
@@ -969,6 +978,9 @@
             z-index: 1500;
             display: flex;
             overflow: hidden;
+            resize: horizontal;
+            min-width: 500px;
+            max-width: 90vw;
         }
         
         .admin-panel.active {
@@ -1353,6 +1365,8 @@
             outline: none;
             transition: var(--transition);
             font-family: inherit;
+            /* Ngăn chặn zoom trên iOS */
+            font-size: 16px;
         }
         
         .admin-form-group input:focus, .admin-form-group textarea:focus, .admin-form-group select:focus {
@@ -1652,11 +1666,96 @@
             display: block;
         }
         
+        /* Admin Customization Panel */
+        .admin-customization {
+            position: fixed;
+            top: 50%;
+            right: 0;
+            transform: translateY(-50%);
+            background: white;
+            border-radius: 10px 0 0 10px;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            z-index: 1600;
+            padding: 15px;
+            width: 300px;
+            transition: var(--transition);
+            right: -300px;
+        }
+        
+        .admin-customization.active {
+            right: 0;
+        }
+        
+        .customization-toggle {
+            position: absolute;
+            left: -40px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--primary-color);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px 0 0 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+        }
+        
+        .customization-content h3 {
+            margin-bottom: 15px;
+            color: var(--gray-800);
+            font-size: 1.2rem;
+        }
+        
+        .customization-group {
+            margin-bottom: 15px;
+        }
+        
+        .customization-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--gray-700);
+        }
+        
+        .customization-group input, .customization-group select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--border-radius);
+            outline: none;
+        }
+        
+        .customization-bg-preview {
+            width: 100%;
+            height: 100px;
+            border-radius: var(--border-radius);
+            margin-top: 10px;
+            background-size: cover;
+            background-position: center;
+            border: 1px solid var(--gray-300);
+        }
+        
+        /* Resize Handle */
+        .resize-handle {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 10px;
+            height: 100%;
+            cursor: col-resize;
+            background: transparent;
+            z-index: 10;
+        }
+        
         /* Responsive */
         @media (max-width: 1200px) {
             .admin-panel {
                 width: 100%;
                 left: -100%;
+                resize: none;
             }
             
             .admin-panel.active {
@@ -1774,6 +1873,11 @@
             .table-container {
                 overflow-x: auto;
             }
+            
+            .admin-customization {
+                width: 280px;
+                right: -280px;
+            }
         }
         
         @media (max-width: 576px) {
@@ -1816,6 +1920,16 @@
             .bank-info-label {
                 width: 100%;
                 margin-bottom: 5px;
+            }
+            
+            .admin-customization {
+                width: 100%;
+                right: -100%;
+                border-radius: 0;
+            }
+            
+            .admin-customization.active {
+                right: 0;
             }
         }
     </style>
@@ -2535,6 +2649,49 @@
                 </div>
             </div>
         </div>
+        <div class="resize-handle"></div>
+    </div>
+
+    <!-- Admin Customization Panel -->
+    <div class="admin-customization" id="admin-customization">
+        <div class="customization-toggle" id="customization-toggle">
+            <i class="fas fa-palette"></i>
+        </div>
+        <div class="customization-content">
+            <h3>Tùy chỉnh Admin Panel</h3>
+            
+            <div class="customization-group">
+                <label for="custom-bg">Hình nền</label>
+                <input type="file" id="custom-bg" accept="image/*">
+                <div class="customization-bg-preview" id="bg-preview"></div>
+            </div>
+            
+            <div class="customization-group">
+                <label for="custom-title">Tiêu đề</label>
+                <input type="text" id="custom-title" value="Trúc Đào Admin Dashboard">
+            </div>
+            
+            <div class="customization-group">
+                <label for="custom-font-size">Kích thước chữ</label>
+                <select id="custom-font-size">
+                    <option value="small">Nhỏ</option>
+                    <option value="medium" selected>Trung bình</option>
+                    <option value="large">Lớn</option>
+                </select>
+            </div>
+            
+            <div class="customization-group">
+                <label for="custom-panel-size">Kích thước panel</label>
+                <select id="custom-panel-size">
+                    <option value="small">Nhỏ</option>
+                    <option value="medium" selected>Trung bình</option>
+                    <option value="large">Lớn</option>
+                </select>
+            </div>
+            
+            <button class="btn" id="apply-customization" style="width: 100%; margin-top: 15px;">Áp dụng</button>
+            <button class="btn btn-secondary" id="reset-customization" style="width: 100%; margin-top: 10px;">Đặt lại mặc định</button>
+        </div>
     </div>
 
     <script>
@@ -2553,8 +2710,307 @@
         let productViews = {};
         let cart = JSON.parse(localStorage.getItem('cart')) || [];
 
-        // ==================== API FUNCTIONS ====================
+        // ==================== CẢI THIỆN ADMIN PANEL ====================
+        
+        // Admin Panel Resize Functionality
+        function initAdminPanelResize() {
+            const adminPanel = document.getElementById('admin-panel');
+            const resizeHandle = adminPanel.querySelector('.resize-handle');
+            
+            let isResizing = false;
+            
+            resizeHandle.addEventListener('mousedown', function(e) {
+                isResizing = true;
+                document.addEventListener('mousemove', handleResize);
+                document.addEventListener('mouseup', stopResize);
+                e.preventDefault();
+            });
+            
+            function handleResize(e) {
+                if (!isResizing) return;
+                
+                const newWidth = Math.max(500, Math.min(window.innerWidth * 0.9, e.clientX));
+                adminPanel.style.width = newWidth + 'px';
+            }
+            
+            function stopResize() {
+                isResizing = false;
+                document.removeEventListener('mousemove', handleResize);
+                document.removeEventListener('mouseup', stopResize);
+            }
+        }
+        
+        // Admin Customization Functionality
+        function initAdminCustomization() {
+            const customizationPanel = document.getElementById('admin-customization');
+            const toggleBtn = document.getElementById('customization-toggle');
+            const applyBtn = document.getElementById('apply-customization');
+            const resetBtn = document.getElementById('reset-customization');
+            const bgInput = document.getElementById('custom-bg');
+            const titleInput = document.getElementById('custom-title');
+            const fontSizeSelect = document.getElementById('custom-font-size');
+            const panelSizeSelect = document.getElementById('custom-panel-size');
+            const bgPreview = document.getElementById('bg-preview');
+            
+            // Toggle customization panel
+            toggleBtn.addEventListener('click', function() {
+                customizationPanel.classList.toggle('active');
+            });
+            
+            // Handle background image upload
+            bgInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        bgPreview.style.backgroundImage = `url(${e.target.result})`;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // Apply customization
+            applyBtn.addEventListener('click', function() {
+                // Apply background
+                if (bgPreview.style.backgroundImage) {
+                    document.getElementById('admin-panel').style.backgroundImage = bgPreview.style.backgroundImage;
+                    document.getElementById('admin-panel').style.backgroundSize = 'cover';
+                    document.getElementById('admin-panel').style.backgroundPosition = 'center';
+                }
+                
+                // Apply title
+                const newTitle = titleInput.value;
+                document.querySelector('.admin-header h2').textContent = newTitle;
+                
+                // Apply font size
+                const fontSize = fontSizeSelect.value;
+                const adminContent = document.querySelector('.admin-main');
+                if (fontSize === 'small') {
+                    adminContent.style.fontSize = '12px';
+                } else if (fontSize === 'medium') {
+                    adminContent.style.fontSize = '14px';
+                } else if (fontSize === 'large') {
+                    adminContent.style.fontSize = '16px';
+                }
+                
+                // Apply panel size
+                const panelSize = panelSizeSelect.value;
+                const adminPanel = document.getElementById('admin-panel');
+                if (panelSize === 'small') {
+                    adminPanel.style.width = '500px';
+                } else if (panelSize === 'medium') {
+                    adminPanel.style.width = '600px';
+                } else if (panelSize === 'large') {
+                    adminPanel.style.width = '700px';
+                }
+                
+                // Save to localStorage
+                const customization = {
+                    background: bgPreview.style.backgroundImage,
+                    title: newTitle,
+                    fontSize: fontSize,
+                    panelSize: panelSize
+                };
+                localStorage.setItem('adminCustomization', JSON.stringify(customization));
+                
+                showNotification('Tùy chỉnh đã được áp dụng!', 'success');
+            });
+            
+            // Reset customization
+            resetBtn.addEventListener('click', function() {
+                // Reset background
+                document.getElementById('admin-panel').style.backgroundImage = '';
+                bgPreview.style.backgroundImage = '';
+                bgInput.value = '';
+                
+                // Reset title
+                titleInput.value = 'Trúc Đào Admin Dashboard';
+                document.querySelector('.admin-header h2').textContent = 'Trúc Đào Admin Dashboard';
+                
+                // Reset font size
+                fontSizeSelect.value = 'medium';
+                document.querySelector('.admin-main').style.fontSize = '14px';
+                
+                // Reset panel size
+                panelSizeSelect.value = 'medium';
+                document.getElementById('admin-panel').style.width = '600px';
+                
+                // Remove from localStorage
+                localStorage.removeItem('adminCustomization');
+                
+                showNotification('Đã đặt lại mặc định!', 'success');
+            });
+            
+            // Load saved customization
+            const savedCustomization = localStorage.getItem('adminCustomization');
+            if (savedCustomization) {
+                const customization = JSON.parse(savedCustomization);
+                
+                if (customization.background) {
+                    document.getElementById('admin-panel').style.backgroundImage = customization.background;
+                    document.getElementById('admin-panel').style.backgroundSize = 'cover';
+                    document.getElementById('admin-panel').style.backgroundPosition = 'center';
+                    bgPreview.style.backgroundImage = customization.background;
+                }
+                
+                if (customization.title) {
+                    titleInput.value = customization.title;
+                    document.querySelector('.admin-header h2').textContent = customization.title;
+                }
+                
+                if (customization.fontSize) {
+                    fontSizeSelect.value = customization.fontSize;
+                    const adminContent = document.querySelector('.admin-main');
+                    if (customization.fontSize === 'small') {
+                        adminContent.style.fontSize = '12px';
+                    } else if (customization.fontSize === 'medium') {
+                        adminContent.style.fontSize = '14px';
+                    } else if (customization.fontSize === 'large') {
+                        adminContent.style.fontSize = '16px';
+                    }
+                }
+                
+                if (customization.panelSize) {
+                    panelSizeSelect.value = customization.panelSize;
+                    const adminPanel = document.getElementById('admin-panel');
+                    if (customization.panelSize === 'small') {
+                        adminPanel.style.width = '500px';
+                    } else if (customization.panelSize === 'medium') {
+                        adminPanel.style.width = '600px';
+                    } else if (customization.panelSize === 'large') {
+                        adminPanel.style.width = '700px';
+                    }
+                }
+            }
+        }
+        
+        // ==================== FIX ZOOM TRÊN MOBILE ====================
+        
+        // Ngăn chặn zoom trên mobile
+        function preventZoom() {
+            document.addEventListener('touchstart', function(event) {
+                if (event.touches.length > 1) {
+                    event.preventDefault();
+                }
+            });
+            
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function(event) {
+                const now = (new Date()).getTime();
+                if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, false);
+            
+            // Fix cho iOS - ngăn chặn zoom khi focus vào input
+            document.addEventListener('focus', function(event) {
+                if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || event.target.tagName === 'SELECT') {
+                    document.body.style.zoom = "100%";
+                }
+            }, true);
+            
+            document.addEventListener('blur', function(event) {
+                if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || event.target.tagName === 'SELECT') {
+                    // Khôi phục zoom về bình thường sau khi rời khỏi input
+                    setTimeout(function() {
+                        document.body.style.zoom = "";
+                    }, 100);
+                }
+            }, true);
+        }
+        
+        // ==================== KHỞI ĐỘNG ====================
 
+        // Khởi tạo
+        document.addEventListener('DOMContentLoaded', function() {
+            // Khởi tạo các tính năng mới
+            initAdminPanelResize();
+            initAdminCustomization();
+            preventZoom();
+            
+            updateVisitorCountAPI();
+            loadProductsFromAPI();
+            loadMessagesFromAPI();
+            loadOrdersFromAPI();
+            loadStatisticsFromAPI();
+            updateAnalytics();
+            updateCartCount();
+            renderCartItems();
+            
+            // Mobile navigation
+            const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+            const mobileNav = document.getElementById('mobile-nav');
+            const closeMobileNav = document.getElementById('close-mobile-nav');
+            const mobileNavOverlay = document.getElementById('mobile-nav-overlay');
+            
+            mobileMenuToggle.addEventListener('click', function() {
+                mobileNav.classList.add('active');
+                mobileNavOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+            
+            closeMobileNav.addEventListener('click', function() {
+                mobileNav.classList.remove('active');
+                mobileNavOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+            
+            mobileNavOverlay.addEventListener('click', function() {
+                mobileNav.classList.remove('active');
+                mobileNavOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+            
+            // Track product views
+            document.querySelectorAll('.product-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    const productId = this.getAttribute('data-id');
+                    productViews[productId] = (productViews[productId] || 0) + 1;
+                    localStorage.setItem('productViews', JSON.stringify(productViews));
+                    updateAnalytics();
+                });
+            });
+            
+            // Login functionality
+            const loginBtn = document.getElementById('login-btn');
+            const loginModal = document.getElementById('login-modal');
+            const closeLogin = document.getElementById('close-login');
+            
+            loginBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                loginModal.style.display = 'flex';
+            });
+            
+            closeLogin.addEventListener('click', () => {
+                loginModal.style.display = 'none';
+            });
+            
+            loginModal.addEventListener('click', (e) => {
+                if (e.target === loginModal) {
+                    loginModal.style.display = 'none';
+                }
+            });
+            
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    loginModal.style.display = 'none';
+                }
+            });
+
+            // Thêm tính năng "đang phát triển" cho các menu chưa hoàn thiện
+            document.querySelectorAll('.nav-links a, .mobile-nav-links a').forEach(link => {
+                if (!link.getAttribute('href') || link.getAttribute('href') === '#') {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        alert('Tính năng đang được công ty cập nhật và phát triển');
+                    });
+                }
+            });
+        });
+
+        // ==================== CÁC HÀM CŨ (giữ nguyên) ====================
+        
         // Hàm gọi API để lấy sản phẩm
         async function loadProductsFromAPI() {
             try {
@@ -2796,90 +3252,6 @@
                 console.error('Lỗi khi cập nhật lượt truy cập:', error);
             }
         }
-
-        // ==================== KHỞI ĐỘNG ====================
-
-        // Khởi tạo
-        document.addEventListener('DOMContentLoaded', function() {
-            updateVisitorCountAPI();
-            loadProductsFromAPI();
-            loadMessagesFromAPI();
-            loadOrdersFromAPI();
-            loadStatisticsFromAPI();
-            updateAnalytics();
-            updateCartCount();
-            renderCartItems();
-            
-            // Mobile navigation
-            const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
-            const mobileNav = document.getElementById('mobile-nav');
-            const closeMobileNav = document.getElementById('close-mobile-nav');
-            const mobileNavOverlay = document.getElementById('mobile-nav-overlay');
-            
-            mobileMenuToggle.addEventListener('click', function() {
-                mobileNav.classList.add('active');
-                mobileNavOverlay.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            });
-            
-            closeMobileNav.addEventListener('click', function() {
-                mobileNav.classList.remove('active');
-                mobileNavOverlay.classList.remove('active');
-                document.body.style.overflow = '';
-            });
-            
-            mobileNavOverlay.addEventListener('click', function() {
-                mobileNav.classList.remove('active');
-                mobileNavOverlay.classList.remove('active');
-                document.body.style.overflow = '';
-            });
-            
-            // Track product views
-            document.querySelectorAll('.product-card').forEach(card => {
-                card.addEventListener('click', function() {
-                    const productId = this.getAttribute('data-id');
-                    productViews[productId] = (productViews[productId] || 0) + 1;
-                    localStorage.setItem('productViews', JSON.stringify(productViews));
-                    updateAnalytics();
-                });
-            });
-            
-            // Login functionality
-            const loginBtn = document.getElementById('login-btn');
-            const loginModal = document.getElementById('login-modal');
-            const closeLogin = document.getElementById('close-login');
-            
-            loginBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                loginModal.style.display = 'flex';
-            });
-            
-            closeLogin.addEventListener('click', () => {
-                loginModal.style.display = 'none';
-            });
-            
-            loginModal.addEventListener('click', (e) => {
-                if (e.target === loginModal) {
-                    loginModal.style.display = 'none';
-                }
-            });
-            
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    loginModal.style.display = 'none';
-                }
-            });
-
-            // Thêm tính năng "đang phát triển" cho các menu chưa hoàn thiện
-            document.querySelectorAll('.nav-links a, .mobile-nav-links a').forEach(link => {
-                if (!link.getAttribute('href') || link.getAttribute('href') === '#') {
-                    link.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        alert('Tính năng đang được công ty cập nhật và phát triển');
-                    });
-                }
-            });
-        });
 
         // Cart functionality
         function addToCart(id, name, price, image) {
