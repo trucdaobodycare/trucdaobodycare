@@ -907,63 +907,81 @@
         
         /* Login Modal */
         .login-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-        }
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
         
         .login-form {
-            background-color: white;
-            width: 100%;
-            max-width: 450px;
-            padding: 40px;
-            border-radius: var(--border-radius-lg);
-            box-shadow: var(--box-shadow-lg);
-            position: relative;
-        }
+    background-color: white;
+    width: 90%;
+    max-width: 400px;
+    padding: 30px;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--box-shadow-lg);
+    position: relative;
+}
         
         .login-form h2 {
-            text-align: center;
-            margin-bottom: 30px;
-            color: var(--gray-800);
-            font-weight: 700;
-        }
+    text-align: center;
+    margin-bottom: 25px;
+    color: var(--gray-800);
+    font-weight: 700;
+}
         
-        .login-btn {
-            width: 100%;
-            padding: 12px;
-            margin-top: 10px;
-        }
+  .login-form .form-group {
+    margin-bottom: 20px;
+}
+      
+        .login-form .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--gray-700);
+}
+        .login-form .form-group input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--border-radius);
+    outline: none;
+    transition: var(--transition);
+    font-size: 16px; /* Ngăn chặn zoom trên iOS */
+}
+        .login-form .form-group input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(232, 62, 140, 0.1);
+}
         
-        .close-login {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: var(--gray-500);
-            width: 35px;
-            height: 35px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            transition: var(--transition);
-        }
-        
-        .close-login:hover {
-            background-color: var(--gray-200);
-            color: var(--danger-color);
-        }
+       .close-login {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--gray-500);
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: var(--transition);
+}
+
+.close-login:hover {
+    background-color: var(--gray-200);
+    color: var(--danger-color);
+}
         
         /* Admin Panel - NEW DESIGN ON LEFT SIDE */
         .admin-panel {
@@ -2444,22 +2462,22 @@
 
     <!-- Login Modal -->
     <div class="login-modal" id="login-modal">
-        <div class="login-form">
-            <button class="close-login" id="close-login">
-                <i class="fas fa-times"></i>
-            </button>
-            <h2>Đăng nhập Admin</h2>
-            <div class="form-group">
-                <label for="username">Tên đăng nhập</label>
-                <input type="text" id="username" placeholder="Nhập tên đăng nhập">
-            </div>
-            <div class="form-group">
-                <label for="password">Mật khẩu</label>
-                <input type="password" id="password" placeholder="Nhập mật khẩu">
-            </div>
-            <button class="login-btn"
+    <div class="login-form">
+        <button class="close-login" id="close-login">
+            <i class="fas fa-times"></i>
+        </button>
+        <h2>Đăng nhập Admin</h2>
+        <div class="form-group">
+            <label for="username">Tên đăng nhập</label>
+            <input type="text" id="username" placeholder="Nhập tên đăng nhập">
         </div>
+        <div class="form-group">
+            <label for="password">Mật khẩu</label>
+            <input type="password" id="password" placeholder="Nhập mật khẩu">
+        </div>
+        <button class="btn login-btn" id="admin-login-btn" style="width: 100%; margin-top: 15px;">Đăng nhập</button>
     </div>
+</div>
 
     <!-- Cart Modal -->
     <div class="cart-modal" id="cart-modal">
@@ -4094,6 +4112,80 @@
 
         // Khởi tạo
         document.addEventListener('DOMContentLoaded', function() {
+            // Login functionality
+    const loginBtn = document.getElementById('login-btn');
+    const loginModal = document.getElementById('login-modal');
+    const closeLogin = document.getElementById('close-login');
+    const adminLoginBtn = document.getElementById('admin-login-btn');
+    
+    console.log('Login elements:', {loginBtn, loginModal, closeLogin, adminLoginBtn});
+    
+    if (loginBtn && loginModal) {
+        loginBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Login button clicked');
+            loginModal.style.display = 'flex';
+        });
+    }
+    
+    if (closeLogin) {
+        closeLogin.addEventListener('click', () => {
+            console.log('Close login clicked');
+            loginModal.style.display = 'none';
+        });
+    }
+    
+    if (loginModal) {
+        loginModal.addEventListener('click', (e) => {
+            if (e.target === loginModal) {
+                console.log('Clicked outside modal');
+                loginModal.style.display = 'none';
+            }
+        });
+    }
+    
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && loginModal.style.display === 'flex') {
+            console.log('Escape key pressed');
+            loginModal.style.display = 'none';
+        }
+    });
+
+    // Admin login
+    if (adminLoginBtn) {
+        adminLoginBtn.addEventListener('click', () => {
+            const username = document.getElementById('username');
+            const password = document.getElementById('password');
+            
+            if (!username || !password) {
+                console.error('Username or password input not found');
+                showNotification('Lỗi: Không tìm thấy trường nhập liệu!', 'error');
+                return;
+            }
+            
+            const usernameValue = username.value;
+            const passwordValue = password.value;
+            
+            console.log('Login attempt:', {usernameValue, passwordValue});
+            
+            if (usernameValue === ADMIN_USERNAME && passwordValue === ADMIN_PASSWORD) {
+                loginModal.style.display = 'none';
+                localStorage.setItem('adminLoggedIn', 'true');
+                showNotification('Đăng nhập admin thành công!', 'success');
+                
+                // Show admin panel in navigation
+                document.getElementById('admin-nav-desktop').style.display = 'block';
+                document.getElementById('admin-nav-mobile').style.display = 'block';
+                
+                // Clear form
+                username.value = '';
+                password.value = '';
+            } else {
+                showNotification('Tên đăng nhập hoặc mật khẩu không đúng!', 'error');
+            }
+        });
+    }
+});
             // Khởi tạo các tính năng mới
             initAdminPanelResize();
             initAdminCustomization();
