@@ -7,20 +7,35 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const cors = require('cors');
 const morgan = require('morgan');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const fs = require('fs');
+const crypto = require('crypto');
 
 const app = express();
 
-// ==================== RENDER.COM CONFIGURATION ====================
+// ==================== CONFIGURATION ====================
 const isProduction = process.env.NODE_ENV === 'production';
 const PORT = process.env.PORT || 10000;
-
-// MongoDB Connection String - THAY THẾ BẰNG URL CỦA BẠN
+const JWT_SECRET = process.env.JWT_SECRET || 'trucdao-cosmetics-secret-key-2024';
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/trucdao-cosmetics?retryWrites=true&w=majority';
 
 console.log('🚀 Environment:', isProduction ? 'production' : 'development');
 console.log('📍 Port:', PORT);
 
 // ==================== MONGODB MODELS ====================
+
+// User Model for Admin
+const userSchema = new mongoose.Schema({
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    role: { type: String, default: 'admin' },
+    lastLogin: { type: Date },
+    createdAt: { type: Date, default: Date.now }
+});
+
+const User = mongoose.model('User', userSchema);
 
 // Product Model
 const productSchema = new mongoose.Schema({
@@ -30,9 +45,23 @@ const productSchema = new mongoose.Schema({
     salePrice: { type: Number, required: true },
     image: { type: String, required: true },
     description: { type: String, default: '' },
+    sku: { type: String, unique: true },
+    stock: { type: Number, default: 0 },
+    featured: { type: Boolean, default: false },
+    tags: [{ type: String }],
     views: { type: Number, default: 0 },
+    sales: { type: Number, default: 0 },
+    status: { type: String, default: 'active' },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
+});
+
+// Auto-generate SKU
+productSchema.pre('save', function(next) {
+    if (!this.sku) {
+        this.sku = 'TD-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+    }
+    next();
 });
 
 const Product = mongoose.model('Product', productSchema);
@@ -40,58 +69,104 @@ const Product = mongoose.model('Product', productSchema);
 // Message Model
 const messageSchema = new mongoose.Schema({
     text: { type: String, required: true },
+    type: { type: String, default: 'customer' }, // customer, admin, system
     product: { type: String, default: null },
     timestamp: { type: Date, default: Date.now },
     read: { type: Boolean, default: false },
     isAutoResponse: { type: Boolean, default: false },
     isAdminReply: { type: Boolean, default: false },
-    originalMessageId: { type: String, default: null },
+    priority: { type: String, default: 'normal' }, // low, normal, high, urgent
     customerInfo: {
         name: String,
         phone: String,
-        email: String
+        email: String,
+        ip: String,
+        userAgent: String
     },
     replies: [{
         text: String,
         timestamp: { type: Date, default: Date.now },
         isAdminReply: { type: Boolean, default: true },
-        adminName: { type: String, default: 'Admin' }
-    }]
+        adminName: { type: String, default: 'Admin' },
+        adminId: String
+    }],
+    status: { type: String, default: 'open' } // open, pending, resolved, closed
 });
 
 const Message = mongoose.model('Message', messageSchema);
 
 // Order Model
 const orderSchema = new mongoose.Schema({
+    orderNumber: { type: String, unique: true },
     customerName: { type: String, required: true },
     customerPhone: { type: String, required: true },
+    customerEmail: { type: String },
     customerAddress: { type: String, required: true },
+    customerNote: { type: String },
     products: [{
         id: String,
         name: String,
         price: Number,
         quantity: Number,
-        image: String
+        image: String,
+        sku: String
     }],
+    subtotal: { type: Number, required: true },
+    shippingFee: { type: Number, default: 30000 },
     totalAmount: { type: Number, required: true },
-    status: { type: String, default: 'pending' },
+    status: { type: String, default: 'pending' }, // pending, confirmed, processing, shipping, delivered, cancelled, refunded
     paymentMethod: { type: String, default: 'bank_transfer' },
+    paymentStatus: { type: String, default: 'pending' }, // pending, paid, failed, refunded
     paymentScreenshot: { type: String, default: '' },
+    shippingInfo: {
+        carrier: String,
+        trackingNumber: String,
+        shippedAt: Date,
+        estimatedDelivery: Date
+    },
+    notes: [{
+        text: String,
+        adminName: String,
+        timestamp: { type: Date, default: Date.now }
+    }],
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
 });
 
+// Auto-generate order number
+orderSchema.pre('save', function(next) {
+    if (!this.orderNumber) {
+        const timestamp = Date.now().toString().slice(-6);
+        const random = Math.random().toString(36).substring(2, 5).toUpperCase();
+        this.orderNumber = `TD-${timestamp}${random}`;
+    }
+    next();
+});
+
 const Order = mongoose.model('Order', orderSchema);
 
-// Visitor Model
+// Visitor/Analytics Model
 const visitorSchema = new mongoose.Schema({
     total: { type: Number, default: 0 },
     today: { type: Number, default: 0 },
     date: { type: String, default: new Date().toDateString() },
+    uniqueVisitors: { type: Number, default: 0 },
+    pageViews: { type: Number, default: 0 },
     history: [{
         timestamp: Date,
         ip: String,
-        userAgent: String
+        userAgent: String,
+        path: String,
+        referrer: String,
+        country: String,
+        city: String,
+        sessionId: String
+    }],
+    dailyStats: [{
+        date: String,
+        visits: Number,
+        pageViews: Number,
+        uniqueVisitors: Number
     }]
 });
 
@@ -100,8 +175,37 @@ const Visitor = mongoose.model('Visitor', visitorSchema);
 // Settings Model
 const settingsSchema = new mongoose.Schema({
     siteTitle: { type: String, default: 'Trúc Đào Cosmetics' },
+    siteDescription: { type: String, default: 'Mỹ phẩm cao cấp' },
     adminEmail: { type: String, default: 'admin@trucdaocosmetics.vn' },
-    maintenanceMode: { type: Boolean, default: false }
+    supportPhone: { type: String, default: '1900 1234' },
+    supportEmail: { type: String, default: 'support@trucdaocosmetics.vn' },
+    address: { type: String, default: '123 Nguyễn Văn Linh, Quận 7, TP.HCM' },
+    socialMedia: {
+        facebook: String,
+        instagram: String,
+        tiktok: String,
+        youtube: String
+    },
+    bankInfo: {
+        bankName: { type: String, default: 'Sacombank' },
+        accountNumber: { type: String, default: '123022988888' },
+        accountName: { type: String, default: 'Nguyễn Thị Trúc Đào' }
+    },
+    shippingFee: { type: Number, default: 30000 },
+    freeShippingThreshold: { type: Number, default: 500000 },
+    maintenanceMode: { type: Boolean, default: false },
+    maintenanceMessage: { type: String, default: 'Website đang bảo trì, vui lòng quay lại sau.' },
+    themeSettings: {
+        primaryColor: { type: String, default: '#e83e8c' },
+        secondaryColor: { type: String, default: '#ffc107' },
+        fontFamily: { type: String, default: 'Inter' }
+    },
+    seoSettings: {
+        metaTitle: String,
+        metaDescription: String,
+        keywords: String
+    },
+    updatedAt: { type: Date, default: Date.now }
 });
 
 const Settings = mongoose.model('Settings', settingsSchema);
@@ -110,91 +214,57 @@ const Settings = mongoose.model('Settings', settingsSchema);
 const statisticsSchema = new mongoose.Schema({
     totalSales: { type: Number, default: 0 },
     totalRevenue: { type: Number, default: 0 },
+    totalCustomers: { type: Number, default: 0 },
+    totalProducts: { type: Number, default: 0 },
+    monthlyRevenue: [{
+        month: String,
+        revenue: Number,
+        orders: Number
+    }],
     popularProducts: [{
         name: String,
+        sku: String,
         quantity: Number,
-        revenue: Number
-    }]
+        revenue: Number,
+        views: Number
+    }],
+    customerAcquisition: [{
+        source: String,
+        count: Number,
+        conversion: Number
+    }],
+    updatedAt: { type: Date, default: Date.now }
 });
 
 const Statistics = mongoose.model('Statistics', statisticsSchema);
 
-// ==================== DATABASE INITIALIZATION ====================
+// Coupon/Promotion Model
+const couponSchema = new mongoose.Schema({
+    code: { type: String, required: true, unique: true, uppercase: true },
+    type: { type: String, default: 'percentage' }, // percentage, fixed, shipping
+    value: { type: Number, required: true },
+    minOrder: { type: Number, default: 0 },
+    maxDiscount: { type: Number },
+    usageLimit: { type: Number },
+    usedCount: { type: Number, default: 0 },
+    validFrom: { type: Date, default: Date.now },
+    validUntil: { type: Date },
+    active: { type: Boolean, default: true },
+    description: String,
+    createdAt: { type: Date, default: Date.now }
+});
 
-async function initializeDatabase() {
-    try {
-        console.log('🔄 Initializing database...');
-        
-        // Kiểm tra và tạo dữ liệu mặc định nếu cần
-        const visitorCount = await Visitor.countDocuments();
-        if (visitorCount === 0) {
-            await Visitor.create({});
-            console.log('✅ Default visitor record created');
-        }
-        
-        const settingsCount = await Settings.countDocuments();
-        if (settingsCount === 0) {
-            await Settings.create({});
-            console.log('✅ Default settings created');
-        }
-        
-        const statisticsCount = await Statistics.countDocuments();
-        if (statisticsCount === 0) {
-            await Statistics.create({});
-            console.log('✅ Default statistics created');
-        }
-        
-        const productCount = await Product.countDocuments();
-        if (productCount === 0) {
-            await Product.insertMany([
-                {
-                    name: "Son lì cao cấp Luxury Matte",
-                    category: "Son môi",
-                    originalPrice: 399000,
-                    salePrice: 299000,
-                    image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-                    description: "Son lì cao cấp với công thức mềm mịn, lâu trôi"
-                },
-                {
-                    name: "Bảng phấn mắt 12 màu Pro Palette",
-                    category: "Trang điểm mắt",
-                    originalPrice: 600000,
-                    salePrice: 450000,
-                    image: "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-                    description: "Bảng phấn mắt đa dạng màu sắc, dễ phối màu"
-                },
-                {
-                    name: "Kem nền che khuyết điểm Full Cover",
-                    category: "Trang điểm mặt",
-                    originalPrice: 650000,
-                    salePrice: 520000,
-                    image: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-                    description: "Kem nền che phủ hoàn hảo, không gây bít tắc lỗ chân lông"
-                },
-                {
-                    name: "Serum dưỡng ẩm chống lão hóa",
-                    category: "Chăm sóc da",
-                    originalPrice: 850000,
-                    salePrice: 680000,
-                    image: "https://images.unsplash.com/photo-1594035910387-fea47794261f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-                    description: "Serum dưỡng ẩm chuyên sâu, cải thiện nếp nhăn"
-                }
-            ]);
-            console.log('✅ Default products created');
-        }
-        
-        console.log('✅ Database initialization completed');
-    } catch (error) {
-        console.error('❌ Database initialization error:', error);
-    }
-}
+const Coupon = mongoose.model('Coupon', couponSchema);
 
-// ==================== MIDDLEWARE SETUP ====================
+// ==================== MIDDLEWARE ====================
+
+// Security middleware
 app.use(helmet({
     contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false
 }));
 
+// Compression
 app.use(compression());
 
 // CORS configuration
@@ -222,8 +292,9 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+// Body parsing
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Rate limiting
 const limiter = rateLimit({
@@ -238,19 +309,87 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// API-specific rate limiting
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 200,
+    message: {
+        error: 'Quá nhiều yêu cầu API, vui lòng thử lại sau 15 phút.'
+    }
+});
+
 // Logging
 app.use(morgan(isProduction ? 'combined' : 'dev'));
 
-// Security headers
+// Custom security headers
 app.use((req, res, next) => {
     res.header('X-Content-Type-Options', 'nosniff');
     res.header('X-Frame-Options', 'DENY');
     res.header('X-XSS-Protection', '1; mode=block');
     res.header('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-    res.header('Access-Control-Allow-Headers', 'Content-Type', 'Authorization', 'X-Requested-With');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     next();
+});
+
+// ==================== AUTHENTICATION MIDDLEWARE ====================
+
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({ error: 'Token truy cập không tồn tại' });
+    }
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) {
+            return res.status(403).json({ error: 'Token không hợp lệ' });
+        }
+        req.user = user;
+        next();
+    });
+};
+
+const requireAdmin = (req, res, next) => {
+    if (req.user && req.user.role === 'admin') {
+        next();
+    } else {
+        res.status(403).json({ error: 'Yêu cầu quyền admin' });
+    }
+};
+
+// ==================== FILE UPLOAD CONFIGURATION ====================
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadDir = 'uploads/';
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+    } else {
+        cb(new Error('Chỉ chấp nhận file ảnh!'), false);
+    }
+};
+
+const upload = multer({
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: {
+        fileSize: 10 * 1024 * 1024 // 10MB
+    }
 });
 
 // ==================== STATIC FILES ====================
@@ -258,79 +397,253 @@ app.use(express.static(path.join(__dirname, 'public'), {
     maxAge: isProduction ? '1d' : '0',
     etag: true,
     lastModified: true,
-    index: 'index.html',
-    setHeaders: (res, filePath) => {
-        if (filePath.endsWith('.html')) {
-            res.setHeader('Content-Type', 'text/html; charset=utf-8');
-            res.setHeader('Cache-Control', 'no-cache');
-        }
-    }
+    index: 'index.html'
 }));
+
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// ==================== DATABASE INITIALIZATION ====================
+
+async function initializeDatabase() {
+    try {
+        console.log('🔄 Initializing database...');
+        
+        // Create default admin user
+        const adminExists = await User.findOne({ username: 'Trucdaoadminlogin' });
+        if (!adminExists) {
+            const hashedPassword = await bcrypt.hash('Thanhduy@060596', 12);
+            await User.create({
+                username: 'Trucdaoadminlogin',
+                password: hashedPassword,
+                role: 'admin'
+            });
+            console.log('✅ Default admin user created');
+        }
+
+        // Initialize other default data
+        const collections = [
+            { model: Visitor, defaultData: {} },
+            { model: Settings, defaultData: {} },
+            { model: Statistics, defaultData: {} }
+        ];
+
+        for (const collection of collections) {
+            const count = await collection.model.countDocuments();
+            if (count === 0) {
+                await collection.model.create(collection.defaultData);
+                console.log(`✅ Default ${collection.model.modelName} created`);
+            }
+        }
+
+        // Create sample products if none exist
+        const productCount = await Product.countDocuments();
+        if (productCount === 0) {
+            await Product.insertMany([
+                {
+                    name: "Son Lì Cao Cấp Ruby",
+                    category: "Son môi",
+                    originalPrice: 350000,
+                    salePrice: 250000,
+                    image: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1315&q=80",
+                    description: "Son lì cao cấp với độ bền lên đến 12 giờ, không gây khô môi",
+                    stock: 50,
+                    featured: true,
+                    tags: ["son lì", "cao cấp", "lâu trôi"]
+                },
+                {
+                    name: "Phấn Mắt Nude Palette",
+                    category: "Trang điểm mắt",
+                    originalPrice: 450000,
+                    salePrice: 320000,
+                    image: "https://images.unsplash.com/photo-1515377905703-c4788e51af15?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
+                    description: "Bảng phấn mắt với 12 tông màu nude thời thượng, dễ phối màu",
+                    stock: 30,
+                    featured: true,
+                    tags: ["phấn mắt", "nude", "palette"]
+                },
+                {
+                    name: "Kem Nền Che Khuyết Điểm",
+                    category: "Trang điểm mặt",
+                    originalPrice: 280000,
+                    salePrice: 280000,
+                    image: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1187&q=80",
+                    description: "Kem nền mỏng nhẹ, che phủ hoàn hảo, không gây bít tắc lỗ chân lông",
+                    stock: 25,
+                    tags: ["kem nền", "che khuyết điểm", "mỏng nhẹ"]
+                },
+                {
+                    name: "Serum Dưỡng Ẩm Chuyên Sâu",
+                    category: "Chăm sóc da",
+                    originalPrice: 520000,
+                    salePrice: 420000,
+                    image: "https://images.unsplash.com/photo-1556228577-135c319f45c8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
+                    description: "Serum dưỡng ẩm chuyên sâu cho làn da căng mịn, sáng khỏe",
+                    stock: 40,
+                    featured: true,
+                    tags: ["serum", "dưỡng ẩm", "chăm sóc da"]
+                }
+            ]);
+            console.log('✅ Sample products created');
+        }
+
+        console.log('✅ Database initialization completed');
+    } catch (error) {
+        console.error('❌ Database initialization error:', error);
+    }
+}
+
+// ==================== UTILITY FUNCTIONS ====================
+
+function formatPrice(price) {
+    return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
+}
+
+function generateSessionId() {
+    return crypto.randomBytes(16).toString('hex');
+}
+
+async function updateStatistics() {
+    try {
+        const totalProducts = await Product.countDocuments({ status: 'active' });
+        const totalOrders = await Order.countDocuments();
+        const completedOrders = await Order.countDocuments({ status: 'delivered' });
+        const totalRevenue = await Order.aggregate([
+            { $match: { status: 'delivered' } },
+            { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+        ]);
+        
+        const uniqueCustomers = await Order.distinct('customerPhone');
+        
+        let stats = await Statistics.findOne();
+        if (!stats) {
+            stats = new Statistics();
+        }
+        
+        stats.totalProducts = totalProducts;
+        stats.totalSales = completedOrders;
+        stats.totalRevenue = totalRevenue[0]?.total || 0;
+        stats.totalCustomers = uniqueCustomers.length;
+        stats.updatedAt = new Date();
+        
+        await stats.save();
+    } catch (error) {
+        console.error('Error updating statistics:', error);
+    }
+}
 
 // ==================== ROUTES ====================
 
-// Favicon
-app.get('/favicon.ico', (req, res) => {
-    res.status(204).end();
-});
-
-// Home page
+// Basic routes
+app.get('/favicon.ico', (req, res) => res.status(204).end());
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Health check endpoint
+// Health check
 app.get('/health', async (req, res) => {
     try {
+        const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
         const productCount = await Product.countDocuments();
-        const messageCount = await Message.countDocuments();
         const orderCount = await Order.countDocuments();
-        const visitorData = await Visitor.findOne();
+        const messageCount = await Message.countDocuments();
         
         res.json({
             status: 'OK',
             timestamp: new Date().toISOString(),
             uptime: process.uptime(),
-            memory: process.memoryUsage(),
-            database: {
-                status: 'connected',
+            database: dbStatus,
+            collections: {
                 products: productCount,
-                messages: messageCount,
                 orders: orderCount,
-                visitors: visitorData?.total || 0
+                messages: messageCount
+            },
+            memory: process.memoryUsage()
+        });
+    } catch (error) {
+        res.status(500).json({ status: 'ERROR', error: error.message });
+    }
+});
+
+// ==================== AUTHENTICATION ROUTES ====================
+
+app.post('/api/auth/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        
+        if (!username || !password) {
+            return res.status(400).json({ error: 'Vui lòng nhập tên đăng nhập và mật khẩu' });
+        }
+        
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(401).json({ error: 'Tên đăng nhập hoặc mật khẩu không đúng' });
+        }
+        
+        const isValidPassword = await bcrypt.compare(password, user.password);
+        if (!isValidPassword) {
+            return res.status(401).json({ error: 'Tên đăng nhập hoặc mật khẩu không đúng' });
+        }
+        
+        // Update last login
+        user.lastLogin = new Date();
+        await user.save();
+        
+        const token = jwt.sign(
+            { userId: user._id, username: user.username, role: user.role },
+            JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+        
+        console.log(`🔐 User ${username} logged in successfully`);
+        
+        res.json({
+            success: true,
+            message: 'Đăng nhập thành công',
+            token,
+            user: {
+                id: user._id,
+                username: user.username,
+                role: user.role,
+                lastLogin: user.lastLogin
             }
         });
     } catch (error) {
-        res.status(500).json({
-            status: 'ERROR',
-            error: error.message
-        });
+        console.error('Login error:', error);
+        res.status(500).json({ error: 'Lỗi server khi đăng nhập' });
     }
+});
+
+app.post('/api/auth/verify', authenticateToken, (req, res) => {
+    res.json({
+        valid: true,
+        user: req.user
+    });
 });
 
 // ==================== API ROUTES ====================
 
-// API info
+// Apply API rate limiting to all API routes
+app.use('/api/', apiLimiter);
+
+// API Info
 app.get('/api/info', async (req, res) => {
     try {
         const productCount = await Product.countDocuments();
-        const messageCount = await Message.countDocuments();
         const orderCount = await Order.countDocuments();
-        const unreadMessages = await Message.countDocuments({ read: false });
+        const messageCount = await Message.countDocuments();
         const visitorData = await Visitor.findOne();
         
         res.json({
             server: {
                 name: 'Trúc Đào Cosmetics API',
-                version: '2.0.0',
-                environment: isProduction ? 'production' : 'development',
-                database: 'MongoDB'
+                version: '3.0.0',
+                environment: isProduction ? 'production' : 'development'
             },
-            database: {
+            statistics: {
                 products: productCount,
-                messages: messageCount,
                 orders: orderCount,
-                unreadMessages: unreadMessages,
+                messages: messageCount,
                 visitors: visitorData?.total || 0
             },
             timestamp: new Date().toISOString()
@@ -343,31 +656,57 @@ app.get('/api/info', async (req, res) => {
 // Visitor tracking
 app.post('/api/visitors', async (req, res) => {
     try {
+        const { path, referrer, sessionId } = req.body;
+        const ip = req.ip || req.connection.remoteAddress;
+        const userAgent = req.get('User-Agent');
+        
         let visitorData = await Visitor.findOne();
         if (!visitorData) {
             visitorData = new Visitor();
         }
         
         const today = new Date().toDateString();
-        const now = new Date();
-        
         if (visitorData.date !== today) {
             visitorData.today = 0;
             visitorData.date = today;
+            visitorData.dailyStats.push({
+                date: today,
+                visits: 0,
+                pageViews: 0,
+                uniqueVisitors: 0
+            });
         }
         
         visitorData.total++;
         visitorData.today++;
+        visitorData.pageViews++;
+        
+        // Check if unique visitor (based on session ID)
+        const existingSession = visitorData.history.find(h => 
+            h.sessionId === sessionId && 
+            new Date(h.timestamp).toDateString() === today
+        );
+        
+        if (!existingSession) {
+            visitorData.uniqueVisitors++;
+            const dailyStat = visitorData.dailyStats.find(d => d.date === today);
+            if (dailyStat) {
+                dailyStat.uniqueVisitors++;
+            }
+        }
         
         visitorData.history.push({
-            timestamp: now.toISOString(),
-            ip: req.ip,
-            userAgent: req.get('User-Agent')
+            timestamp: new Date(),
+            ip,
+            userAgent,
+            path: path || '/',
+            referrer: referrer || 'direct',
+            sessionId: sessionId || generateSessionId()
         });
         
-        // Keep only last 1000 records
-        if (visitorData.history.length > 1000) {
-            visitorData.history = visitorData.history.slice(-1000);
+        // Keep history manageable
+        if (visitorData.history.length > 5000) {
+            visitorData.history = visitorData.history.slice(-5000);
         }
         
         await visitorData.save();
@@ -375,7 +714,8 @@ app.post('/api/visitors', async (req, res) => {
         res.json({
             total: visitorData.total,
             today: visitorData.today,
-            date: visitorData.date
+            uniqueVisitors: visitorData.uniqueVisitors,
+            pageViews: visitorData.pageViews
         });
     } catch (error) {
         console.error('Error tracking visitor:', error);
@@ -383,11 +723,38 @@ app.post('/api/visitors', async (req, res) => {
     }
 });
 
-// Products API - FIXED: Hỗ trợ cả ID số và ObjectId
+// ==================== PRODUCTS API ====================
+
 app.get('/api/products', async (req, res) => {
     try {
-        const products = await Product.find().sort({ createdAt: -1 });
-        // Chuyển đổi _id thành id để tương thích với frontend
+        const { category, featured, search, page = 1, limit = 12 } = req.query;
+        
+        let filter = { status: 'active' };
+        
+        if (category && category !== 'all') {
+            filter.category = category;
+        }
+        
+        if (featured === 'true') {
+            filter.featured = true;
+        }
+        
+        if (search) {
+            filter.$or = [
+                { name: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } },
+                { tags: { $in: [new RegExp(search, 'i')] } }
+            ];
+        }
+        
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const products = await Product.find(filter)
+            .sort({ featured: -1, createdAt: -1 })
+            .skip(skip)
+            .limit(parseInt(limit));
+        
+        const total = await Product.countDocuments(filter);
+        
         const formattedProducts = products.map(product => ({
             id: product._id.toString(),
             name: product.name,
@@ -396,27 +763,79 @@ app.get('/api/products', async (req, res) => {
             salePrice: product.salePrice,
             image: product.image,
             description: product.description,
+            sku: product.sku,
+            stock: product.stock,
+            featured: product.featured,
+            tags: product.tags,
+            views: product.views,
+            sales: product.sales,
             createdAt: product.createdAt,
             updatedAt: product.updatedAt
         }));
-        res.json(formattedProducts);
+        
+        res.json({
+            products: formattedProducts,
+            pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                total,
+                pages: Math.ceil(total / parseInt(limit))
+            }
+        });
     } catch (error) {
         console.error('Error getting products:', error);
         res.status(500).json({ error: 'Lỗi server khi lấy sản phẩm' });
     }
 });
 
-app.post('/api/products', async (req, res) => {
+app.get('/api/products/:id', async (req, res) => {
     try {
-        const { name, category, originalPrice, salePrice, image, description } = req.body;
+        const productId = req.params.id;
         
-        console.log('📦 Creating new product:', { name, category, originalPrice, salePrice });
+        let product;
+        if (mongoose.Types.ObjectId.isValid(productId)) {
+            product = await Product.findById(productId);
+        }
+        
+        if (!product) {
+            return res.status(404).json({ error: 'Không tìm thấy sản phẩm' });
+        }
+        
+        // Increment views
+        product.views += 1;
+        await product.save();
+        
+        const formattedProduct = {
+            id: product._id.toString(),
+            name: product.name,
+            category: product.category,
+            originalPrice: product.originalPrice,
+            salePrice: product.salePrice,
+            image: product.image,
+            description: product.description,
+            sku: product.sku,
+            stock: product.stock,
+            featured: product.featured,
+            tags: product.tags,
+            views: product.views,
+            sales: product.sales,
+            createdAt: product.createdAt,
+            updatedAt: product.updatedAt
+        };
+        
+        res.json(formattedProduct);
+    } catch (error) {
+        console.error('Error getting product:', error);
+        res.status(500).json({ error: 'Lỗi server khi lấy sản phẩm' });
+    }
+});
+
+app.post('/api/products', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { name, category, originalPrice, salePrice, image, description, stock, featured, tags } = req.body;
         
         if (!name || !category || !originalPrice || !salePrice || !image) {
-            return res.status(400).json({
-                success: false,
-                error: 'Thiếu thông tin sản phẩm bắt buộc'
-            });
+            return res.status(400).json({ error: 'Thiếu thông tin sản phẩm bắt buộc' });
         }
         
         const newProduct = new Product({
@@ -425,14 +844,16 @@ app.post('/api/products', async (req, res) => {
             originalPrice: parseInt(originalPrice),
             salePrice: parseInt(salePrice),
             image: image.trim(),
-            description: (description || '').trim()
+            description: (description || '').trim(),
+            stock: parseInt(stock) || 0,
+            featured: featured || false,
+            tags: tags || []
         });
         
         await newProduct.save();
         
         console.log('✅ New product created:', newProduct.name);
         
-        // Trả về sản phẩm với id thay vì _id
         const responseProduct = {
             id: newProduct._id.toString(),
             name: newProduct.name,
@@ -441,6 +862,10 @@ app.post('/api/products', async (req, res) => {
             salePrice: newProduct.salePrice,
             image: newProduct.image,
             description: newProduct.description,
+            sku: newProduct.sku,
+            stock: newProduct.stock,
+            featured: newProduct.featured,
+            tags: newProduct.tags,
             createdAt: newProduct.createdAt,
             updatedAt: newProduct.updatedAt
         };
@@ -451,102 +876,48 @@ app.post('/api/products', async (req, res) => {
             product: responseProduct
         });
     } catch (error) {
-        console.error('❌ Error creating product:', error);
-        res.status(500).json({ 
-            success: false,
-            error: 'Lỗi server khi tạo sản phẩm: ' + error.message 
-        });
+        console.error('Error creating product:', error);
+        res.status(500).json({ error: 'Lỗi server khi tạo sản phẩm' });
     }
 });
 
-// FIXED: Cập nhật sản phẩm - Hỗ trợ cả ID số và ObjectId
-app.put('/api/products/:id', async (req, res) => {
+app.put('/api/products/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const productId = req.params.id;
-        const { name, category, originalPrice, salePrice, image, description } = req.body;
+        const updateData = { ...req.body, updatedAt: new Date() };
         
-        console.log('🔄 Updating product:', { 
-            productId, 
-            name, 
-            category, 
-            originalPrice, 
-            salePrice 
-        });
+        // Remove id field if present
+        delete updateData.id;
         
         let product;
-        
-        // THỬ 1: Tìm bằng ObjectId (cho sản phẩm mới)
         if (mongoose.Types.ObjectId.isValid(productId)) {
-            product = await Product.findById(productId);
-            if (product) {
-                console.log('✅ Found product by ObjectId:', product.name);
-            }
-        }
-        
-        // THỬ 2: Nếu không tìm thấy, tìm bằng ID số (cho sản phẩm cũ)
-        if (!product) {
-            console.log('🔍 Trying to find product by numeric ID:', productId);
-            
-            // Lấy tất cả sản phẩm và tìm theo index
-            const allProducts = await Product.find().sort({ createdAt: 1 });
-            const productIndex = parseInt(productId) - 1; // Giả sử ID bắt đầu từ 1
-            
-            if (productIndex >= 0 && productIndex < allProducts.length) {
-                product = allProducts[productIndex];
-                console.log('✅ Found product by index:', product.name);
-            }
-        }
-        
-        // THỬ 3: Tìm bằng tên sản phẩm (fallback)
-        if (!product && name) {
-            console.log('🔍 Trying to find product by name:', name);
-            product = await Product.findOne({ name: new RegExp(name, 'i') });
-            if (product) {
-                console.log('✅ Found product by name:', product.name);
-            }
+            product = await Product.findByIdAndUpdate(
+                productId,
+                updateData,
+                { new: true, runValidators: true }
+            );
         }
         
         if (!product) {
-            console.log('❌ Product not found with ID:', productId);
-            return res.status(404).json({ 
-                success: false,
-                error: 'Không tìm thấy sản phẩm với ID: ' + productId 
-            });
+            return res.status(404).json({ error: 'Không tìm thấy sản phẩm' });
         }
         
-        console.log('✅ Found product:', product.name);
-        
-        // Cập nhật thông tin sản phẩm
-        const updateData = {
-            updatedAt: new Date()
-        };
-        
-        if (name) updateData.name = name.trim();
-        if (category) updateData.category = category.trim();
-        if (originalPrice) updateData.originalPrice = parseInt(originalPrice);
-        if (salePrice) updateData.salePrice = parseInt(salePrice);
-        if (image) updateData.image = image.trim();
-        if (description !== undefined) updateData.description = description.trim();
-        
-        const updatedProduct = await Product.findByIdAndUpdate(
-            product._id, // Sử dụng ObjectId thực tế
-            updateData,
-            { new: true, runValidators: true }
-        );
-        
-        console.log('✅ Product updated successfully:', updatedProduct.name);
-        
-        // Trả về sản phẩm với id thay vì _id
         const responseProduct = {
-            id: updatedProduct._id.toString(),
-            name: updatedProduct.name,
-            category: updatedProduct.category,
-            originalPrice: updatedProduct.originalPrice,
-            salePrice: updatedProduct.salePrice,
-            image: updatedProduct.image,
-            description: updatedProduct.description,
-            createdAt: updatedProduct.createdAt,
-            updatedAt: updatedProduct.updatedAt
+            id: product._id.toString(),
+            name: product.name,
+            category: product.category,
+            originalPrice: product.originalPrice,
+            salePrice: product.salePrice,
+            image: product.image,
+            description: product.description,
+            sku: product.sku,
+            stock: product.stock,
+            featured: product.featured,
+            tags: product.tags,
+            views: product.views,
+            sales: product.sales,
+            createdAt: product.createdAt,
+            updatedAt: product.updatedAt
         };
         
         res.json({
@@ -555,151 +926,308 @@ app.put('/api/products/:id', async (req, res) => {
             product: responseProduct
         });
     } catch (error) {
-        console.error('❌ Error updating product:', error);
-        res.status(500).json({ 
-            success: false,
-            error: 'Lỗi server khi cập nhật sản phẩm: ' + error.message 
-        });
+        console.error('Error updating product:', error);
+        res.status(500).json({ error: 'Lỗi server khi cập nhật sản phẩm' });
     }
 });
 
-app.delete('/api/products/:id', async (req, res) => {
+app.delete('/api/products/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const productId = req.params.id;
         
-        console.log('🗑️ Deleting product:', productId);
-        
         let product;
-        
-        // Tìm sản phẩm bằng ObjectId hoặc ID số
         if (mongoose.Types.ObjectId.isValid(productId)) {
-            product = await Product.findById(productId);
+            product = await Product.findByIdAndDelete(productId);
         }
         
         if (!product) {
-            // Tìm bằng ID số
-            const allProducts = await Product.find().sort({ createdAt: 1 });
-            const productIndex = parseInt(productId) - 1;
-            
-            if (productIndex >= 0 && productIndex < allProducts.length) {
-                product = allProducts[productIndex];
-            }
+            return res.status(404).json({ error: 'Không tìm thấy sản phẩm' });
         }
-        
-        if (!product) {
-            console.log('❌ Product not found for deletion:', productId);
-            return res.status(404).json({ 
-                success: false,
-                error: 'Không tìm thấy sản phẩm để xóa' 
-            });
-        }
-        
-        const deletedProduct = await Product.findByIdAndDelete(product._id);
-        
-        console.log('✅ Product deleted:', deletedProduct.name);
-        
-        res.json({ 
-            success: true,
-            message: 'Đã xóa sản phẩm thành công',
-            deletedProduct: {
-                id: deletedProduct._id.toString(),
-                name: deletedProduct.name
-            }
-        });
-    } catch (error) {
-        console.error('❌ Error deleting product:', error);
-        res.status(500).json({ 
-            success: false,
-            error: 'Lỗi server khi xóa sản phẩm: ' + error.message 
-        });
-    }
-});
-
-// Reset products endpoint - ĐỂ FIX LỖI ID
-app.delete('/api/products-reset', async (req, res) => {
-    try {
-        console.log('🔄 Resetting all products...');
-        
-        // Xóa tất cả sản phẩm
-        const deleteResult = await Product.deleteMany({});
-        console.log(`✅ Deleted ${deleteResult.deletedCount} products`);
-        
-        // Tạo lại sản phẩm mặc định với ObjectId
-        await Product.insertMany([
-            {
-                name: "Son lì cao cấp Luxury Matte",
-                category: "Son môi",
-                originalPrice: 399000,
-                salePrice: 299000,
-                image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-                description: "Son lì cao cấp với công thức mềm mịn, lâu trôi"
-            },
-            {
-                name: "Bảng phấn mắt 12 màu Pro Palette",
-                category: "Trang điểm mắt",
-                originalPrice: 600000,
-                salePrice: 450000,
-                image: "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-                description: "Bảng phấn mắt đa dạng màu sắc, dễ phối màu"
-            },
-            {
-                name: "Kem nền che khuyết điểm Full Cover",
-                category: "Trang điểm mặt",
-                originalPrice: 650000,
-                salePrice: 520000,
-                image: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-                description: "Kem nền che phủ hoàn hảo, không gây bít tắc lỗ chân lông"
-            },
-            {
-                name: "Serum dưỡng ẩm chống lão hóa",
-                category: "Chăm sóc da",
-                originalPrice: 850000,
-                salePrice: 680000,
-                image: "https://images.unsplash.com/photo-1594035910387-fea47794261f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-                description: "Serum dưỡng ẩm chuyên sâu, cải thiện nếp nhăn"
-            }
-        ]);
-        
-        console.log('✅ Created new products with ObjectId');
-        
-        const newProducts = await Product.find();
-        const productsWithIds = newProducts.map(product => ({
-            id: product._id.toString(),
-            name: product.name
-        }));
         
         res.json({
             success: true,
-            message: 'Đã xóa và tạo lại tất cả sản phẩm với ObjectId mới',
-            products: productsWithIds
+            message: 'Đã xóa sản phẩm thành công',
+            deletedProduct: {
+                id: product._id.toString(),
+                name: product.name
+            }
         });
     } catch (error) {
-        console.error('❌ Error resetting products:', error);
-        res.status(500).json({ 
-            success: false,
-            error: 'Lỗi khi reset sản phẩm: ' + error.message 
-        });
+        console.error('Error deleting product:', error);
+        res.status(500).json({ error: 'Lỗi server khi xóa sản phẩm' });
     }
 });
 
-// Messages API
-app.get('/api/messages', async (req, res) => {
+// ==================== ORDERS API ====================
+
+app.get('/api/orders', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const messages = await Message.find().sort({ timestamp: -1 });
-        // Chuyển đổi _id thành id để tương thích với frontend
+        const { status, page = 1, limit = 20 } = req.query;
+        
+        let filter = {};
+        if (status && status !== 'all') {
+            filter.status = status;
+        }
+        
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const orders = await Order.find(filter)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(parseInt(limit));
+        
+        const total = await Order.countDocuments(filter);
+        
+        const formattedOrders = orders.map(order => ({
+            id: order._id.toString(),
+            orderNumber: order.orderNumber,
+            customerName: order.customerName,
+            customerPhone: order.customerPhone,
+            customerEmail: order.customerEmail,
+            customerAddress: order.customerAddress,
+            products: order.products,
+            subtotal: order.subtotal,
+            shippingFee: order.shippingFee,
+            totalAmount: order.totalAmount,
+            status: order.status,
+            paymentMethod: order.paymentMethod,
+            paymentStatus: order.paymentStatus,
+            paymentScreenshot: order.paymentScreenshot,
+            shippingInfo: order.shippingInfo,
+            notes: order.notes,
+            createdAt: order.createdAt,
+            updatedAt: order.updatedAt
+        }));
+        
+        res.json({
+            orders: formattedOrders,
+            pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                total,
+                pages: Math.ceil(total / parseInt(limit))
+            }
+        });
+    } catch (error) {
+        console.error('Error getting orders:', error);
+        res.status(500).json({ error: 'Lỗi server khi lấy đơn hàng' });
+    }
+});
+
+app.post('/api/orders', async (req, res) => {
+    try {
+        const { 
+            customerName, 
+            customerPhone, 
+            customerEmail, 
+            customerAddress, 
+            customerNote,
+            products, 
+            subtotal,
+            shippingFee = 30000,
+            totalAmount, 
+            paymentScreenshot 
+        } = req.body;
+        
+        if (!customerName || !customerPhone || !customerAddress || !products || !totalAmount) {
+            return res.status(400).json({ error: 'Thiếu thông tin đơn hàng bắt buộc' });
+        }
+        
+        // Calculate subtotal if not provided
+        const calculatedSubtotal = subtotal || products.reduce((sum, product) => 
+            sum + (product.price * (product.quantity || 1)), 0
+        );
+        
+        const calculatedTotal = totalAmount || calculatedSubtotal + shippingFee;
+        
+        const newOrder = new Order({
+            customerName: customerName.trim(),
+            customerPhone: customerPhone.trim(),
+            customerEmail: customerEmail?.trim(),
+            customerAddress: customerAddress.trim(),
+            customerNote: customerNote?.trim(),
+            products: products.map(p => ({
+                id: p.id,
+                name: p.name,
+                price: p.price,
+                quantity: p.quantity || 1,
+                image: p.image,
+                sku: p.sku
+            })),
+            subtotal: calculatedSubtotal,
+            shippingFee: shippingFee,
+            totalAmount: calculatedTotal,
+            paymentScreenshot: paymentScreenshot || ''
+        });
+        
+        await newOrder.save();
+        
+        // Update product sales and stock
+        for (const item of products) {
+            if (item.id && mongoose.Types.ObjectId.isValid(item.id)) {
+                await Product.findByIdAndUpdate(item.id, {
+                    $inc: { 
+                        sales: item.quantity || 1,
+                        stock: -(item.quantity || 1)
+                    }
+                });
+            }
+        }
+        
+        // Update statistics
+        await updateStatistics();
+        
+        console.log(`🛒 New order created: ${newOrder.orderNumber} - ${customerName}`);
+        
+        const responseOrder = {
+            id: newOrder._id.toString(),
+            orderNumber: newOrder.orderNumber,
+            customerName: newOrder.customerName,
+            customerPhone: newOrder.customerPhone,
+            customerEmail: newOrder.customerEmail,
+            customerAddress: newOrder.customerAddress,
+            products: newOrder.products,
+            subtotal: newOrder.subtotal,
+            shippingFee: newOrder.shippingFee,
+            totalAmount: newOrder.totalAmount,
+            status: newOrder.status,
+            paymentMethod: newOrder.paymentMethod,
+            paymentStatus: newOrder.paymentStatus,
+            paymentScreenshot: newOrder.paymentScreenshot,
+            createdAt: newOrder.createdAt,
+            updatedAt: newOrder.updatedAt
+        };
+        
+        res.status(201).json({
+            success: true,
+            message: 'Đơn hàng đã được tạo thành công',
+            order: responseOrder
+        });
+    } catch (error) {
+        console.error('Error creating order:', error);
+        res.status(500).json({ error: 'Lỗi server khi tạo đơn hàng' });
+    }
+});
+
+app.put('/api/orders/:id/status', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const orderId = req.params.id;
+        const { status, note } = req.body;
+        
+        const validStatuses = ['pending', 'confirmed', 'processing', 'shipping', 'delivered', 'cancelled', 'refunded'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ error: 'Trạng thái không hợp lệ' });
+        }
+        
+        let order;
+        if (mongoose.Types.ObjectId.isValid(orderId)) {
+            order = await Order.findById(orderId);
+        }
+        
+        if (!order) {
+            return res.status(404).json({ error: 'Không tìm thấy đơn hàng' });
+        }
+        
+        const updateData = {
+            status: status,
+            updatedAt: new Date()
+        };
+        
+        // Add shipping info if status is shipping
+        if (status === 'shipping') {
+            updateData.shippingInfo = {
+                shippedAt: new Date(),
+                estimatedDelivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) // 3 days from now
+            };
+        }
+        
+        // Add note if provided
+        if (note) {
+            if (!order.notes) order.notes = [];
+            order.notes.push({
+                text: note,
+                adminName: req.user.username,
+                timestamp: new Date()
+            });
+        }
+        
+        const updatedOrder = await Order.findByIdAndUpdate(
+            orderId,
+            updateData,
+            { new: true }
+        );
+        
+        // Update statistics
+        await updateStatistics();
+        
+        console.log(`✅ Order ${order.orderNumber} status changed to: ${status}`);
+        
+        res.json({
+            success: true,
+            message: 'Cập nhật trạng thái đơn hàng thành công',
+            order: {
+                id: updatedOrder._id.toString(),
+                orderNumber: updatedOrder.orderNumber,
+                status: updatedOrder.status,
+                updatedAt: updatedOrder.updatedAt
+            }
+        });
+    } catch (error) {
+        console.error('Error updating order status:', error);
+        res.status(500).json({ error: 'Lỗi server khi cập nhật trạng thái đơn hàng' });
+    }
+});
+
+// ==================== MESSAGES API ====================
+
+app.get('/api/messages', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { status, unread, page = 1, limit = 20 } = req.query;
+        
+        let filter = {};
+        
+        if (status && status !== 'all') {
+            filter.status = status;
+        }
+        
+        if (unread === 'true') {
+            filter.read = false;
+            filter.isAdminReply = false;
+        }
+        
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const messages = await Message.find(filter)
+            .sort({ timestamp: -1 })
+            .skip(skip)
+            .limit(parseInt(limit));
+        
+        const total = await Message.countDocuments(filter);
+        const unreadCount = await Message.countDocuments({ read: false, isAdminReply: false });
+        
         const formattedMessages = messages.map(message => ({
             id: message._id.toString(),
             text: message.text,
+            type: message.type,
             product: message.product,
             timestamp: message.timestamp,
             read: message.read,
             isAutoResponse: message.isAutoResponse,
             isAdminReply: message.isAdminReply,
-            originalMessageId: message.originalMessageId,
+            priority: message.priority,
             customerInfo: message.customerInfo,
-            replies: message.replies
+            replies: message.replies,
+            status: message.status
         }));
-        res.json(formattedMessages);
+        
+        res.json({
+            messages: formattedMessages,
+            unreadCount,
+            pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                total,
+                pages: Math.ceil(total / parseInt(limit))
+            }
+        });
     } catch (error) {
         console.error('Error getting messages:', error);
         res.status(500).json({ error: 'Lỗi server khi lấy tin nhắn' });
@@ -708,7 +1236,7 @@ app.get('/api/messages', async (req, res) => {
 
 app.post('/api/messages', async (req, res) => {
     try {
-        const { text, product, isAutoResponse, isAdminReply, originalMessageId, customerInfo } = req.body;
+        const { text, product, customerInfo } = req.body;
         
         if (!text || text.trim() === '') {
             return res.status(400).json({ error: 'Nội dung tin nhắn không được để trống' });
@@ -717,17 +1245,17 @@ app.post('/api/messages', async (req, res) => {
         const newMessage = new Message({
             text: text.trim(),
             product: product || null,
-            isAutoResponse: isAutoResponse || false,
-            isAdminReply: isAdminReply || false,
-            originalMessageId: originalMessageId || null,
-            customerInfo: customerInfo || null
+            customerInfo: {
+                ...customerInfo,
+                ip: req.ip,
+                userAgent: req.get('User-Agent')
+            }
         });
         
         await newMessage.save();
         
         console.log('💬 New message received from:', customerInfo?.name || 'Unknown');
         
-        // Trả về message với id thay vì _id
         const responseMessage = {
             id: newMessage._id.toString(),
             text: newMessage.text,
@@ -735,25 +1263,26 @@ app.post('/api/messages', async (req, res) => {
             timestamp: newMessage.timestamp,
             read: newMessage.read,
             isAutoResponse: newMessage.isAutoResponse,
-            isAdminReply: newMessage.isAdminReply,
-            originalMessageId: newMessage.originalMessageId,
             customerInfo: newMessage.customerInfo,
-            replies: newMessage.replies
+            replies: newMessage.replies,
+            status: newMessage.status
         };
         
-        res.status(201).json(responseMessage);
+        res.status(201).json({
+            success: true,
+            message: 'Tin nhắn đã được gửi thành công',
+            data: responseMessage
+        });
     } catch (error) {
         console.error('Error creating message:', error);
         res.status(500).json({ error: 'Lỗi server khi gửi tin nhắn' });
     }
 });
 
-// Mark message as read
-app.put('/api/messages/:id/read', async (req, res) => {
+app.put('/api/messages/:id/read', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const messageId = req.params.id;
         
-        // FIX: Sử dụng ObjectId để tìm kiếm
         if (!mongoose.Types.ObjectId.isValid(messageId)) {
             return res.status(400).json({ error: 'ID tin nhắn không hợp lệ' });
         }
@@ -769,11 +1298,12 @@ app.put('/api/messages/:id/read', async (req, res) => {
         }
         
         res.json({
-            id: message._id.toString(),
-            text: message.text,
-            timestamp: message.timestamp,
-            read: message.read,
-            customerInfo: message.customerInfo
+            success: true,
+            message: 'Đã đánh dấu tin nhắn là đã đọc',
+            data: {
+                id: message._id.toString(),
+                read: message.read
+            }
         });
     } catch (error) {
         console.error('Error marking message as read:', error);
@@ -781,53 +1311,49 @@ app.put('/api/messages/:id/read', async (req, res) => {
     }
 });
 
-// Reply to message
-app.post('/api/messages/:id/reply', async (req, res) => {
+app.post('/api/messages/:id/reply', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const messageId = req.params.id;
-        const { text, adminName } = req.body;
+        const { text } = req.body;
         
         if (!text || text.trim() === '') {
             return res.status(400).json({ error: 'Nội dung phản hồi không được để trống' });
         }
         
-        // FIX: Sử dụng ObjectId để tìm kiếm
         if (!mongoose.Types.ObjectId.isValid(messageId)) {
             return res.status(400).json({ error: 'ID tin nhắn không hợp lệ' });
         }
         
-        const parentMessage = await Message.findById(messageId);
+        const message = await Message.findById(messageId);
         
-        if (!parentMessage) {
+        if (!message) {
             return res.status(404).json({ error: 'Không tìm thấy tin nhắn' });
         }
         
-        const replyMessage = {
-            text: text.trim(),
-            adminName: adminName || 'Admin'
-        };
-        
-        if (!parentMessage.replies) {
-            parentMessage.replies = [];
+        if (!message.replies) {
+            message.replies = [];
         }
         
-        parentMessage.replies.push(replyMessage);
-        parentMessage.read = true;
+        message.replies.push({
+            text: text.trim(),
+            adminName: req.user.username,
+            adminId: req.user.userId
+        });
         
-        await parentMessage.save();
+        message.read = true;
+        message.status = 'pending';
         
-        console.log('📤 Admin replied to message:', messageId);
+        await message.save();
+        
+        console.log(`📤 Admin ${req.user.username} replied to message: ${messageId}`);
         
         res.json({
-            parentMessage: {
-                id: parentMessage._id.toString(),
-                text: parentMessage.text,
-                timestamp: parentMessage.timestamp,
-                read: parentMessage.read,
-                customerInfo: parentMessage.customerInfo,
-                replies: parentMessage.replies
-            },
-            reply: replyMessage
+            success: true,
+            message: 'Phản hồi đã được gửi thành công',
+            data: {
+                id: message._id.toString(),
+                replies: message.replies
+            }
         });
     } catch (error) {
         console.error('Error replying to message:', error);
@@ -835,8 +1361,7 @@ app.post('/api/messages/:id/reply', async (req, res) => {
     }
 });
 
-// Mark all messages as read for a customer
-app.put('/api/messages/customer/:phone/read-all', async (req, res) => {
+app.put('/api/messages/customer/:phone/read-all', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const customerPhone = req.params.phone;
         
@@ -862,195 +1387,8 @@ app.put('/api/messages/customer/:phone/read-all', async (req, res) => {
     }
 });
 
-// Orders API
-app.get('/api/orders', async (req, res) => {
-    try {
-        const orders = await Order.find().sort({ createdAt: -1 });
-        // Chuyển đổi _id thành id để tương thích với frontend
-        const formattedOrders = orders.map(order => ({
-            id: order._id.toString(),
-            customerName: order.customerName,
-            customerPhone: order.customerPhone,
-            customerAddress: order.customerAddress,
-            products: order.products,
-            totalAmount: order.totalAmount,
-            status: order.status,
-            paymentMethod: order.paymentMethod,
-            paymentScreenshot: order.paymentScreenshot,
-            createdAt: order.createdAt,
-            updatedAt: order.updatedAt
-        }));
-        res.json(formattedOrders);
-    } catch (error) {
-        console.error('Error getting orders:', error);
-        res.status(500).json({ error: 'Lỗi server khi lấy đơn hàng' });
-    }
-});
+// ==================== SETTINGS API ====================
 
-app.post('/api/orders', async (req, res) => {
-    try {
-        const { customerName, customerPhone, customerAddress, products, totalAmount, paymentScreenshot } = req.body;
-        
-        if (!customerName || !customerPhone || !customerAddress || !products || !totalAmount) {
-            return res.status(400).json({
-                error: 'Thiếu thông tin đơn hàng bắt buộc'
-            });
-        }
-        
-        const newOrder = new Order({
-            customerName: customerName.trim(),
-            customerPhone: customerPhone.trim(),
-            customerAddress: customerAddress.trim(),
-            products: Array.isArray(products) ? products : [],
-            totalAmount: parseInt(totalAmount),
-            paymentScreenshot: paymentScreenshot || ''
-        });
-        
-        await newOrder.save();
-        
-        // Update statistics
-        await updateOrderStatistics();
-        
-        console.log('🛒 New order created:', `${customerName} - ${formatPrice(totalAmount)}`);
-        
-        // Trả về order với id thay vì _id
-        const responseOrder = {
-            id: newOrder._id.toString(),
-            customerName: newOrder.customerName,
-            customerPhone: newOrder.customerPhone,
-            customerAddress: newOrder.customerAddress,
-            products: newOrder.products,
-            totalAmount: newOrder.totalAmount,
-            status: newOrder.status,
-            paymentMethod: newOrder.paymentMethod,
-            paymentScreenshot: newOrder.paymentScreenshot,
-            createdAt: newOrder.createdAt,
-            updatedAt: newOrder.updatedAt
-        };
-        
-        res.status(201).json(responseOrder);
-    } catch (error) {
-        console.error('Error creating order:', error);
-        res.status(500).json({ error: 'Lỗi server khi tạo đơn hàng' });
-    }
-});
-
-app.put('/api/orders/:id/status', async (req, res) => {
-    try {
-        const orderId = req.params.id;
-        const { status } = req.body;
-        
-        const validStatuses = ['pending', 'completed', 'cancelled'];
-        if (!validStatuses.includes(status)) {
-            return res.status(400).json({ error: 'Trạng thái không hợp lệ' });
-        }
-        
-        // FIX: Sử dụng ObjectId để tìm kiếm
-        if (!mongoose.Types.ObjectId.isValid(orderId)) {
-            return res.status(400).json({ error: 'ID đơn hàng không hợp lệ' });
-        }
-        
-        const updatedOrder = await Order.findByIdAndUpdate(
-            orderId,
-            { 
-                status: status,
-                updatedAt: new Date()
-            },
-            { new: true }
-        );
-        
-        if (!updatedOrder) {
-            return res.status(404).json({ error: 'Không tìm thấy đơn hàng' });
-        }
-        
-        // Update statistics
-        await updateOrderStatistics();
-        
-        console.log(`✅ Order ${orderId} status changed to: ${status}`);
-        
-        res.json({
-            id: updatedOrder._id.toString(),
-            customerName: updatedOrder.customerName,
-            customerPhone: updatedOrder.customerPhone,
-            totalAmount: updatedOrder.totalAmount,
-            status: updatedOrder.status,
-            updatedAt: updatedOrder.updatedAt
-        });
-    } catch (error) {
-        console.error('Error updating order status:', error);
-        res.status(500).json({ error: 'Lỗi server khi cập nhật trạng thái đơn hàng' });
-    }
-});
-
-// Get order statistics
-app.get('/api/orders/statistics', async (req, res) => {
-    try {
-        const totalOrders = await Order.countDocuments();
-        const pendingOrders = await Order.countDocuments({ status: 'pending' });
-        const completedOrders = await Order.countDocuments({ status: 'completed' });
-        const cancelledOrders = await Order.countDocuments({ status: 'cancelled' });
-        
-        const completedOrdersData = await Order.find({ status: 'completed' });
-        const totalRevenue = completedOrdersData.reduce((sum, order) => sum + order.totalAmount, 0);
-        
-        const uniqueCustomers = await Order.distinct('customerPhone');
-        
-        res.json({
-            totalOrders,
-            pendingOrders,
-            completedOrders,
-            cancelledOrders,
-            totalRevenue,
-            uniqueCustomers: uniqueCustomers.length,
-            averageOrderValue: completedOrders > 0 ? Math.round(totalRevenue / completedOrders) : 0
-        });
-    } catch (error) {
-        console.error('Error getting order statistics:', error);
-        res.status(500).json({ error: 'Lỗi server khi lấy thống kê đơn hàng' });
-    }
-});
-
-// Contact form
-app.post('/api/contact', async (req, res) => {
-    try {
-        const { name, email, message, phone } = req.body;
-        
-        if (!name || !email || !message) {
-            return res.status(400).json({
-                success: false,
-                message: 'Vui lòng điền đầy đủ thông tin bắt buộc'
-            });
-        }
-        
-        const contactMessage = new Message({
-            text: `Liên hệ từ: ${name} (${email}${phone ? ` - ${phone}` : ''}) - ${message}`,
-            type: 'contact_form',
-            customerInfo: { 
-                name: name.trim(), 
-                email: email.trim(), 
-                phone: phone ? phone.trim() : '' 
-            }
-        });
-        
-        await contactMessage.save();
-        
-        console.log('📧 Contact form submission:', { name, email, phone });
-        
-        res.json({
-            success: true,
-            message: 'Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi sớm nhất.',
-            data: { name, email, phone }
-        });
-    } catch (error) {
-        console.error('Error processing contact form:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Đã có lỗi xảy ra khi gửi liên hệ'
-        });
-    }
-});
-
-// Settings API
 app.get('/api/settings', async (req, res) => {
     try {
         let settings = await Settings.findOne();
@@ -1064,112 +1402,134 @@ app.get('/api/settings', async (req, res) => {
     }
 });
 
-app.put('/api/settings', async (req, res) => {
+app.put('/api/settings', authenticateToken, requireAdmin, async (req, res) => {
     try {
         let settings = await Settings.findOne();
         if (!settings) {
             settings = new Settings(req.body);
         } else {
-            settings = Object.assign(settings, req.body);
+            Object.assign(settings, req.body, { updatedAt: new Date() });
         }
         
         await settings.save();
         
-        console.log('⚙️ Settings updated');
+        console.log('⚙️ Settings updated by admin:', req.user.username);
         
-        res.json(settings);
+        res.json({
+            success: true,
+            message: 'Cài đặt đã được cập nhật',
+            data: settings
+        });
     } catch (error) {
         console.error('Error updating settings:', error);
         res.status(500).json({ error: 'Lỗi server khi cập nhật cài đặt' });
     }
 });
 
-// Statistics API
-app.get('/api/statistics', async (req, res) => {
+// ==================== STATISTICS & DASHBOARD API ====================
+
+app.get('/api/statistics', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const productCount = await Product.countDocuments();
+        const productCount = await Product.countDocuments({ status: 'active' });
         const messageCount = await Message.countDocuments();
-        const unreadMessages = await Message.countDocuments({ read: false });
+        const unreadMessages = await Message.countDocuments({ read: false, isAdminReply: false });
         const visitorData = await Visitor.findOne();
         const orderCount = await Order.countDocuments();
-        const completedOrders = await Order.countDocuments({ status: 'completed' });
+        const pendingOrders = await Order.countDocuments({ status: 'pending' });
+        const completedOrders = await Order.countDocuments({ status: 'delivered' });
         
-        const completedOrdersData = await Order.find({ status: 'completed' });
-        const totalRevenue = completedOrdersData.reduce((sum, order) => sum + order.totalAmount, 0);
+        const revenueData = await Order.aggregate([
+            { $match: { status: 'delivered' } },
+            { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+        ]);
         
-        let statistics = await Statistics.findOne();
-        if (!statistics) {
-            statistics = await Statistics.create({});
-        }
+        const totalRevenue = revenueData[0]?.total || 0;
         
-        const result = {
-            ...statistics.toObject(),
-            totalProducts: productCount,
-            totalMessages: messageCount,
-            unreadMessages: unreadMessages,
-            totalVisitors: visitorData?.total || 0,
-            todayVisitors: visitorData?.today || 0,
-            totalOrders: orderCount,
-            completedOrders: completedOrders,
-            totalRevenue: totalRevenue
-        };
+        const recentOrders = await Order.find()
+            .sort({ createdAt: -1 })
+            .limit(5)
+            .select('orderNumber customerName totalAmount status createdAt');
         
-        res.json(result);
+        const recentMessages = await Message.find()
+            .sort({ timestamp: -1 })
+            .limit(5)
+            .select('customerInfo text timestamp read');
+        
+        // Monthly revenue
+        const monthlyRevenue = await Order.aggregate([
+            { $match: { status: 'delivered' } },
+            {
+                $group: {
+                    _id: { 
+                        year: { $year: '$createdAt' },
+                        month: { $month: '$createdAt' }
+                    },
+                    revenue: { $sum: '$totalAmount' },
+                    orders: { $sum: 1 }
+                }
+            },
+            { $sort: { '_id.year': -1, '_id.month': -1 } },
+            { $limit: 6 }
+        ]);
+        
+        const formattedMonthlyRevenue = monthlyRevenue.map(item => ({
+            month: `${item._id.month}/${item._id.year}`,
+            revenue: item.revenue,
+            orders: item.orders
+        })).reverse();
+        
+        res.json({
+            overview: {
+                totalProducts: productCount,
+                totalOrders: orderCount,
+                pendingOrders,
+                completedOrders,
+                totalRevenue,
+                totalMessages: messageCount,
+                unreadMessages,
+                totalVisitors: visitorData?.total || 0,
+                todayVisitors: visitorData?.today || 0
+            },
+            recentOrders,
+            recentMessages,
+            monthlyRevenue: formattedMonthlyRevenue
+        });
     } catch (error) {
         console.error('Error getting statistics:', error);
         res.status(500).json({ error: 'Lỗi server khi lấy thống kê' });
     }
 });
 
-// Dashboard API
-app.get('/api/dashboard', async (req, res) => {
+app.get('/api/dashboard', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const totalOrders = await Order.countDocuments();
-        const pendingOrders = await Order.countDocuments({ status: 'pending' });
-        const completedOrders = await Order.countDocuments({ status: 'completed' });
+        const [
+            totalOrders,
+            pendingOrders,
+            completedOrders,
+            totalProducts,
+            totalMessages,
+            unreadMessages,
+            visitorData,
+            recentOrders,
+            recentMessages
+        ] = await Promise.all([
+            Order.countDocuments(),
+            Order.countDocuments({ status: 'pending' }),
+            Order.countDocuments({ status: 'delivered' }),
+            Product.countDocuments({ status: 'active' }),
+            Message.countDocuments(),
+            Message.countDocuments({ read: false, isAdminReply: false }),
+            Visitor.findOne(),
+            Order.find().sort({ createdAt: -1 }).limit(5),
+            Message.find().sort({ timestamp: -1 }).limit(5)
+        ]);
         
-        const completedOrdersData = await Order.find({ status: 'completed' });
-        const totalRevenue = completedOrdersData.reduce((sum, order) => sum + order.totalAmount, 0);
+        const revenueData = await Order.aggregate([
+            { $match: { status: 'delivered' } },
+            { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+        ]);
         
-        const uniqueCustomers = await Order.distinct('customerPhone');
-        const unreadMessages = await Message.countDocuments({ read: false, isAdminReply: false });
-        const productCount = await Product.countDocuments();
-        const visitorData = await Visitor.findOne();
-        
-        // Recent orders (last 5)
-        const recentOrders = await Order.find()
-            .sort({ createdAt: -1 })
-            .limit(5)
-            .select('id customerName customerPhone totalAmount status createdAt');
-        
-        // Recent messages (last 5)
-        const recentMessages = await Message.find()
-            .sort({ timestamp: -1 })
-            .limit(5)
-            .select('id customerInfo text timestamp read');
-        
-        // Popular products (based on orders)
-        const completedOrdersForProducts = await Order.find({ status: 'completed' });
-        const productSales = {};
-        
-        completedOrdersForProducts.forEach(order => {
-            order.products.forEach(product => {
-                const productId = product.id || product.name;
-                if (!productSales[productId]) {
-                    productSales[productId] = {
-                        name: product.name,
-                        quantity: 0,
-                        revenue: 0
-                    };
-                }
-                productSales[productId].quantity += product.quantity || 1;
-                productSales[productId].revenue += (product.price || 0) * (product.quantity || 1);
-            });
-        });
-        
-        const popularProducts = Object.values(productSales)
-            .sort((a, b) => b.quantity - a.quantity)
-            .slice(0, 5);
+        const totalRevenue = revenueData[0]?.total || 0;
         
         res.json({
             overview: {
@@ -1177,14 +1537,27 @@ app.get('/api/dashboard', async (req, res) => {
                 pendingOrders,
                 completedOrders,
                 totalRevenue,
-                uniqueCustomers: uniqueCustomers.length,
+                totalProducts,
+                totalMessages,
                 unreadMessages,
-                totalProducts: productCount,
-                totalVisitors: visitorData?.total || 0
+                totalVisitors: visitorData?.total || 0,
+                todayVisitors: visitorData?.today || 0
             },
-            recentOrders,
-            recentMessages,
-            popularProducts
+            recentOrders: recentOrders.map(order => ({
+                id: order._id.toString(),
+                orderNumber: order.orderNumber,
+                customerName: order.customerName,
+                totalAmount: order.totalAmount,
+                status: order.status,
+                createdAt: order.createdAt
+            })),
+            recentMessages: recentMessages.map(message => ({
+                id: message._id.toString(),
+                customerName: message.customerInfo?.name,
+                text: message.text,
+                timestamp: message.timestamp,
+                read: message.read
+            }))
         });
     } catch (error) {
         console.error('Error getting dashboard data:', error);
@@ -1192,60 +1565,68 @@ app.get('/api/dashboard', async (req, res) => {
     }
 });
 
-// ==================== HELPER FUNCTIONS ====================
+// ==================== FILE UPLOAD API ====================
 
-// Format price helper function
-function formatPrice(price) {
-    return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
-}
-
-// Update order statistics
-async function updateOrderStatistics() {
+app.post('/api/upload', authenticateToken, requireAdmin, upload.single('file'), (req, res) => {
     try {
-        const completedOrders = await Order.find({ status: 'completed' });
-        
-        const totalSales = completedOrders.length;
-        const totalRevenue = completedOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-        
-        // Update popular products
-        const productSales = {};
-        completedOrders.forEach(order => {
-            order.products.forEach(product => {
-                const productId = product.id || product.name;
-                if (!productSales[productId]) {
-                    productSales[productId] = {
-                        name: product.name,
-                        quantity: 0,
-                        revenue: 0
-                    };
-                }
-                productSales[productId].quantity += product.quantity || 1;
-                productSales[productId].revenue += (product.price || 0) * (product.quantity || 1);
-            });
-        });
-        
-        const popularProducts = Object.values(productSales)
-            .sort((a, b) => b.quantity - a.quantity)
-            .slice(0, 10);
-        
-        let statistics = await Statistics.findOne();
-        if (!statistics) {
-            statistics = new Statistics({
-                totalSales,
-                totalRevenue,
-                popularProducts
-            });
-        } else {
-            statistics.totalSales = totalSales;
-            statistics.totalRevenue = totalRevenue;
-            statistics.popularProducts = popularProducts;
+        if (!req.file) {
+            return res.status(400).json({ error: 'Không có file được tải lên' });
         }
         
-        await statistics.save();
+        const fileUrl = `/uploads/${req.file.filename}`;
+        
+        res.json({
+            success: true,
+            message: 'File uploaded successfully',
+            file: {
+                filename: req.file.filename,
+                originalname: req.file.originalname,
+                size: req.file.size,
+                url: fileUrl
+            }
+        });
     } catch (error) {
-        console.error('Error updating statistics:', error);
+        console.error('Error uploading file:', error);
+        res.status(500).json({ error: 'Lỗi server khi tải file lên' });
     }
-}
+});
+
+// ==================== CONTACT FORM API ====================
+
+app.post('/api/contact', async (req, res) => {
+    try {
+        const { name, email, phone, message, subject } = req.body;
+        
+        if (!name || !email || !message) {
+            return res.status(400).json({ error: 'Vui lòng điền đầy đủ thông tin bắt buộc' });
+        }
+        
+        const contactMessage = new Message({
+            text: `[CONTACT] ${subject || 'Liên hệ từ website'}: ${message}`,
+            type: 'contact',
+            customerInfo: {
+                name: name.trim(),
+                email: email.trim(),
+                phone: phone?.trim(),
+                ip: req.ip,
+                userAgent: req.get('User-Agent')
+            },
+            priority: 'high'
+        });
+        
+        await contactMessage.save();
+        
+        console.log('📧 Contact form submission:', { name, email, phone });
+        
+        res.json({
+            success: true,
+            message: 'Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi sớm nhất có thể.'
+        });
+    } catch (error) {
+        console.error('Error processing contact form:', error);
+        res.status(500).json({ error: 'Đã có lỗi xảy ra khi gửi liên hệ' });
+    }
+});
 
 // ==================== ERROR HANDLING ====================
 
@@ -1253,7 +1634,7 @@ async function updateOrderStatistics() {
 app.use('/api/*', (req, res) => {
     res.status(404).json({
         success: false,
-        message: 'API endpoint không tồn tại'
+        error: 'API endpoint không tồn tại'
     });
 });
 
@@ -1264,7 +1645,7 @@ app.use('*', (req, res) => {
     } else if (req.accepts('json')) {
         res.status(404).json({
             success: false,
-            message: 'Route không tồn tại'
+            error: 'Route không tồn tại'
         });
     } else {
         res.status(404).type('txt').send('404 Not Found');
@@ -1275,27 +1656,36 @@ app.use('*', (req, res) => {
 app.use((error, req, res, next) => {
     console.error('🚨 Server Error:', error);
     
+    // Multer errors
+    if (error instanceof multer.MulterError) {
+        if (error.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ error: 'File quá lớn. Kích thước tối đa là 10MB.' });
+        }
+    }
+    
     res.status(500).json({
         success: false,
-        message: 'Đã có lỗi xảy ra trên máy chủ',
-        errorId: Date.now(),
+        error: 'Đã có lỗi xảy ra trên máy chủ',
         ...(isProduction ? {} : { stack: error.stack })
     });
 });
 
-// ==================== DATABASE CONNECTION & SERVER STARTUP ====================
+// ==================== SERVER STARTUP ====================
 
 async function startServer() {
     try {
         console.log('🔗 Connecting to MongoDB...');
+        
         await mongoose.connect(MONGODB_URI, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
         });
         
         console.log('✅ Connected to MongoDB successfully');
         
-        // Khởi tạo database
+        // Initialize database
         await initializeDatabase();
         
         const server = http.createServer(app);
@@ -1308,12 +1698,22 @@ async function startServer() {
             console.log('🌍 Environment:', isProduction ? 'production' : 'development');
             console.log('💾 Database: MongoDB Atlas');
             console.log('⏰ Server started at:', new Date().toISOString());
+            console.log('🔐 JWT Authentication: Enabled');
+            console.log('📊 Analytics: Enabled');
+            console.log('🛡️ Security: Enhanced');
             console.log('='.repeat(70));
         });
         
         // Graceful shutdown
         process.on('SIGINT', async () => {
             console.log('\n🛑 Shutting down gracefully...');
+            await mongoose.connection.close();
+            console.log('✅ MongoDB connection closed');
+            process.exit(0);
+        });
+        
+        process.on('SIGTERM', async () => {
+            console.log('\n🛑 Received SIGTERM, shutting down gracefully...');
             await mongoose.connection.close();
             console.log('✅ MongoDB connection closed');
             process.exit(0);
