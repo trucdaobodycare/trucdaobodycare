@@ -1750,250 +1750,6 @@
             z-index: 10;
         }
         
-        /* NEW FEATURES STYLES */
-        
-        /* Theme Customizer */
-        .theme-customizer {
-            position: fixed;
-            top: 50%;
-            left: -300px;
-            transform: translateY(-50%);
-            background: white;
-            border-radius: 0 10px 10px 0;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            z-index: 1600;
-            padding: 15px;
-            width: 300px;
-            transition: var(--transition);
-        }
-        
-        .theme-customizer.active {
-            left: 0;
-        }
-        
-        .theme-toggle {
-            position: absolute;
-            right: -40px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: var(--primary-color);
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 0 10px 10px 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-        }
-        
-        .color-palette {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .color-option {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid transparent;
-        }
-        
-        .color-option.active {
-            border-color: var(--gray-800);
-        }
-        
-        /* Dark Mode */
-        .dark-mode {
-            background-color: var(--gray-900);
-            color: var(--gray-100);
-        }
-        
-        .dark-mode .product-card,
-        .dark-mode .admin-form,
-        .dark-mode .admin-table,
-        .dark-mode .dashboard-card {
-            background-color: var(--gray-800);
-            color: var(--gray-100);
-        }
-        
-        .dark-mode .admin-form-group input,
-        .dark-mode .admin-form-group textarea,
-        .dark-mode .admin-form-group select {
-            background-color: var(--gray-700);
-            color: var(--gray-100);
-            border-color: var(--gray-600);
-        }
-        
-        /* Product Quick View */
-        .quick-view-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-        }
-        
-        .quick-view-content {
-            background-color: white;
-            width: 90%;
-            max-width: 1000px;
-            border-radius: var(--border-radius-lg);
-            overflow: hidden;
-            display: flex;
-            max-height: 90vh;
-        }
-        
-        .quick-view-image {
-            flex: 1;
-            background-size: cover;
-            background-position: center;
-        }
-        
-        .quick-view-info {
-            flex: 1;
-            padding: 30px;
-            overflow-y: auto;
-        }
-        
-        /* Wishlist */
-        .wishlist-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 255, 255, 0.9);
-            border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: var(--transition);
-            z-index: 2;
-        }
-        
-        .wishlist-btn.active {
-            color: var(--danger-color);
-        }
-        
-        .wishlist-btn:hover {
-            background: white;
-            transform: scale(1.1);
-        }
-        
-        /* Product Comparison */
-        .comparison-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        
-        .comparison-table th,
-        .comparison-table td {
-            padding: 12px;
-            text-align: center;
-            border: 1px solid var(--gray-300);
-        }
-        
-        .comparison-table th {
-            background-color: var(--gray-100);
-            font-weight: 600;
-        }
-        
-        /* Loyalty Program */
-        .loyalty-badge {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-left: 10px;
-        }
-        
-        .loyalty-bronze {
-            background: linear-gradient(135deg, #cd7f32, #a57128);
-            color: white;
-        }
-        
-        .loyalty-silver {
-            background: linear-gradient(135deg, #c0c0c0, #a8a8a8);
-            color: white;
-        }
-        
-        .loyalty-gold {
-            background: linear-gradient(135deg, #ffd700, #d4af37);
-            color: white;
-        }
-        
-        .loyalty-platinum {
-            background: linear-gradient(135deg, #e5e4e2, #b4b4b4);
-            color: white;
-        }
-        
-        /* Advanced Filters */
-        .filters-panel {
-            background: white;
-            border-radius: var(--border-radius);
-            padding: 20px;
-            margin-bottom: 30px;
-            box-shadow: var(--box-shadow);
-        }
-        
-        .filter-group {
-            margin-bottom: 20px;
-        }
-        
-        .filter-group h4 {
-            margin-bottom: 10px;
-            color: var(--gray-800);
-        }
-        
-        .filter-options {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        
-        .filter-option {
-            padding: 8px 15px;
-            background: var(--gray-100);
-            border-radius: 20px;
-            cursor: pointer;
-            transition: var(--transition);
-            font-size: 0.9rem;
-        }
-        
-        .filter-option.active {
-            background: var(--primary-color);
-            color: white;
-        }
-        
-        /* Loading Spinner */
-        .loading-spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
         /* Responsive */
         @media (max-width: 1200px) {
             .admin-panel {
@@ -2004,15 +1760,6 @@
             
             .admin-panel.active {
                 left: 0;
-            }
-            
-            .quick-view-content {
-                flex-direction: column;
-                max-height: 95vh;
-            }
-            
-            .quick-view-image {
-                height: 300px;
             }
         }
         
@@ -2131,11 +1878,6 @@
                 width: 280px;
                 right: -280px;
             }
-            
-            .theme-customizer {
-                width: 280px;
-                left: -280px;
-            }
         }
         
         @media (max-width: 576px) {
@@ -2189,16 +1931,6 @@
             .admin-customization.active {
                 right: 0;
             }
-            
-            .theme-customizer {
-                width: 100%;
-                left: -100%;
-                border-radius: 0;
-            }
-            
-            .theme-customizer.active {
-                left: 0;
-            }
         }
     </style>
 </head>
@@ -2244,7 +1976,7 @@
                 </div>
                 <div class="header-actions">
                     <a href="#" id="login-btn"><i class="fas fa-user"></i></a>
-                    <a href="#" id="wishlist-icon"><i class="fas fa-heart"></i></a>
+                    <a href="#"><i class="fas fa-heart"></i></a>
                     <a href="#" class="cart-icon" id="cart-icon">
                         <i class="fas fa-shopping-cart"></i>
                         <span class="cart-count">0</span>
@@ -2300,10 +2032,6 @@
             </div>
             <div class="products-grid" id="products-grid">
                 <!-- Products will be loaded dynamically -->
-                <div class="loading-placeholder" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
-                    <div class="loading-spinner" style="margin: 0 auto;"></div>
-                    <p style="margin-top: 15px; color: var(--gray-600);">Đang tải sản phẩm...</p>
-                </div>
             </div>
         </div>
     </section>
@@ -2966,69 +2694,6 @@
         </div>
     </div>
 
-    <!-- Theme Customizer -->
-    <div class="theme-customizer" id="theme-customizer">
-        <div class="theme-toggle" id="theme-toggle">
-            <i class="fas fa-paint-brush"></i>
-        </div>
-        <div class="customization-content">
-            <h3>Tùy chỉnh Giao diện</h3>
-            
-            <div class="customization-group">
-                <label>Chủ đề màu</label>
-                <div class="color-palette">
-                    <div class="color-option active" style="background-color: #e83e8c;" data-color="#e83e8c"></div>
-                    <div class="color-option" style="background-color: #3b82f6;" data-color="#3b82f6"></div>
-                    <div class="color-option" style="background-color: #10b981;" data-color="#10b981"></div>
-                    <div class="color-option" style="background-color: #f59e0b;" data-color="#f59e0b"></div>
-                    <div class="color-option" style="background-color: #8b5cf6;" data-color="#8b5cf6"></div>
-                    <div class="color-option" style="background-color: #ec4899;" data-color="#ec4899"></div>
-                    <div class="color-option" style="background-color: #06b6d4;" data-color="#06b6d4"></div>
-                    <div class="color-option" style="background-color: #84cc16;" data-color="#84cc16"></div>
-                </div>
-            </div>
-            
-            <div class="customization-group">
-                <label for="theme-mode">Chế độ hiển thị</label>
-                <select id="theme-mode">
-                    <option value="light">Sáng</option>
-                    <option value="dark">Tối</option>
-                    <option value="auto">Tự động</option>
-                </select>
-            </div>
-            
-            <div class="customization-group">
-                <label for="font-family">Font chữ</label>
-                <select id="font-family">
-                    <option value="Inter">Inter</option>
-                    <option value="Arial">Arial</option>
-                    <option value="Helvetica">Helvetica</option>
-                    <option value="Georgia">Georgia</option>
-                    <option value="Times New Roman">Times New Roman</option>
-                </select>
-            </div>
-            
-            <div class="customization-group">
-                <label for="border-radius">Độ bo góc</label>
-                <select id="border-radius">
-                    <option value="small">Nhỏ</option>
-                    <option value="medium" selected>Trung bình</option>
-                    <option value="large">Lớn</option>
-                </select>
-            </div>
-            
-            <button class="btn" id="apply-theme" style="width: 100%; margin-top: 15px;">Áp dụng</button>
-            <button class="btn btn-secondary" id="reset-theme" style="width: 100%; margin-top: 10px;">Đặt lại mặc định</button>
-        </div>
-    </div>
-
-    <!-- Quick View Modal -->
-    <div class="quick-view-modal" id="quick-view-modal">
-        <div class="quick-view-content" id="quick-view-content">
-            <!-- Content will be populated dynamically -->
-        </div>
-    </div>
-
     <script>
         // Admin credentials
         const ADMIN_USERNAME = "Trucdaoadminlogin";
@@ -3044,8 +2709,6 @@
         let visitors = { total: 0, today: 0, date: new Date().toDateString() };
         let productViews = {};
         let cart = JSON.parse(localStorage.getItem('cart')) || [];
-        let wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
-        let isAdminLoggedIn = localStorage.getItem('adminLoggedIn') === 'true';
 
         // ==================== CẢI THIỆN ADMIN PANEL ====================
         
@@ -3221,438 +2884,6 @@
             }
         }
         
-        // ==================== TÍNH NĂNG MỚI ====================
-        
-        // Theme Customizer
-        function initThemeCustomizer() {
-            const themeCustomizer = document.getElementById('theme-customizer');
-            const themeToggle = document.getElementById('theme-toggle');
-            const applyThemeBtn = document.getElementById('apply-theme');
-            const resetThemeBtn = document.getElementById('reset-theme');
-            const colorOptions = document.querySelectorAll('.color-option');
-            const themeModeSelect = document.getElementById('theme-mode');
-            const fontFamilySelect = document.getElementById('font-family');
-            const borderRadiusSelect = document.getElementById('border-radius');
-            
-            // Toggle theme customizer
-            themeToggle.addEventListener('click', function() {
-                themeCustomizer.classList.toggle('active');
-            });
-            
-            // Color selection
-            colorOptions.forEach(option => {
-                option.addEventListener('click', function() {
-                    colorOptions.forEach(opt => opt.classList.remove('active'));
-                    this.classList.add('active');
-                });
-            });
-            
-            // Apply theme
-            applyThemeBtn.addEventListener('click', function() {
-                // Apply primary color
-                const selectedColor = document.querySelector('.color-option.active').getAttribute('data-color');
-                document.documentElement.style.setProperty('--primary-color', selectedColor);
-                document.documentElement.style.setProperty('--primary-dark', darkenColor(selectedColor, 20));
-                
-                // Apply theme mode
-                const themeMode = themeModeSelect.value;
-                if (themeMode === 'dark') {
-                    document.body.classList.add('dark-mode');
-                } else if (themeMode === 'light') {
-                    document.body.classList.remove('dark-mode');
-                } else {
-                    // Auto mode - check system preference
-                    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                        document.body.classList.add('dark-mode');
-                    } else {
-                        document.body.classList.remove('dark-mode');
-                    }
-                }
-                
-                // Apply font family
-                const fontFamily = fontFamilySelect.value;
-                document.body.style.fontFamily = fontFamily + ', sans-serif';
-                
-                // Apply border radius
-                const borderRadius = borderRadiusSelect.value;
-                if (borderRadius === 'small') {
-                    document.documentElement.style.setProperty('--border-radius', '4px');
-                    document.documentElement.style.setProperty('--border-radius-lg', '8px');
-                } else if (borderRadius === 'medium') {
-                    document.documentElement.style.setProperty('--border-radius', '8px');
-                    document.documentElement.style.setProperty('--border-radius-lg', '12px');
-                } else if (borderRadius === 'large') {
-                    document.documentElement.style.setProperty('--border-radius', '12px');
-                    document.documentElement.style.setProperty('--border-radius-lg', '16px');
-                }
-                
-                // Save to localStorage
-                const themeSettings = {
-                    primaryColor: selectedColor,
-                    themeMode: themeMode,
-                    fontFamily: fontFamily,
-                    borderRadius: borderRadius
-                };
-                localStorage.setItem('themeSettings', JSON.stringify(themeSettings));
-                
-                showNotification('Giao diện đã được cập nhật!', 'success');
-            });
-            
-            // Reset theme
-            resetThemeBtn.addEventListener('click', function() {
-                // Reset to default values
-                document.documentElement.style.setProperty('--primary-color', '#e83e8c');
-                document.documentElement.style.setProperty('--primary-dark', '#d81b60');
-                document.body.classList.remove('dark-mode');
-                document.body.style.fontFamily = "'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
-                document.documentElement.style.setProperty('--border-radius', '8px');
-                document.documentElement.style.setProperty('--border-radius-lg', '12px');
-                
-                // Reset form values
-                colorOptions.forEach(opt => opt.classList.remove('active'));
-                document.querySelector('.color-option[data-color="#e83e8c"]').classList.add('active');
-                themeModeSelect.value = 'light';
-                fontFamilySelect.value = 'Inter';
-                borderRadiusSelect.value = 'medium';
-                
-                // Remove from localStorage
-                localStorage.removeItem('themeSettings');
-                
-                showNotification('Đã đặt lại giao diện mặc định!', 'success');
-            });
-            
-            // Load saved theme settings
-            const savedThemeSettings = localStorage.getItem('themeSettings');
-            if (savedThemeSettings) {
-                const themeSettings = JSON.parse(savedThemeSettings);
-                
-                if (themeSettings.primaryColor) {
-                    document.documentElement.style.setProperty('--primary-color', themeSettings.primaryColor);
-                    document.documentElement.style.setProperty('--primary-dark', darkenColor(themeSettings.primaryColor, 20));
-                    colorOptions.forEach(opt => opt.classList.remove('active'));
-                    document.querySelector(`.color-option[data-color="${themeSettings.primaryColor}"]`).classList.add('active');
-                }
-                
-                if (themeSettings.themeMode) {
-                    themeModeSelect.value = themeSettings.themeMode;
-                    if (themeSettings.themeMode === 'dark') {
-                        document.body.classList.add('dark-mode');
-                    } else if (themeSettings.themeMode === 'light') {
-                        document.body.classList.remove('dark-mode');
-                    } else {
-                        // Auto mode
-                        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                            document.body.classList.add('dark-mode');
-                        } else {
-                            document.body.classList.remove('dark-mode');
-                        }
-                    }
-                }
-                
-                if (themeSettings.fontFamily) {
-                    fontFamilySelect.value = themeSettings.fontFamily;
-                    document.body.style.fontFamily = themeSettings.fontFamily + ', sans-serif';
-                }
-                
-                if (themeSettings.borderRadius) {
-                    borderRadiusSelect.value = themeSettings.borderRadius;
-                    if (themeSettings.borderRadius === 'small') {
-                        document.documentElement.style.setProperty('--border-radius', '4px');
-                        document.documentElement.style.setProperty('--border-radius-lg', '8px');
-                    } else if (themeSettings.borderRadius === 'medium') {
-                        document.documentElement.style.setProperty('--border-radius', '8px');
-                        document.documentElement.style.setProperty('--border-radius-lg', '12px');
-                    } else if (themeSettings.borderRadius === 'large') {
-                        document.documentElement.style.setProperty('--border-radius', '12px');
-                        document.documentElement.style.setProperty('--border-radius-lg', '16px');
-                    }
-                }
-            }
-        }
-        
-        // Helper function to darken color
-        function darkenColor(color, percent) {
-            const num = parseInt(color.replace("#", ""), 16);
-            const amt = Math.round(2.55 * percent);
-            const R = (num >> 16) - amt;
-            const G = (num >> 8 & 0x00FF) - amt;
-            const B = (num & 0x0000FF) - amt;
-            return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
-                (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
-                (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
-        }
-        
-        // Wishlist functionality
-        function initWishlist() {
-            const wishlistIcon = document.getElementById('wishlist-icon');
-            const wishlistCount = document.createElement('span');
-            wishlistCount.className = 'cart-count';
-            wishlistCount.style.top = '-5px';
-            wishlistCount.style.right = '-5px';
-            wishlistCount.textContent = wishlist.length;
-            wishlistIcon.appendChild(wishlistCount);
-            
-            wishlistIcon.addEventListener('click', function(e) {
-                e.preventDefault();
-                showWishlistModal();
-            });
-            
-            updateWishlistCount();
-        }
-        
-        function toggleWishlist(productId, productName, productPrice, productImage) {
-            const existingItem = wishlist.find(item => item.id === productId);
-            
-            if (existingItem) {
-                wishlist = wishlist.filter(item => item.id !== productId);
-                showNotification(`Đã xóa ${productName} khỏi danh sách yêu thích!`, 'info');
-            } else {
-                wishlist.push({
-                    id: productId,
-                    name: productName,
-                    price: productPrice,
-                    image: productImage
-                });
-                showNotification(`Đã thêm ${productName} vào danh sách yêu thích!`, 'success');
-            }
-            
-            localStorage.setItem('wishlist', JSON.stringify(wishlist));
-            updateWishlistCount();
-            updateProductWishlistButtons();
-        }
-        
-        function updateWishlistCount() {
-            const wishlistCount = document.querySelector('#wishlist-icon .cart-count');
-            if (wishlistCount) {
-                wishlistCount.textContent = wishlist.length;
-            }
-        }
-        
-        function updateProductWishlistButtons() {
-            document.querySelectorAll('.wishlist-btn').forEach(btn => {
-                const productId = btn.getAttribute('data-id');
-                if (wishlist.find(item => item.id === productId)) {
-                    btn.classList.add('active');
-                    btn.innerHTML = '<i class="fas fa-heart"></i>';
-                } else {
-                    btn.classList.remove('active');
-                    btn.innerHTML = '<i class="far fa-heart"></i>';
-                }
-            });
-        }
-        
-        function showWishlistModal() {
-            const modal = document.createElement('div');
-            modal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0,0,0,0.5);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 2000;
-            `;
-            
-            modal.innerHTML = `
-                <div style="background: white; width: 90%; max-width: 600px; max-height: 80%; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column;">
-                    <div style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: between; align-items: center;">
-                        <h3 style="margin: 0;">Sản phẩm yêu thích</h3>
-                        <button class="close-wishlist" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
-                    </div>
-                    <div style="flex: 1; overflow-y: auto; padding: 20px;" id="wishlist-items">
-                        ${wishlist.length === 0 ? 
-                            '<p style="text-align: center; padding: 40px; color: #666;">Danh sách yêu thích của bạn đang trống</p>' : 
-                            wishlist.map(item => `
-                                <div class="cart-item">
-                                    <img src="${item.image}" alt="${item.name}" class="cart-item-image">
-                                    <div class="cart-item-info">
-                                        <div class="cart-item-name">${item.name}</div>
-                                        <div class="cart-item-price">${formatPrice(item.price)}</div>
-                                        <div style="display: flex; gap: 10px; margin-top: 10px;">
-                                            <button class="btn btn-sm add-to-cart-from-wishlist" data-id="${item.id}" data-name="${item.name}" data-price="${item.price}" data-image="${item.image}">Thêm vào giỏ</button>
-                                            <button class="btn btn-sm btn-danger remove-from-wishlist" data-id="${item.id}">Xóa</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            `).join('')
-                        }
-                    </div>
-                    <div style="padding: 15px; border-top: 1px solid #eee; display: flex; justify-content: flex-end;">
-                        <button class="btn btn-secondary close-wishlist-btn">Đóng</button>
-                    </div>
-                </div>
-            `;
-            
-            document.body.appendChild(modal);
-            
-            // Close modal
-            const closeBtn = modal.querySelector('.close-wishlist');
-            const closeBtn2 = modal.querySelector('.close-wishlist-btn');
-            
-            closeBtn.addEventListener('click', () => {
-                document.body.removeChild(modal);
-            });
-            
-            closeBtn2.addEventListener('click', () => {
-                document.body.removeChild(modal);
-            });
-            
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    document.body.removeChild(modal);
-                }
-            });
-            
-            // Add event listeners for wishlist items
-            document.querySelectorAll('.add-to-cart-from-wishlist').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const productId = this.getAttribute('data-id');
-                    const productName = this.getAttribute('data-name');
-                    const productPrice = parseInt(this.getAttribute('data-price'));
-                    const productImage = this.getAttribute('data-image');
-                    
-                    addToCart(productId, productName, productPrice, productImage);
-                    document.body.removeChild(modal);
-                });
-            });
-            
-            document.querySelectorAll('.remove-from-wishlist').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const productId = this.getAttribute('data-id');
-                    const product = wishlist.find(item => item.id === productId);
-                    
-                    if (product) {
-                        wishlist = wishlist.filter(item => item.id !== productId);
-                        localStorage.setItem('wishlist', JSON.stringify(wishlist));
-                        updateWishlistCount();
-                        updateProductWishlistButtons();
-                        
-                        // Refresh modal
-                        document.body.removeChild(modal);
-                        showWishlistModal();
-                    }
-                });
-            });
-        }
-        
-        // Quick View functionality
-        function initQuickView() {
-            document.addEventListener('click', function(e) {
-                if (e.target.closest('.quick-view-btn')) {
-                    const productId = e.target.closest('.quick-view-btn').getAttribute('data-id');
-                    showQuickView(productId);
-                }
-            });
-            
-            // Close quick view when clicking outside
-            document.addEventListener('click', function(e) {
-                if (e.target.id === 'quick-view-modal') {
-                    document.getElementById('quick-view-modal').style.display = 'none';
-                }
-            });
-            
-            // Close quick view with escape key
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') {
-                    document.getElementById('quick-view-modal').style.display = 'none';
-                }
-            });
-        }
-        
-        function showQuickView(productId) {
-            const product = products.find(p => p.id == productId);
-            if (!product) return;
-            
-            const discount = Math.round((1 - product.salePrice / product.originalPrice) * 100);
-            
-            const quickViewContent = document.getElementById('quick-view-content');
-            quickViewContent.innerHTML = `
-                <div class="quick-view-image" style="background-image: url('${product.image}')"></div>
-                <div class="quick-view-info">
-                    <button class="close-login" id="close-quick-view" style="position: absolute; top: 15px; right: 15px;">
-                        <i class="fas fa-times"></i>
-                    </button>
-                    <div class="product-category">${product.category}</div>
-                    <h2 style="margin-bottom: 15px;">${product.name}</h2>
-                    <div class="product-price" style="margin-bottom: 20px;">
-                        <span class="current-price">${formatPrice(product.salePrice)}</span>
-                        <span class="original-price">${formatPrice(product.originalPrice)}</span>
-                        <div class="sale-badge" style="position: relative; display: inline-block; margin-left: 10px;">-${discount}%</div>
-                    </div>
-                    <p style="margin-bottom: 20px; color: #666;">${product.description || 'Sản phẩm chất lượng cao từ Trúc Đào Cosmetics'}</p>
-                    
-                    <div style="margin-bottom: 20px;">
-                        <h4 style="margin-bottom: 10px;">Thông tin sản phẩm</h4>
-                        <ul style="list-style: none; padding-left: 0;">
-                            <li style="margin-bottom: 5px;"><i class="fas fa-check" style="color: var(--success-color); margin-right: 8px;"></i> Chất lượng cao cấp</li>
-                            <li style="margin-bottom: 5px;"><i class="fas fa-check" style="color: var(--success-color); margin-right: 8px;"></i> An toàn cho da</li>
-                            <li style="margin-bottom: 5px;"><i class="fas fa-check" style="color: var(--success-color); margin-right: 8px;"></i> Hiệu ứng lâu trôi</li>
-                            <li style="margin-bottom: 5px;"><i class="fas fa-check" style="color: var(--success-color); margin-right: 8px;"></i> Phù hợp mọi loại da</li>
-                        </ul>
-                    </div>
-                    
-                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                        <button class="btn add-to-cart" data-id="${product.id}" data-name="${product.name}" data-price="${product.salePrice}" data-image="${product.image}" style="flex: 1;">
-                            <i class="fas fa-shopping-cart"></i> Thêm vào giỏ
-                        </button>
-                        <button class="wishlist-btn ${wishlist.find(item => item.id === product.id) ? 'active' : ''}" data-id="${product.id}" data-name="${product.name}" data-price="${product.salePrice}" data-image="${product.image}" style="width: 50px;">
-                            <i class="${wishlist.find(item => item.id === product.id) ? 'fas' : 'far'} fa-heart"></i>
-                        </button>
-                    </div>
-                    
-                    <div style="border-top: 1px solid #eee; padding-top: 15px;">
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                            <i class="fas fa-truck" style="color: var(--primary-color);"></i>
-                            <span>Miễn phí vận chuyển cho đơn hàng từ 500.000đ</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <i class="fas fa-shield-alt" style="color: var(--primary-color);"></i>
-                            <span>Đảm bảo hoàn tiền trong 7 ngày nếu không hài lòng</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('quick-view-modal').style.display = 'flex';
-            
-            // Close button
-            document.getElementById('close-quick-view').addEventListener('click', function() {
-                document.getElementById('quick-view-modal').style.display = 'none';
-            });
-            
-            // Add event listeners for buttons inside quick view
-            quickViewContent.querySelector('.add-to-cart').addEventListener('click', function() {
-                const productId = this.getAttribute('data-id');
-                const productName = this.getAttribute('data-name');
-                const productPrice = parseInt(this.getAttribute('data-price'));
-                const productImage = this.getAttribute('data-image');
-                
-                addToCart(productId, productName, productPrice, productImage);
-                document.getElementById('quick-view-modal').style.display = 'none';
-            });
-            
-            quickViewContent.querySelector('.wishlist-btn').addEventListener('click', function() {
-                const productId = this.getAttribute('data-id');
-                const productName = this.getAttribute('data-name');
-                const productPrice = parseInt(this.getAttribute('data-price'));
-                const productImage = this.getAttribute('data-image');
-                
-                toggleWishlist(productId, productName, productPrice, productImage);
-                
-                // Update button state
-                if (wishlist.find(item => item.id === productId)) {
-                    this.classList.add('active');
-                    this.innerHTML = '<i class="fas fa-heart"></i>';
-                } else {
-                    this.classList.remove('active');
-                    this.innerHTML = '<i class="far fa-heart"></i>';
-                }
-            });
-        }
-        
         // ==================== FIX ZOOM TRÊN MOBILE ====================
         
         // Ngăn chặn zoom trên mobile
@@ -3696,15 +2927,9 @@
             // Khởi tạo các tính năng mới
             initAdminPanelResize();
             initAdminCustomization();
-            initThemeCustomizer();
-            initWishlist();
-            initQuickView();
             preventZoom();
             
-            // Kiểm tra trạng thái đăng nhập admin
-            checkAdminLoginStatus();
-            
-            // Tải sản phẩm ngay lập tức
+            updateVisitorCountAPI();
             loadProductsFromAPI();
             loadMessagesFromAPI();
             loadOrdersFromAPI();
@@ -3754,13 +2979,7 @@
             
             loginBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                // Kiểm tra nếu đã đăng nhập thì mở admin panel
-                if (isAdminLoggedIn) {
-                    document.getElementById('admin-panel').classList.add('active');
-                } else {
-                    // Nếu chưa đăng nhập thì hiển thị form đăng nhập
-                    loginModal.style.display = 'flex';
-                }
+                loginModal.style.display = 'flex';
             });
             
             closeLogin.addEventListener('click', () => {
@@ -3792,7 +3011,7 @@
 
         // ==================== CÁC HÀM CŨ (giữ nguyên) ====================
         
-        // Hàm gọi API để lấy sản phẩm - ƯU TIÊN SẢN PHẨM KHUYẾN MÃI
+        // Hàm gọi API để lấy sản phẩm
         async function loadProductsFromAPI() {
             try {
                 console.log('🔄 Đang tải sản phẩm từ API...');
@@ -3804,92 +3023,15 @@
                     // Cập nhật danh sách sản phẩm từ API
                     if (apiProducts && apiProducts.length > 0) {
                         products = apiProducts;
-                        
-                        // Ưu tiên hiển thị sản phẩm khuyến mãi trước
-                        const saleProducts = products.filter(product => product.salePrice < product.originalPrice);
-                        const regularProducts = products.filter(product => product.salePrice >= product.originalPrice);
-                        
-                        // Sắp xếp lại danh sách: sản phẩm khuyến mãi lên đầu
-                        products = [...saleProducts, ...regularProducts];
-                        
                         renderProductsInAdmin();
                         updateProductDisplay();
-                        attachProductEventListeners();
                     }
                 } else {
                     console.warn('⚠️ Không thể tải sản phẩm từ API');
-                    // Hiển thị sản phẩm mẫu nếu không kết nối được API
-                    loadSampleProducts();
                 }
             } catch (error) {
                 console.error('❌ Lỗi khi tải sản phẩm từ API:', error);
-                // Hiển thị sản phẩm mẫu nếu có lỗi
-                loadSampleProducts();
             }
-        }
-
-        // Hàm hiển thị sản phẩm mẫu khi không kết nối được API
-        function loadSampleProducts() {
-            products = [
-                {
-                    id: 1,
-                    name: "Son Lì Cao Cấp Ruby",
-                    category: "Son môi",
-                    originalPrice: 350000,
-                    salePrice: 250000,
-                    image: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1315&q=80",
-                    description: "Son lì cao cấp với độ bền lên đến 12 giờ"
-                },
-                {
-                    id: 2,
-                    name: "Phấn Mắt Nude Palette",
-                    category: "Trang điểm mắt",
-                    originalPrice: 450000,
-                    salePrice: 320000,
-                    image: "https://images.unsplash.com/photo-1515377905703-c4788e51af15?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
-                    description: "Bảng phấn mắt với 12 tông màu nude thời thượng"
-                },
-                {
-                    id: 3,
-                    name: "Kem Nền Che Khuyết Điểm",
-                    category: "Trang điểm mặt",
-                    originalPrice: 280000,
-                    salePrice: 280000,
-                    image: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1187&q=80",
-                    description: "Kem nền mỏng nhẹ, che phủ hoàn hảo"
-                },
-                {
-                    id: 4,
-                    name: "Serum Dưỡng Ẩm Chuyên Sâu",
-                    category: "Chăm sóc da",
-                    originalPrice: 520000,
-                    salePrice: 420000,
-                    image: "https://images.unsplash.com/photo-1556228577-135c319f45c8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
-                    description: "Serum dưỡng ẩm chuyên sâu cho làn da căng mịn"
-                },
-                {
-                    id: 5,
-                    name: "Nước Hoa Hương Hoa Nhài",
-                    category: "Nước hoa",
-                    originalPrice: 680000,
-                    salePrice: 550000,
-                    image: "https://images.unsplash.com/photo-1541643600914-78b084683601?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1048&q=80",
-                    description: "Nước hoa nữ tính với hương hoa nhài tinh tế"
-                },
-                {
-                    id: 6,
-                    name: "Mascara Làm Dài Mi",
-                    category: "Trang điểm mắt",
-                    originalPrice: 220000,
-                    salePrice: 180000,
-                    image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
-                    description: "Mascara làm dài và cong mi tự nhiên"
-                }
-            ];
-            
-            renderProductsInAdmin();
-            updateProductDisplay();
-            attachProductEventListeners();
         }
 
         // Hàm lưu sản phẩm lên API
@@ -4098,7 +3240,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        }
+                    }
                 });
                 
                 if (response.ok) {
@@ -4495,7 +3637,7 @@
             chatBody.innerHTML = '';
         }
         
-        // Login functionality - ĐÃ SỬA LỖI ĐĂNG NHẬP
+        // Login functionality
         const adminLoginBtn = document.getElementById('admin-login-btn');
         
         adminLoginBtn.addEventListener('click', () => {
@@ -4505,11 +3647,11 @@
             if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
                 document.getElementById('login-modal').style.display = 'none';
                 localStorage.setItem('adminLoggedIn', 'true');
-                isAdminLoggedIn = true;
                 showNotification('Đăng nhập admin thành công!', 'success');
                 
-                // Cập nhật giao diện sau khi đăng nhập
-                checkAdminLoginStatus();
+                // Show admin panel in navigation
+                document.getElementById('admin-nav-desktop').style.display = 'block';
+                document.getElementById('admin-nav-mobile').style.display = 'block';
                 
                 // Clear form
                 document.getElementById('username').value = '';
@@ -4540,56 +3682,25 @@
         const adminNavItems = document.querySelectorAll('.admin-nav-item');
         const adminContents = document.querySelectorAll('.admin-content');
         
-        // Kiểm tra trạng thái đăng nhập admin
-        function checkAdminLoginStatus() {
-            if (isAdminLoggedIn) {
-                // Hiển thị menu admin
-                document.getElementById('admin-nav-desktop').style.display = 'block';
-                document.getElementById('admin-nav-mobile').style.display = 'block';
-                
-                // Hiển thị các tùy chọn giao diện
-                document.getElementById('admin-customization').style.display = 'block';
-                document.getElementById('theme-customizer').style.display = 'block';
-                
-                // Hiển thị nút toggle admin panel
-                document.getElementById('admin-toggle').classList.add('active');
-            } else {
-                // Ẩn menu admin
-                document.getElementById('admin-nav-desktop').style.display = 'none';
-                document.getElementById('admin-nav-mobile').style.display = 'none';
-                
-                // Ẩn các tùy chọn giao diện
-                document.getElementById('admin-customization').style.display = 'none';
-                document.getElementById('theme-customizer').style.display = 'none';
-                
-                // Ẩn nút toggle admin panel
-                document.getElementById('admin-toggle').classList.remove('active');
-            }
+        // Check if admin is already logged in
+        if (localStorage.getItem('adminLoggedIn') === 'true') {
+            document.getElementById('admin-nav-desktop').style.display = 'block';
+            document.getElementById('admin-nav-mobile').style.display = 'block';
         }
         
         adminPanelLink.addEventListener('click', (e) => {
             e.preventDefault();
-            if (isAdminLoggedIn) {
-                adminPanel.classList.add('active');
-            } else {
-                // Nếu chưa đăng nhập, hiển thị form đăng nhập
-                document.getElementById('login-modal').style.display = 'flex';
-            }
+            adminPanel.classList.add('active');
         });
         
         // Mobile admin panel link
         document.getElementById('admin-nav-mobile').addEventListener('click', (e) => {
             e.preventDefault();
-            if (isAdminLoggedIn) {
-                adminPanel.classList.add('active');
-                // Close mobile nav
-                document.getElementById('mobile-nav').classList.remove('active');
-                document.getElementById('mobile-nav-overlay').classList.remove('active');
-                document.body.style.overflow = '';
-            } else {
-                // Nếu chưa đăng nhập, hiển thị form đăng nhập
-                document.getElementById('login-modal').style.display = 'flex';
-            }
+            adminPanel.classList.add('active');
+            // Close mobile nav
+            document.getElementById('mobile-nav').classList.remove('active');
+            document.getElementById('mobile-nav-overlay').classList.remove('active');
+            document.body.style.overflow = '';
         });
         
         closeAdmin.addEventListener('click', () => {
@@ -4712,13 +3823,10 @@
                 productCard.setAttribute('data-id', product.id);
                 productCard.innerHTML = `
                     <div class="sale-badge">-${discount}%</div>
-                    <button class="wishlist-btn ${wishlist.find(item => item.id === product.id) ? 'active' : ''}" data-id="${product.id}" data-name="${product.name}" data-price="${product.salePrice}" data-image="${product.image}">
-                        <i class="${wishlist.find(item => item.id === product.id) ? 'fas' : 'far'} fa-heart"></i>
-                    </button>
                     <div class="product-image">
                         <img src="${product.image}" alt="${product.name}">
                         <div class="product-overlay">
-                            <button class="btn btn-sm quick-view-btn" data-id="${product.id}">Xem nhanh</button>
+                            <button class="btn btn-sm" style="background: rgba(255,255,255,0.2); backdrop-filter: blur(10px);">Xem nhanh</button>
                         </div>
                     </div>
                     <div class="product-info">
@@ -4743,11 +3851,6 @@
             });
             
             // Re-attach event listeners
-            attachProductEventListeners();
-        }
-        
-        // Function to attach event listeners to product elements
-        function attachProductEventListeners() {
             document.querySelectorAll('.add-to-cart').forEach(button => {
                 button.addEventListener('click', function() {
                     const productId = this.getAttribute('data-id');
@@ -4756,17 +3859,6 @@
                     const productImage = this.getAttribute('data-image');
                     
                     addToCart(productId, productName, productPrice, productImage);
-                });
-            });
-            
-            document.querySelectorAll('.wishlist-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const productId = this.getAttribute('data-id');
-                    const productName = this.getAttribute('data-name');
-                    const productPrice = parseInt(this.getAttribute('data-price'));
-                    const productImage = this.getAttribute('data-image');
-                    
-                    toggleWishlist(productId, productName, productPrice, productImage);
                 });
             });
             
@@ -4780,13 +3872,6 @@
                     document.querySelector('.chat-footer').style.display = 'none';
                     
                     chatModal.setAttribute('data-product', productName);
-                });
-            });
-            
-            document.querySelectorAll('.quick-view-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const productId = this.getAttribute('data-id');
-                    showQuickView(productId);
                 });
             });
             
@@ -5038,8 +4123,7 @@
                 messageList.appendChild(messageItem);
             });
             
-            // Add event
-
+            // Add event listeners
             document.querySelectorAll('.view-conversation').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const phone = this.getAttribute('data-phone');
@@ -5447,18 +4531,10 @@
         document.getElementById('logout-admin').addEventListener('click', function() {
             if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
                 localStorage.removeItem('adminLoggedIn');
-                isAdminLoggedIn = false;
                 document.getElementById('admin-nav-desktop').style.display = 'none';
                 document.getElementById('admin-nav-mobile').style.display = 'none';
                 adminPanel.classList.remove('active');
                 showNotification('Đã đăng xuất khỏi admin!', 'success');
-                
-                // Ẩn các tùy chọn giao diện
-                document.getElementById('admin-customization').style.display = 'none';
-                document.getElementById('theme-customizer').style.display = 'none';
-                
-                // Ẩn nút toggle admin panel
-                document.getElementById('admin-toggle').classList.remove('active');
             }
         });
         
@@ -5546,548 +4622,6 @@
                 }, 300);
             });
         }
-        
-        // ==================== TÍNH NĂNG BỔ SUNG ====================
-        
-        // Advanced Search Functionality
-        function initAdvancedSearch() {
-            const searchInput = document.querySelector('.search-bar input');
-            const searchButton = document.querySelector('.search-bar button');
-            
-            searchButton.addEventListener('click', performSearch);
-            searchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    performSearch();
-                }
-            });
-            
-            function performSearch() {
-                const searchTerm = searchInput.value.trim().toLowerCase();
-                if (searchTerm) {
-                    const filteredProducts = products.filter(product => 
-                        product.name.toLowerCase().includes(searchTerm) ||
-                        product.category.toLowerCase().includes(searchTerm) ||
-                        (product.description && product.description.toLowerCase().includes(searchTerm))
-                    );
-                    
-                    if (filteredProducts.length > 0) {
-                        // Hiển thị kết quả tìm kiếm
-                        displaySearchResults(filteredProducts, searchTerm);
-                    } else {
-                        showNotification(`Không tìm thấy sản phẩm nào cho "${searchTerm}"`, 'info');
-                    }
-                }
-            }
-            
-            function displaySearchResults(results, searchTerm) {
-                const productsGrid = document.getElementById('products-grid');
-                const originalTitle = document.querySelector('.section-title h2').textContent;
-                const originalDescription = document.querySelector('.section-title p').textContent;
-                
-                // Cập nhật tiêu đề
-                document.querySelector('.section-title h2').textContent = `Kết quả tìm kiếm cho "${searchTerm}"`;
-                document.querySelector('.section-title p').textContent = `Tìm thấy ${results.length} sản phẩm`;
-                
-                // Hiển thị kết quả
-                productsGrid.innerHTML = '';
-                
-                if (results.length === 0) {
-                    productsGrid.innerHTML = `
-                        <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
-                            <i class="fas fa-search" style="font-size: 3rem; color: var(--gray-400); margin-bottom: 15px;"></i>
-                            <h3 style="color: var(--gray-600); margin-bottom: 10px;">Không tìm thấy sản phẩm</h3>
-                            <p style="color: var(--gray-500);">Hãy thử với từ khóa khác hoặc duyệt danh mục sản phẩm</p>
-                            <button class="btn" style="margin-top: 15px;" onclick="resetSearch()">Xem tất cả sản phẩm</button>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                results.forEach(product => {
-                    const discount = Math.round((1 - product.salePrice / product.originalPrice) * 100);
-                    
-                    const productCard = document.createElement('div');
-                    productCard.className = 'product-card';
-                    productCard.setAttribute('data-id', product.id);
-                    productCard.innerHTML = `
-                        ${discount > 0 ? `<div class="sale-badge">-${discount}%</div>` : ''}
-                        <button class="wishlist-btn ${wishlist.find(item => item.id === product.id) ? 'active' : ''}" data-id="${product.id}" data-name="${product.name}" data-price="${product.salePrice}" data-image="${product.image}">
-                            <i class="${wishlist.find(item => item.id === product.id) ? 'fas' : 'far'} fa-heart"></i>
-                        </button>
-                        <div class="product-image">
-                            <img src="${product.image}" alt="${product.name}">
-                            <div class="product-overlay">
-                                <button class="btn btn-sm quick-view-btn" data-id="${product.id}">Xem nhanh</button>
-                            </div>
-                        </div>
-                        <div class="product-info">
-                            <div class="product-category">${product.category}</div>
-                            <h3 class="product-name">${product.name}</h3>
-                            <div class="product-price">
-                                <span class="current-price">${formatPrice(product.salePrice)}</span>
-                                ${discount > 0 ? `<span class="original-price">${formatPrice(product.originalPrice)}</span>` : ''}
-                            </div>
-                            <div class="product-actions">
-                                <button class="btn add-to-cart" data-id="${product.id}" data-name="${product.name}" data-price="${product.salePrice}" data-image="${product.image}">
-                                    <i class="fas fa-shopping-cart"></i> Thêm vào giỏ
-                                </button>
-                                <button class="btn btn-outline chat-btn" data-product="${product.name}">
-                                    <i class="fas fa-comment"></i> Chat
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                    
-                    productsGrid.appendChild(productCard);
-                });
-                
-                // Re-attach event listeners
-                attachProductEventListeners();
-                
-                // Lưu trạng thái tìm kiếm
-                window.currentSearchState = {
-                    originalTitle: originalTitle,
-                    originalDescription: originalDescription,
-                    isSearchActive: true
-                };
-            }
-        }
-        
-        // Reset search function
-        function resetSearch() {
-            if (window.currentSearchState && window.currentSearchState.isSearchActive) {
-                document.querySelector('.section-title h2').textContent = window.currentSearchState.originalTitle;
-                document.querySelector('.section-title p').textContent = window.currentSearchState.originalDescription;
-                updateProductDisplay();
-                window.currentSearchState.isSearchActive = false;
-            }
-        }
-        
-        // Initialize advanced search
-        initAdvancedSearch();
-        
-        // ==================== TÍNH NĂNG ĐẾM NGƯỢC KHUYẾN MÃI ====================
-        
-        function initCountdownTimer() {
-            // Set end date for promotion (24 hours from now)
-            const endDate = new Date();
-            endDate.setHours(endDate.getHours() + 24);
-            
-            function updateCountdown() {
-                const now = new Date().getTime();
-                const distance = endDate - now;
-                
-                if (distance < 0) {
-                    // Countdown finished
-                    document.querySelectorAll('.countdown-timer').forEach(timer => {
-                        timer.innerHTML = '<span style="color: var(--danger-color);">Khuyến mãi đã kết thúc!</span>';
-                    });
-                    return;
-                }
-                
-                // Calculate time units
-                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                
-                // Update countdown display
-                document.querySelectorAll('.countdown-timer').forEach(timer => {
-                    timer.innerHTML = `
-                        <div style="display: flex; gap: 5px; justify-content: center;">
-                            <div style="background: var(--primary-color); color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold;">
-                                ${hours.toString().padStart(2, '0')}
-                            </div>
-                            <div style="padding: 5px 2px;">:</div>
-                            <div style="background: var(--primary-color); color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold;">
-                                ${minutes.toString().padStart(2, '0')}
-                            </div>
-                            <div style="padding: 5px 2px;">:</div>
-                            <div style="background: var(--primary-color); color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold;">
-                                ${seconds.toString().padStart(2, '0')}
-                            </div>
-                        </div>
-                    `;
-                });
-            }
-            
-            // Update countdown every second
-            setInterval(updateCountdown, 1000);
-            updateCountdown(); // Initial call
-        }
-        
-        // Initialize countdown timer
-        initCountdownTimer();
-        
-        // ==================== TÍNH NĂNG FILTER SẢN PHẨM ====================
-        
-        function initProductFilters() {
-            // Add filter UI to the products section
-            const productsSection = document.querySelector('.section');
-            const filterHTML = `
-                <div class="filters-panel">
-                    <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 20px;">
-                        <h3 style="margin: 0;">Bộ lọc sản phẩm</h3>
-                        <button class="btn btn-sm" id="reset-filters">Đặt lại</button>
-                    </div>
-                    <div class="filter-group">
-                        <h4>Danh mục</h4>
-                        <div class="filter-options" id="category-filters">
-                            <div class="filter-option active" data-category="all">Tất cả</div>
-                            <div class="filter-option" data-category="Son môi">Son môi</div>
-                            <div class="filter-option" data-category="Trang điểm mắt">Trang điểm mắt</div>
-                            <div class="filter-option" data-category="Trang điểm mặt">Trang điểm mặt</div>
-                            <div class="filter-option" data-category="Chăm sóc da">Chăm sóc da</div>
-                            <div class="filter-option" data-category="Nước hoa">Nước hoa</div>
-                        </div>
-                    </div>
-                    <div class="filter-group">
-                        <h4>Mức giá</h4>
-                        <div class="filter-options" id="price-filters">
-                            <div class="filter-option active" data-price="all">Tất cả</div>
-                            <div class="filter-option" data-price="0-200000">Dưới 200.000đ</div>
-                            <div class="filter-option" data-price="200000-500000">200.000đ - 500.000đ</div>
-                            <div class="filter-option" data-price="500000-1000000">500.000đ - 1.000.000đ</div>
-                            <div class="filter-option" data-price="1000000+">Trên 1.000.000đ</div>
-                        </div>
-                    </div>
-                    <div class="filter-group">
-                        <h4>Khuyến mãi</h4>
-                        <div class="filter-options" id="sale-filters">
-                            <div class="filter-option active" data-sale="all">Tất cả</div>
-                            <div class="filter-option" data-sale="sale">Đang giảm giá</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Insert filters before products grid
-            const productsGrid = document.getElementById('products-grid');
-            productsGrid.insertAdjacentHTML('beforebegin', filterHTML);
-            
-            // Add event listeners to filter options
-            document.querySelectorAll('.filter-option').forEach(option => {
-                option.addEventListener('click', function() {
-                    const parent = this.parentElement;
-                    parent.querySelectorAll('.filter-option').forEach(opt => opt.classList.remove('active'));
-                    this.classList.add('active');
-                    applyFilters();
-                });
-            });
-            
-            // Reset filters
-            document.getElementById('reset-filters').addEventListener('click', function() {
-                document.querySelectorAll('.filter-option').forEach(option => {
-                    if (option.getAttribute('data-category') === 'all' || 
-                        option.getAttribute('data-price') === 'all' ||
-                        option.getAttribute('data-sale') === 'all') {
-                        option.classList.add('active');
-                    } else {
-                        option.classList.remove('active');
-                    }
-                });
-                applyFilters();
-            });
-            
-            function applyFilters() {
-                const selectedCategory = document.querySelector('#category-filters .filter-option.active').getAttribute('data-category');
-                const selectedPrice = document.querySelector('#price-filters .filter-option.active').getAttribute('data-price');
-                const selectedSale = document.querySelector('#sale-filters .filter-option.active').getAttribute('data-sale');
-                
-                let filteredProducts = [...products];
-                
-                // Apply category filter
-                if (selectedCategory !== 'all') {
-                    filteredProducts = filteredProducts.filter(product => product.category === selectedCategory);
-                }
-                
-                // Apply price filter
-                if (selectedPrice !== 'all') {
-                    filteredProducts = filteredProducts.filter(product => {
-                        const price = product.salePrice;
-                        switch (selectedPrice) {
-                            case '0-200000':
-                                return price <= 200000;
-                            case '200000-500000':
-                                return price > 200000 && price <= 500000;
-                            case '500000-1000000':
-                                return price > 500000 && price <= 1000000;
-                            case '1000000+':
-                                return price > 1000000;
-                            default:
-                                return true;
-                        }
-                    });
-                }
-                
-                // Apply sale filter
-                if (selectedSale !== 'all') {
-                    filteredProducts = filteredProducts.filter(product => product.salePrice < product.originalPrice);
-                }
-                
-                // Display filtered products
-                displayFilteredProducts(filteredProducts);
-            }
-            
-            function displayFilteredProducts(filteredProducts) {
-                const productsGrid = document.getElementById('products-grid');
-                productsGrid.innerHTML = '';
-                
-                if (filteredProducts.length === 0) {
-                    productsGrid.innerHTML = `
-                        <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
-                            <i class="fas fa-filter" style="font-size: 3rem; color: var(--gray-400); margin-bottom: 15px;"></i>
-                            <h3 style="color: var(--gray-600); margin-bottom: 10px;">Không tìm thấy sản phẩm</h3>
-                            <p style="color: var(--gray-500);">Hãy thử điều chỉnh bộ lọc để xem nhiều sản phẩm hơn</p>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                filteredProducts.forEach(product => {
-                    const discount = Math.round((1 - product.salePrice / product.originalPrice) * 100);
-                    
-                    const productCard = document.createElement('div');
-                    productCard.className = 'product-card';
-                    productCard.setAttribute('data-id', product.id);
-                    productCard.innerHTML = `
-                        ${discount > 0 ? `<div class="sale-badge">-${discount}%</div>` : ''}
-                        <button class="wishlist-btn ${wishlist.find(item => item.id === product.id) ? 'active' : ''}" data-id="${product.id}" data-name="${product.name}" data-price="${product.salePrice}" data-image="${product.image}">
-                            <i class="${wishlist.find(item => item.id === product.id) ? 'fas' : 'far'} fa-heart"></i>
-                        </button>
-                        <div class="product-image">
-                            <img src="${product.image}" alt="${product.name}">
-                            <div class="product-overlay">
-                                <button class="btn btn-sm quick-view-btn" data-id="${product.id}">Xem nhanh</button>
-                            </div>
-                        </div>
-                        <div class="product-info">
-                            <div class="product-category">${product.category}</div>
-                            <h3 class="product-name">${product.name}</h3>
-                            <div class="product-price">
-                                <span class="current-price">${formatPrice(product.salePrice)}</span>
-                                ${discount > 0 ? `<span class="original-price">${formatPrice(product.originalPrice)}</span>` : ''}
-                            </div>
-                            <div class="product-actions">
-                                <button class="btn add-to-cart" data-id="${product.id}" data-name="${product.name}" data-price="${product.salePrice}" data-image="${product.image}">
-                                    <i class="fas fa-shopping-cart"></i> Thêm vào giỏ
-                                </button>
-                                <button class="btn btn-outline chat-btn" data-product="${product.name}">
-                                    <i class="fas fa-comment"></i> Chat
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                    
-                    productsGrid.appendChild(productCard);
-                });
-                
-                // Re-attach event listeners
-                attachProductEventListeners();
-            }
-        }
-        
-        // Initialize product filters
-        initProductFilters();
-        
-        // ==================== TÍNH NĂNG LOADING VÀ HIỆU ỨNG ====================
-        
-        // Add loading animation for better UX
-        function showLoading() {
-            const loading = document.createElement('div');
-            loading.id = 'global-loading';
-            loading.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(255,255,255,0.9);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 9999;
-                flex-direction: column;
-            `;
-            loading.innerHTML = `
-                <div class="loading-spinner" style="width: 50px; height: 50px; border-width: 5px;"></div>
-                <p style="margin-top: 15px; color: var(--gray-600);">Đang tải...</p>
-            `;
-            document.body.appendChild(loading);
-        }
-        
-        function hideLoading() {
-            const loading = document.getElementById('global-loading');
-            if (loading) {
-                document.body.removeChild(loading);
-            }
-        }
-        
-        // Add smooth scrolling for better UX
-        function initSmoothScrolling() {
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    const target = document.querySelector(this.getAttribute('href'));
-                    if (target) {
-                        target.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'start'
-                        });
-                    }
-                });
-            });
-        }
-        
-        // Initialize smooth scrolling
-        initSmoothScrolling();
-        
-        // ==================== TÍNH NĂNG RESPONSIVE ENHANCEMENTS ====================
-        
-        // Enhance mobile experience
-        function initMobileEnhancements() {
-            // Add touch swipe for product carousel (placeholder for future implementation)
-            let touchStartX = 0;
-            let touchEndX = 0;
-            
-            document.addEventListener('touchstart', e => {
-                touchStartX = e.changedTouches[0].screenX;
-            });
-            
-            document.addEventListener('touchend', e => {
-                touchEndX = e.changedTouches[0].screenX;
-                handleSwipe();
-            });
-            
-            function handleSwipe() {
-                const swipeThreshold = 50;
-                const swipeDistance = touchEndX - touchStartX;
-                
-                if (Math.abs(swipeDistance) > swipeThreshold) {
-                    if (swipeDistance > 0) {
-                        // Swipe right - could be used for navigation
-                    } else {
-                        // Swipe left - could be used for navigation
-                    }
-                }
-            }
-        }
-        
-        // Initialize mobile enhancements
-        initMobileEnhancements();
-        
-        // ==================== TÍNH NĂNG ACCESSIBILITY ====================
-        
-        // Enhance accessibility
-        function initAccessibility() {
-            // Add keyboard navigation
-            document.addEventListener('keydown', function(e) {
-                // Close modals with Escape key
-                if (e.key === 'Escape') {
-                    const activeModals = document.querySelectorAll('.chat-modal.active, #login-modal[style*="display: flex"], #payment-modal[style*="display: flex"], #quick-view-modal[style*="display: flex"]');
-                    activeModals.forEach(modal => {
-                        if (modal.classList.contains('chat-modal')) {
-                            modal.classList.remove('active');
-                            resetChat();
-                        } else {
-                            modal.style.display = 'none';
-                        }
-                    });
-                    
-                    // Close admin panel
-                    document.getElementById('admin-panel').classList.remove('active');
-                }
-                
-                // Navigate with arrow keys in product grid
-                if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-                    const focusedElement = document.activeElement;
-                    if (focusedElement.classList.contains('product-card') || focusedElement.closest('.product-card')) {
-                        const productCards = Array.from(document.querySelectorAll('.product-card'));
-                        const currentIndex = productCards.indexOf(focusedElement.closest('.product-card'));
-                        let nextIndex;
-                        
-                        if (e.key === 'ArrowRight') {
-                            nextIndex = (currentIndex + 1) % productCards.length;
-                        } else {
-                            nextIndex = (currentIndex - 1 + productCards.length) % productCards.length;
-                        }
-                        
-                        productCards[nextIndex].focus();
-                        e.preventDefault();
-                    }
-                }
-            });
-            
-            // Add focus styles for better accessibility
-            const style = document.createElement('style');
-            style.textContent = `
-                .product-card:focus {
-                    outline: 2px solid var(--primary-color);
-                    outline-offset: 2px;
-                }
-                .btn:focus {
-                    outline: 2px solid var(--primary-color);
-                    outline-offset: 2px;
-                }
-            `;
-            document.head.appendChild(style);
-        }
-        
-        // Initialize accessibility features
-        initAccessibility();
-        
-        // ==================== TÍNH NĂNG PERFORMANCE OPTIMIZATION ====================
-        
-        // Lazy load images for better performance
-        function initLazyLoading() {
-            const lazyImages = document.querySelectorAll('img');
-            
-            const imageObserver = new IntersectionObserver((entries, observer) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const img = entry.target;
-                        img.src = img.dataset.src;
-                        img.classList.remove('lazy');
-                        imageObserver.unobserve(img);
-                    }
-                });
-            });
-            
-            lazyImages.forEach(img => {
-                if (img.dataset.src) {
-                    imageObserver.observe(img);
-                }
-            });
-        }
-        
-        // Initialize lazy loading
-        initLazyLoading();
-        
-        // ==================== FINAL INITIALIZATION ====================
-        
-        // Update visitor count on page load
-        updateVisitorCountAPI();
-        
-        // Show welcome message for first-time visitors
-        if (!localStorage.getItem('hasVisitedBefore')) {
-            setTimeout(() => {
-                showNotification('Chào mừng bạn đến với Trúc Đào Cosmetics! 🎉', 'success');
-                localStorage.setItem('hasVisitedBefore', 'true');
-            }, 2000);
-        }
-        
-        console.log('🎉 Trúc Đào Cosmetics đã được khởi chạy thành công!');
-        console.log('✨ Tính năng đã được kích hoạt:');
-        console.log('   ✅ Admin Panel với tùy chỉnh giao diện');
-        console.log('   ✅ Quản lý sản phẩm và đơn hàng');
-        console.log('   ✅ Giỏ hàng và thanh toán');
-        console.log('   ✅ Chat trực tuyến với khách hàng');
-        console.log('   ✅ Wishlist và Quick View');
-        console.log('   ✅ Tìm kiếm và lọc sản phẩm');
-        console.log('   ✅ Tùy chỉnh theme và màu sắc');
-        console.log('   ✅ Responsive design cho mobile');
-        console.log('   ✅ Tính năng accessibility');
-        console.log('   ✅ Tối ưu hiệu suất');
-        
     </script>
 </body>
 </html>
