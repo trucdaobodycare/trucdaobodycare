@@ -1,0 +1,1 @@
+fix: add login-modal.js and include script to open/close login modal
