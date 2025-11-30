@@ -2266,63 +2266,188 @@
             <button class="btn" id="checkout-btn" style="width: 100%;">Thanh toán</button>
         </div>
     </div>
+    </div>
+</div>
 
-    <!-- Payment Modal -->
-    <div class="payment-modal" id="payment-modal">
-        <div class="payment-form">
-            <button class="close-login" id="close-payment"><i class="fas fa-times"></i></button>
-            <h2>Thanh toán đơn hàng</h2>
-            
-            <div class="bank-info">
-                <h3>Thông tin chuyển khoản</h3>
-                <div class="bank-info-item">
-                    <div class="bank-info-label">Ngân hàng:</div>
-                    <div class="bank-info-value">Sacombank</div>
+<!-- Quick View Modal -->
+<div class="quick-view-modal" id="quick-view-modal">
+    <div class="quick-view-content">
+        <button class="close-quick-view" id="close-quick-view"><i class="fas fa-times"></i></button>
+        <div class="quick-view-body" id="quick-view-body">
+            <div class="quick-view-images">
+                <div class="main-image">
+                    <img id="quick-view-main-img" src="" alt="">
+                    <div class="image-zoom" id="image-zoom"></div>
                 </div>
-                <div class="bank-info-item">
-                    <div class="bank-info-label">Số tài khoản:</div>
-                    <div class="bank-info-value">123022988888</div>
-                </div>
-                <div class="bank-info-item">
-                    <div class="bank-info-label">Tên thụ hưởng:</div>
-                    <div class="bank-info-value">Nguyễn Thị Trúc Đào</div>
-                </div>
-                <div class="bank-info-item">
-                    <div class="bank-info-label">Nội dung:</div>
-                    <div class="bank-info-value" id="payment-content">Tên Khách_Sản Phẩm Mua_Số Lượng</div>
-                </div>
-                <div class="bank-info-item">
-                    <div class="bank-info-label">Số tiền:</div>
-                    <div class="bank-info-value" id="payment-amount">0đ</div>
+                                <div class="image-thumbnails" id="image-thumbnails">
+                    <!-- Thumbnails sẽ được thêm bằng JavaScript -->
                 </div>
             </div>
-            
-            <div class="customer-info">
-                <h3>Thông tin khách hàng</h3>
-                <div class="form-group">
-                    <label for="customer-name">Họ và tên *</label>
-                    <input type="text" id="customer-name" placeholder="Nhập họ và tên">
+            <div class="quick-view-info">
+                <div class="product-badges">
+                    <span class="badge sale">-30%</span>
+                    <span class="badge new">Mới</span>
                 </div>
-                <div class="form-group">
-                    <label for="customer-phone">Số điện thoại *</label>
-                    <input type="tel" id="customer-phone" placeholder="Nhập số điện thoại">
+                <h2 id="quick-view-title">Tên sản phẩm</h2>
+                <div class="product-price">
+                    <span class="current-price" id="quick-view-price">199.000đ</span>
+                    <span class="original-price" id="quick-view-original-price">299.000đ</span>
                 </div>
-                <div class="form-group">
-                    <label for="customer-address">Địa chỉ nhận hàng *</label>
-                    <textarea id="customer-address" placeholder="Nhập địa chỉ nhận hàng" rows="3"></textarea>
+                <div class="stock-status">
+                    <div class="stock-bar"><div class="stock-progress" id="stock-progress"></div></div>
+                    <span class="stock-text" id="stock-text">Còn 15 sản phẩm</span>
+                </div>
+                <div class="color-swatches">
+                    <label>Màu sắc:</label>
+                    <div class="swatches" id="color-swatches">
+                        <div class="swatch active" data-color="red" style="background: #ff0000" title="Đỏ"></div>
+                        <div class="swatch" data-color="pink" style="background: #ff69b4" title="Hồng"></div>
+                        <div class="swatch" data-color="nude" style="background: #f5d0c4" title="Nude"></div>
+                    </div>
+                </div>
+                <div class="size-selection">
+                    <label>Kích thước:</label>
+                    <div class="sizes" id="size-selection">
+                        <button class="size-option active">50ml</button>
+                        <button class="size-option">100ml</button>
+                        <button class="size-option">150ml</button>
+                    </div>
+                    <button class="size-guide-btn" id="size-guide-btn">Hướng dẫn chọn size</button>
+                </div>
+                <div class="quantity-selector">
+                    <label>Số lượng:</label>
+                    <div class="quantity-controls">
+                        <button class="quantity-btn minus">-</button>
+                        <input type="number" class="quantity-input" value="1" min="1" max="10">
+                        <button class="quantity-btn plus">+</button>
+                    </div>
+                </div>
+                <div class="quick-view-actions">
+                    <button class="btn btn-primary" id="quick-view-add-cart">
+                        <i class="fas fa-shopping-cart"></i> Thêm vào giỏ hàng
+                    </button>
+                    <button class="btn btn-success" id="quick-view-buy-now">
+                        <i class="fas fa-bolt"></i> Mua ngay
+                    </button>
+                    <button class="btn btn-outline" id="quick-view-wishlist">
+                        <i class="far fa-heart"></i> Yêu thích
+                    </button>
+                </div>
+                <div class="product-meta">
+                    <div class="meta-item">
+                        <i class="fas fa-truck"></i>
+                        <span>Miễn phí vận chuyển đơn từ 500K</span>
+                    </div>
+                    <div class="meta-item">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Bảo hành chính hãng 12 tháng</span>
+                    </div>
+                    <div class="meta-item">
+                        <i class="fas fa-undo"></i>
+                        <span>Đổi trả trong 7 ngày</span>
+                    </div>
                 </div>
             </div>
-            
-            <div class="file-upload">
-                <label class="file-upload-label">Ảnh chụp màn hình chuyển khoản *</label>
-                <input type="file" id="payment-screenshot" accept="image/*" style="display: none;">
-                <button class="upload-btn" id="upload-payment-btn"><i class="fas fa-upload"></i> Chọn ảnh</button>
-                <img id="payment-preview" class="file-preview" alt="Preview">
-            </div>
-            
-            <button class="btn" id="confirm-payment" style="width: 100%;">Xác nhận đơn hàng</button>
         </div>
     </div>
+</div>
+
+<!-- Size Guide Modal -->
+<div class="size-guide-modal" id="size-guide-modal">
+    <div class="size-guide-content">
+        <button class="close-size-guide" id="close-size-guide"><i class="fas fa-times"></i></button>
+        <h3>Hướng dẫn chọn size</h3>
+        <div class="size-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Size</th>
+                        <th>Chiều dài (cm)</th>
+                        <th>Chiều rộng (cm)</th>
+                        <th>Trọng lượng (g)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>50ml</td>
+                        <td>8.5</td>
+                        <td>3.2</td>
+                        <td>65</td>
+                    </tr>
+                    <tr>
+                        <td>100ml</td>
+                        <td>12.0</td>
+                        <td>4.5</td>
+                        <td>120</td>
+                    </tr>
+                    <tr>
+                        <td>150ml</td>
+                        <td>15.5</td>
+                        <td>5.8</td>
+                        <td>180</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="payment-modal" id="payment-modal">
+    <div class="payment-form">
+        <button class="close-login" id="close-payment"><i class="fas fa-times"></i></button>
+        <h2>Thanh toán đơn hàng</h2>
+        
+        <div class="bank-info">
+            <h3>Thông tin chuyển khoản</h3>
+            <div class="bank-info-item">
+                <div class="bank-info-label">Ngân hàng:</div>
+                <div class="bank-info-value">Sacombank</div>
+            </div>
+            <div class="bank-info-item">
+                <div class="bank-info-label">Số tài khoản:</div>
+                <div class="bank-info-value">123022988888</div>
+            </div>
+            <div class="bank-info-item">
+                <div class="bank-info-label">Tên thụ hưởng:</div>
+                <div class="bank-info-value">Nguyễn Thị Trúc Đào</div>
+            </div>
+            <div class="bank-info-item">
+                <div class="bank-info-label">Nội dung:</div>
+                <div class="bank-info-value" id="payment-content">Tên Khách_Sản Phẩm Mua_Số Lượng</div>
+            </div>
+            <div class="bank-info-item">
+                <div class="bank-info-label">Số tiền:</div>
+                <div class="bank-info-value" id="payment-amount">0đ</div>
+            </div>
+        </div>
+        
+        <div class="customer-info">
+            <h3>Thông tin khách hàng</h3>
+            <div class="form-group">
+                <label for="customer-name">Họ và tên *</label>
+                <input type="text" id="customer-name" placeholder="Nhập họ và tên">
+            </div>
+            <div class="form-group">
+                <label for="customer-phone">Số điện thoại *</label>
+                <input type="tel" id="customer-phone" placeholder="Nhập số điện thoại">
+            </div>
+            <div class="form-group">
+                <label for="customer-address">Địa chỉ nhận hàng *</label>
+                <textarea id="customer-address" placeholder="Nhập địa chỉ nhận hàng" rows="3"></textarea>
+            </div>
+        </div>
+        
+        <div class="file-upload">
+            <label class="file-upload-label">Ảnh chụp màn hình chuyển khoản *</label>
+            <input type="file" id="payment-screenshot" accept="image/*" style="display: none;">
+            <button class="upload-btn" id="upload-payment-btn"><i class="fas fa-upload"></i> Chọn ảnh</button>
+            <img id="payment-preview" class="file-preview" alt="Preview">
+        </div>
+        
+        <button class="btn" id="confirm-payment" style="width: 100%;">Xác nhận đơn hàng</button>
+    </div>
+</div>
 
     <!-- Admin Panel -->
     <div class="admin-panel" id="admin-panel">
@@ -5484,6 +5609,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <style>
 .mega-item[draggable="true"] { border:1px dashed #ccc; padding:4px; border-radius:6px; }
+    
 </style>
 <!-- END: Mega Menu Drag-Drop + AB Testing Analytics -->
 
@@ -5916,6 +6042,310 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <style>
 .mega-item[draggable="true"] { border:1px dashed #ccc; padding:4px; border-radius:6px; }
+/* Quick View Modal */
+.quick-view-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.quick-view-content {
+    background: white;
+    width: 90%;
+    max-width: 1000px;
+    max-height: 90vh;
+    border-radius: 15px;
+    overflow: hidden;
+    position: relative;
+}
+
+.close-quick-view {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10;
+}
+
+.quick-view-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    padding: 30px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.quick-view-images .main-image {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: zoom-in;
+}
+
+.quick-view-images img {
+    width: 100%;
+    height: 400px;
+    object-fit: cover;
+}
+
+.image-thumbnails {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.thumb-img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 5px;
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+
+.thumb-img.active {
+    border-color: var(--primary-color);
+}
+
+.product-badges {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.badge.sale {
+    background: var(--danger-color);
+    color: white;
+}
+
+.badge.new {
+    background: var(--success-color);
+    color: white;
+}
+
+.stock-status {
+    margin: 15px 0;
+}
+
+.stock-bar {
+    height: 6px;
+    background: var(--gray-300);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.stock-progress {
+    height: 100%;
+    background: var(--success-color);
+    transition: width 0.3s ease;
+}
+
+.stock-text {
+    font-size: 0.8rem;
+    color: var(--gray-600);
+    margin-top: 5px;
+}
+
+.color-swatches, .size-selection {
+    margin: 20px 0;
+}
+
+.swatches, .sizes {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.swatch {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid transparent;
+}
+
+.swatch.active {
+    border-color: var(--primary-color);
+}
+
+.size-option {
+    padding: 8px 15px;
+    border: 1px solid var(--gray-300);
+    border-radius: 5px;
+    background: white;
+    cursor: pointer;
+}
+
+.size-option.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.size-guide-btn {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: 0.8rem;
+    margin-top: 5px;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.quantity-selector {
+    margin: 20px 0;
+}
+
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.quantity-btn {
+    width: 35px;
+    height: 35px;
+    border: 1px solid var(--gray-300);
+    background: white;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.quantity-input {
+    width: 60px;
+    text-align: center;
+    border: 1px solid var(--gray-300);
+    border-radius: 5px;
+    padding: 8px;
+}
+
+.quick-view-actions {
+    display: flex;
+    gap: 10px;
+    margin: 25px 0;
+}
+
+.quick-view-actions .btn {
+    flex: 1;
+    justify-content: center;
+}
+
+.product-meta {
+    border-top: 1px solid var(--gray-200);
+    padding-top: 20px;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    color: var(--gray-600);
+}
+
+/* Size Guide Modal */
+.size-guide-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2100;
+}
+
+.size-guide-content {
+    background: white;
+    width: 90%;
+    max-width: 600px;
+    padding: 30px;
+    border-radius: 10px;
+    position: relative;
+}
+
+.close-size-guide {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.size-table table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.size-table th, .size-table td {
+    padding: 12px;
+    text-align: center;
+    border: 1px solid var(--gray-300);
+}
+
+.size-table th {
+    background: var(--gray-100);
+    font-weight: 600;
+}
+
+/* Image Zoom */
+.image-zoom {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.8);
+    background-size: 200%;
+    background-position: center;
+    display: none;
+    pointer-events: none;
+    border: 2px solid var(--primary-color);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .quick-view-body {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        padding: 20px;
+    }
+    
+    .quick-view-actions {
+        flex-direction: column;
+    }
+    
+    .quick-view-images img {
+        height: 300px;
+    }
+}    
 </style>
 <!-- END: Mega Menu Drag-Drop + AB Testing Analytics -->
 
