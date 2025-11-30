@@ -2487,7 +2487,210 @@
                 <h2>Trúc Đào Admin Dashboard</h2>
                 <button id="close-admin"><i class="fas fa-times"></i></button>
             </div>
-            
+            <script>
+    // Quick View Functionality
+    function initQuickView() {
+        const quickViewModal = document.getElementById('quick-view-modal');
+        const closeQuickView = document.getElementById('close-quick-view');
+        const quickViewBody = document.getElementById('quick-view-body');
+        const sizeGuideModal = document.getElementById('size-guide-modal');
+        const closeSizeGuide = document.getElementById('close-size-guide');
+        const sizeGuideBtn = document.getElementById('size-guide-btn');
+
+        // Open Quick View
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.quick-view-btn')) {
+                const productCard = e.target.closest('.product-card');
+                const productId = productCard.getAttribute('data-id');
+                openQuickView(productId);
+            }
+        });
+
+        // Close Quick View
+        closeQuickView.addEventListener('click', closeQuickViewModal);
+        quickViewModal.addEventListener('click', function(e) {
+            if (e.target === quickViewModal) {
+                closeQuickViewModal();
+            }
+        });
+
+        // Size Guide
+        sizeGuideBtn.addEventListener('click', openSizeGuide);
+        closeSizeGuide.addEventListener('click', closeSizeGuideModal);
+        sizeGuideModal.addEventListener('click', function(e) {
+            if (e.target === sizeGuideModal) {
+                closeSizeGuideModal();
+            }
+        });
+
+        // Color Swatches
+        document.querySelectorAll('.swatch').forEach(swatch => {
+            swatch.addEventListener('click', function() {
+                document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Size Options
+        document.querySelectorAll('.size-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.size-option').forEach(o => o.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Quantity Controls
+        document.querySelectorAll('.quantity-btn.minus').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const input = this.nextElementSibling;
+                if (input.value > 1) input.value = parseInt(input.value) - 1;
+            });
+        });
+
+        document.querySelectorAll('.quantity-btn.plus').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const input = this.previousElementSibling;
+                if (input.value < 10) input.value = parseInt(input.value) + 1;
+            });
+        });
+
+        // Image Zoom
+        initImageZoom();
+    }
+
+    function openQuickView(productId) {
+        const product = products.find(p => p.id == productId);
+        if (!product) return;
+
+        const modal = document.getElementById('quick-view-modal');
+        modal.style.display = 'flex';
+
+        // Populate product data
+        document.getElementById('quick-view-title').textContent = product.name;
+        document.getElementById('quick-view-price').textContent = formatPrice(product.salePrice);
+        document.getElementById('quick-view-original-price').textContent = formatPrice(product.originalPrice);
+        document.getElementById('quick-view-main-img').src = product.image;
+
+        // Add to cart button
+        document.getElementById('quick-view-add-cart').setAttribute('data-id', product.id);
+        document.getElementById('quick-view-buy-now').setAttribute('data-id', product.id);
+        document.getElementById('quick-view-wishlist').setAttribute('data-id', product.id);
+
+        // Simulate stock (random for demo)
+        const stockPercent = Math.floor(Math.random() * 100) + 1;
+        document.getElementById('stock-progress').style.width = stockPercent + '%';
+        document.getElementById('stock-text').textContent = `Còn ${Math.floor(stockPercent / 10)} sản phẩm`;
+    }
+
+    function closeQuickViewModal() {
+        document.getElementById('quick-view-modal').style.display = 'none';
+    }
+
+    function openSizeGuide() {
+        document.getElementById('size-guide-modal').style.display = 'flex';
+    }
+
+    function closeSizeGuideModal() {
+        document.getElementById('size-guide-modal').style.display = 'none';
+    }
+
+    function initImageZoom() {
+        const mainImage = document.getElementById('quick-view-main-img');
+        const zoomOverlay = document.getElementById('image-zoom');
+
+        if (mainImage && zoomOverlay) {
+            mainImage.addEventListener('mousemove', function(e) {
+                const rect = this.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const xPercent = (x / rect.width) * 100;
+                const yPercent = (y / rect.height) * 100;
+                
+                zoomOverlay.style.backgroundImage = `url(${this.src})`;
+                zoomOverlay.style.backgroundPosition = `${xPercent}% ${yPercent}%`;
+                zoomOverlay.style.display = 'block';
+                zoomOverlay.style.left = (e.clientX - 100) + 'px';
+                zoomOverlay.style.top = (e.clientY - 100) + 'px';
+            });
+
+            mainImage.addEventListener('mouseleave', function() {
+                zoomOverlay.style.display = 'none';
+            });
+        }
+    }
+
+    // Add quick view buttons to product cards
+    function addQuickViewButtons() {
+        document.querySelectorAll('.product-card').forEach(card => {
+            if (!card.querySelector('.quick-view-btn')) {
+                const quickViewBtn = document.createElement('button');
+                quickViewBtn.className = 'quick-view-btn';
+                quickViewBtn.innerHTML = '<i class="fas fa-eye"></i> Xem nhanh';
+                quickViewBtn.style.cssText = `
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: rgba(255,255,255,0.9);
+                    border: none;
+                    padding: 10px 15px;
+                    border-radius: 20px;
+                    cursor: pointer;
+                    opacity: 0;
+                    transition: opacity 0.3s ease;
+                    z-index: 3;
+                `;
+                
+                card.querySelector('.product-image').style.position = 'relative';
+                card.querySelector('.product-image').appendChild(quickViewBtn);
+                
+                card.addEventListener('mouseenter', function() {
+                    quickViewBtn.style.opacity = '1';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    quickViewBtn.style.opacity = '0';
+                });
+            }
+        });
+    }
+
+    // Initialize when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        initQuickView();
+        addQuickViewButtons();
+    });
+
+    // Add event listeners for quick view actions
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('#quick-view-add-cart')) {
+            const productId = e.target.closest('#quick-view-add-cart').getAttribute('data-id');
+            const product = products.find(p => p.id == productId);
+            if (product) {
+                addToCart(product.id, product.name, product.salePrice, product.image);
+                showNotification('Đã thêm vào giỏ hàng!', 'success');
+                closeQuickViewModal();
+            }
+        }
+        
+        if (e.target.closest('#quick-view-buy-now')) {
+            const productId = e.target.closest('#quick-view-buy-now').getAttribute('data-id');
+            const product = products.find(p => p.id == productId);
+            if (product) {
+                addToCart(product.id, product.name, product.salePrice, product.image);
+                closeQuickViewModal();
+                document.getElementById('cart-modal').classList.add('active');
+            }
+        }
+        
+        if (e.target.closest('#quick-view-wishlist')) {
+            const productId = e.target.closest('#quick-view-wishlist').getAttribute('data-id');
+            // Add to wishlist functionality here
+            showNotification('Đã thêm vào yêu thích!', 'success');
+        }
+    });
+</script>
             <!-- Dashboard Tab -->
             <div class="admin-content active" id="dashboard-tab">
                 <div class="dashboard-cards">
