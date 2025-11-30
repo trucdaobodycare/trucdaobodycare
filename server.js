@@ -267,11 +267,26 @@ app.use(helmet({
 // Compression
 app.use(compression());
 
-// CORS configuration - FIXED: Better mobile support
+// Debug middleware - log all API requests
+app.use((req, res, next) => {
+    if (req.path.startsWith('/api/')) {
+        console.log(`🌐 ${req.method} ${req.path}`, {
+            ip: req.ip,
+            origin: req.headers.origin,
+            'user-agent': req.headers['user-agent']?.substring(0, 50),
+            body: req.method === 'POST' ? req.body : undefined
+        });
+    }
+    next();
+});
+
+// CORS configuration - FIXED: More permissive
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
+        // Allow all origins in production for now (adjust as needed)
+        if (!origin || isProduction) {
+            return callback(null, true);
+        }
         
         const allowedOrigins = [
             'https://trucdaobodycare.onrender.com',
@@ -279,25 +294,25 @@ app.use(cors({
             'http://localhost:3000',
             'http://127.0.0.1:10000',
             'http://127.0.0.1:3000',
-            'https://trucdaobodycare.onrender.com',
-            'http://localhost:5500', // Added for Live Server
-            'http://127.0.0.1:5500'  // Added for Live Server
+            'http://localhost:5500',
+            'http://127.0.0.1:5500'
         ];
         
-        if (allowedOrigins.indexOf(origin) !== -1 || 
-            origin.includes('render.com') ||
+        if (allowedOrigins.includes(origin) || 
             origin.includes('localhost') ||
-            origin.includes('127.0.0.1')) {
+            origin.includes('127.0.0.1') ||
+            origin.includes('render.com')) {
             callback(null, true);
         } else {
             console.log('🔒 Blocked by CORS:', origin);
-            callback(new Error('Not allowed by CORS'));
+            callback(null, true); // Temporarily allow all for debugging
         }
     },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
+
 // Body parsing
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -500,6 +515,17 @@ async function initializeDatabase() {
                     stock: 40,
                     featured: true,
                     tags: ["serum", "dưỡng ẩm", "chăm sóc da"]
+                },
+                {
+                    name: "Nước Hoa Hương Hoa Nhài",
+                    category: "Nước hoa",
+                    originalPrice: 680000,
+                    salePrice: 550000,
+                    image: "https://images.unsplash.com/photo-1541643600914-78b084683601?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1044&q=80",
+                    description: "Nước hoa hương hoa nhài tinh tế, lưu hương lâu",
+                    stock: 20,
+                    featured: true,
+                    tags: ["nước hoa", "hoa nhài", "lưu hương lâu"]
                 }
             ]);
             console.log('✅ Sample products created');
@@ -552,8 +578,8 @@ async function updateStatistics() {
 
 // ==================== ROUTES ====================
 
-// Basic routes - FIXED: Serve static files properly
-app.use(express.static(path.join(__dirname, 'public')));
+// Basic routes
+app.get('/favicon.ico', (req, res) => res.status(204).end());
 
 // Health check
 app.get('/health', async (req, res) => {
@@ -580,13 +606,55 @@ app.get('/health', async (req, res) => {
     }
 });
 
-// Serve main HTML file - FIXED: Add explicit route
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// Simple API test endpoint
+app.get('/api/test', (req, res) => {
+    res.json({
+        success: true,
+        message: 'API is working!',
+        timestamp: new Date().toISOString(),
+        server: 'Trúc Đào Cosmetics Server'
+    });
 });
 
-// Serve all other routes with the main HTML file (for SPA)
-app.get('*', (req, res) => {
+// Test database connection
+app.get('/api/db-status', async (req, res) => {
+    try {
+        const dbStatus = mongoose.connection.readyState;
+        const statusText = {
+            0: 'disconnected',
+            1: 'connected',
+            2: 'connecting',
+            3: 'disconnecting'
+        };
+        
+        res.json({
+            database: statusText[dbStatus] || 'unknown',
+            readyState: dbStatus,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Test authentication endpoint
+app.post('/api/auth/test', async (req, res) => {
+    try {
+        console.log('🔐 Test auth endpoint called:', req.body);
+        res.json({
+            success: true,
+            message: 'Auth endpoint is working!',
+            received: req.body,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('Auth test error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Serve main HTML file
+app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
@@ -654,6 +722,14 @@ app.post('/api/auth/login', async (req, res) => {
         });
     }
 });
+
+app.post('/api/auth/verify', authenticateToken, (req, res) => {
+    res.json({
+        valid: true,
+        user: req.user
+    });
+});
+
 // ==================== API ROUTES ====================
 
 // Apply API rate limiting to all API routes
@@ -1741,9 +1817,13 @@ async function startServer() {
             console.log('   🔑 Password: Thanhduy@060596');
             console.log('   👤 Demo: demo / demo123');
             console.log('='.repeat(70));
+            console.log('🔗 Available at: https://trucdaobodycare.onrender.com');
+            console.log('🔗 Health check: https://trucdaobodycare.onrender.com/health');
+            console.log('🔗 API Test: https://trucdaobodycare.onrender.com/api/test');
+            console.log('='.repeat(70));
         });
         
-        // Graceful shutdown - FIXED: Better handling for Render
+        // Graceful shutdown
         process.on('SIGINT', async () => {
             console.log('\n🛑 Received SIGINT, shutting down gracefully...');
             await mongoose.connection.close();
@@ -1767,4 +1847,3 @@ async function startServer() {
 startServer();
 
 module.exports = app;
-
