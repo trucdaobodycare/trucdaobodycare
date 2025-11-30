@@ -907,81 +907,63 @@
         
         /* Login Modal */
         .login-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-}
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
         
         .login-form {
-    background-color: white;
-    width: 90%;
-    max-width: 400px;
-    padding: 30px;
-    border-radius: var(--border-radius-lg);
-    box-shadow: var(--box-shadow-lg);
-    position: relative;
-}
+            background-color: white;
+            width: 100%;
+            max-width: 450px;
+            padding: 40px;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--box-shadow-lg);
+            position: relative;
+        }
         
         .login-form h2 {
-    text-align: center;
-    margin-bottom: 25px;
-    color: var(--gray-800);
-    font-weight: 700;
-}
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--gray-800);
+            font-weight: 700;
+        }
         
-  .login-form .form-group {
-    margin-bottom: 20px;
-}
-      
-        .login-form .form-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-    color: var(--gray-700);
-}
-        .login-form .form-group input {
-    width: 100%;
-    padding: 12px 15px;
-    border: 1px solid var(--gray-300);
-    border-radius: var(--border-radius);
-    outline: none;
-    transition: var(--transition);
-    font-size: 16px; /* Ngăn chặn zoom trên iOS */
-}
-        .login-form .form-group input:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(232, 62, 140, 0.1);
-}
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+        }
         
-       .close-login {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: var(--gray-500);
-    width: 35px;
-    height: 35px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: var(--transition);
-}
-
-.close-login:hover {
-    background-color: var(--gray-200);
-    color: var(--danger-color);
-}
+        .close-login {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray-500);
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+        
+        .close-login:hover {
+            background-color: var(--gray-200);
+            color: var(--danger-color);
+        }
         
         /* Admin Panel - NEW DESIGN ON LEFT SIDE */
         .admin-panel {
@@ -1997,6 +1979,21 @@
             color: white;
         }
         
+        /* Loading Spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
         /* Responsive */
         @media (max-width: 1200px) {
             .admin-panel {
@@ -2303,6 +2300,10 @@
             </div>
             <div class="products-grid" id="products-grid">
                 <!-- Products will be loaded dynamically -->
+                <div class="loading-placeholder" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                    <div class="loading-spinner" style="margin: 0 auto;"></div>
+                    <p style="margin-top: 15px; color: var(--gray-600);">Đang tải sản phẩm...</p>
+                </div>
             </div>
         </div>
     </section>
@@ -2462,22 +2463,22 @@
 
     <!-- Login Modal -->
     <div class="login-modal" id="login-modal">
-    <div class="login-form">
-        <button class="close-login" id="close-login">
-            <i class="fas fa-times"></i>
-        </button>
-        <h2>Đăng nhập Admin</h2>
-        <div class="form-group">
-            <label for="username">Tên đăng nhập</label>
-            <input type="text" id="username" placeholder="Nhập tên đăng nhập">
+        <div class="login-form">
+            <button class="close-login" id="close-login">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2>Đăng nhập Admin</h2>
+            <div class="form-group">
+                <label for="username">Tên đăng nhập</label>
+                <input type="text" id="username" placeholder="Nhập tên đăng nhập">
+            </div>
+            <div class="form-group">
+                <label for="password">Mật khẩu</label>
+                <input type="password" id="password" placeholder="Nhập mật khẩu">
+            </div>
+            <button class="login-btn" id="admin-login-btn">Đăng nhập</button>
         </div>
-        <div class="form-group">
-            <label for="password">Mật khẩu</label>
-            <input type="password" id="password" placeholder="Nhập mật khẩu">
-        </div>
-        <button class="btn login-btn" id="admin-login-btn" style="width: 100%; margin-top: 15px;">Đăng nhập</button>
     </div>
-</div>
 
     <!-- Cart Modal -->
     <div class="cart-modal" id="cart-modal">
@@ -3044,6 +3045,7 @@
         let productViews = {};
         let cart = JSON.parse(localStorage.getItem('cart')) || [];
         let wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
+        let isAdminLoggedIn = localStorage.getItem('adminLoggedIn') === 'true';
 
         // ==================== CẢI THIỆN ADMIN PANEL ====================
         
@@ -3651,427 +3653,6 @@
             });
         }
         
-        // Product Comparison functionality
-        function initProductComparison() {
-            let comparisonProducts = JSON.parse(localStorage.getItem('comparisonProducts')) || [];
-            
-            // Add to comparison
-            document.addEventListener('click', function(e) {
-                if (e.target.closest('.compare-btn')) {
-                    const productId = e.target.closest('.compare-btn').getAttribute('data-id');
-                    addToComparison(productId);
-                }
-            });
-            
-            // Show comparison modal
-            const compareIcon = document.createElement('a');
-            compareIcon.href = '#';
-            compareIcon.innerHTML = '<i class="fas fa-balance-scale"></i>';
-            compareIcon.style.position = 'fixed';
-            compareIcon.style.bottom = '90px';
-            compareIcon.style.right = '20px';
-            compareIcon.style.width = '60px';
-            compareIcon.style.height = '60px';
-            compareIcon.style.background = 'linear-gradient(135deg, var(--info-color), #60a5fa)';
-            compareIcon.style.color = 'white';
-            compareIcon.style.borderRadius = '50%';
-            compareIcon.style.display = 'flex';
-            compareIcon.style.alignItems = 'center';
-            compareIcon.style.justifyContent = 'center';
-            compareIcon.style.boxShadow = 'var(--box-shadow-lg)';
-            compareIcon.style.zIndex = '999';
-            compareIcon.style.transition = 'var(--transition)';
-            
-            const compareCount = document.createElement('span');
-            compareCount.className = 'cart-count';
-            compareCount.style.top = '-5px';
-            compareCount.style.right = '-5px';
-            compareCount.textContent = comparisonProducts.length;
-            compareIcon.appendChild(compareCount);
-            
-            compareIcon.addEventListener('click', function(e) {
-                e.preventDefault();
-                showComparisonModal();
-            });
-            
-            document.body.appendChild(compareIcon);
-            
-            function addToComparison(productId) {
-                const product = products.find(p => p.id == productId);
-                if (!product) return;
-                
-                if (comparisonProducts.find(p => p.id === productId)) {
-                    showNotification('Sản phẩm đã có trong danh sách so sánh!', 'info');
-                    return;
-                }
-                
-                if (comparisonProducts.length >= 4) {
-                    showNotification('Chỉ có thể so sánh tối đa 4 sản phẩm!', 'error');
-                    return;
-                }
-                
-                comparisonProducts.push(product);
-                localStorage.setItem('comparisonProducts', JSON.stringify(comparisonProducts));
-                updateComparisonCount();
-                showNotification(`Đã thêm ${product.name} vào danh sách so sánh!`, 'success');
-            }
-            
-            function updateComparisonCount() {
-                compareCount.textContent = comparisonProducts.length;
-            }
-            
-            function showComparisonModal() {
-                const modal = document.createElement('div');
-                modal.style.cssText = `
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background: rgba(0,0,0,0.5);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    z-index: 2000;
-                `;
-                
-                modal.innerHTML = `
-                    <div style="background: white; width: 95%; max-width: 1200px; max-height: 90%; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column;">
-                        <div style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: between; align-items: center;">
-                            <h3 style="margin: 0;">So sánh sản phẩm</h3>
-                            <button class="close-comparison" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
-                        </div>
-                        <div style="flex: 1; overflow-y: auto; padding: 20px;">
-                            ${comparisonProducts.length === 0 ? 
-                                '<p style="text-align: center; padding: 40px; color: #666;">Chưa có sản phẩm nào để so sánh</p>' : 
-                                `
-                                <div class="table-container">
-                                    <table class="comparison-table">
-                                        <thead>
-                                            <tr>
-                                                <th style="width: 200px;">Tiêu chí</th>
-                                                ${comparisonProducts.map(product => `
-                                                    <th>
-                                                        <div style="text-align: center;">
-                                                            <img src="${product.image}" alt="${product.name}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;">
-                                                            <div style="font-weight: 600;">${product.name}</div>
-                                                            <div style="color: var(--primary-color); font-weight: 600; margin: 5px 0;">${formatPrice(product.salePrice)}</div>
-                                                            <button class="btn btn-sm remove-from-comparison" data-id="${product.id}" style="margin-top: 5px;">Xóa</button>
-                                                        </div>
-                                                    </th>
-                                                `).join('')}
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>Danh mục</td>
-                                                ${comparisonProducts.map(product => `<td>${product.category}</td>`).join('')}
-                                            </tr>
-                                            <tr>
-                                                <td>Giá gốc</td>
-                                                ${comparisonProducts.map(product => `<td>${formatPrice(product.originalPrice)}</td>`).join('')}
-                                            </tr>
-                                            <tr>
-                                                <td>Khuyến mãi</td>
-                                                ${comparisonProducts.map(product => {
-                                                    const discount = Math.round((1 - product.salePrice / product.originalPrice) * 100);
-                                                    return `<td>-${discount}%</td>`;
-                                                }).join('')}
-                                            </tr>
-                                            <tr>
-                                                <td>Đánh giá</td>
-                                                ${comparisonProducts.map(() => `<td>★★★★★ (5.0)</td>`).join('')}
-                                            </tr>
-                                            <tr>
-                                                <td>Phù hợp với</td>
-                                                ${comparisonProducts.map(() => `<td>Mọi loại da</td>`).join('')}
-                                            </tr>
-                                            <tr>
-                                                <td>Thao tác</td>
-                                                ${comparisonProducts.map(product => `
-                                                    <td>
-                                                        <div style="display: flex; flex-direction: column; gap: 5px;">
-                                                            <button class="btn btn-sm add-to-cart" data-id="${product.id}" data-name="${product.name}" data-price="${product.salePrice}" data-image="${product.image}">Thêm vào giỏ</button>
-                                                            <button class="btn btn-sm btn-outline quick-view-btn" data-id="${product.id}">Xem nhanh</button>
-                                                        </div>
-                                                    </td>
-                                                `).join('')}
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                `
-                            }
-                        </div>
-                        <div style="padding: 15px; border-top: 1px solid #eee; display: flex; justify-content: space-between;">
-                            <button class="btn btn-danger" id="clear-comparison">Xóa tất cả</button>
-                            <button class="btn btn-secondary close-comparison-btn">Đóng</button>
-                        </div>
-                    </div>
-                `;
-                
-                document.body.appendChild(modal);
-                
-                // Close modal
-                const closeBtn = modal.querySelector('.close-comparison');
-                const closeBtn2 = modal.querySelector('.close-comparison-btn');
-                
-                closeBtn.addEventListener('click', () => {
-                    document.body.removeChild(modal);
-                });
-                
-                closeBtn2.addEventListener('click', () => {
-                    document.body.removeChild(modal);
-                });
-                
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        document.body.removeChild(modal);
-                    }
-                });
-                
-                // Clear comparison
-                document.getElementById('clear-comparison').addEventListener('click', function() {
-                    comparisonProducts = [];
-                    localStorage.setItem('comparisonProducts', JSON.stringify(comparisonProducts));
-                    updateComparisonCount();
-                    document.body.removeChild(modal);
-                    showComparisonModal();
-                });
-                
-                // Remove from comparison
-                document.querySelectorAll('.remove-from-comparison').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const productId = this.getAttribute('data-id');
-                        comparisonProducts = comparisonProducts.filter(p => p.id !== productId);
-                        localStorage.setItem('comparisonProducts', JSON.stringify(comparisonProducts));
-                        updateComparisonCount();
-                        document.body.removeChild(modal);
-                        showComparisonModal();
-                    });
-                });
-                
-                // Add event listeners for buttons inside comparison
-                document.querySelectorAll('.add-to-cart').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const productId = this.getAttribute('data-id');
-                        const productName = this.getAttribute('data-name');
-                        const productPrice = parseInt(this.getAttribute('data-price'));
-                        const productImage = this.getAttribute('data-image');
-                        
-                        addToCart(productId, productName, productPrice, productImage);
-                    });
-                });
-                
-                document.querySelectorAll('.quick-view-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const productId = this.getAttribute('data-id');
-                        document.body.removeChild(modal);
-                        showQuickView(productId);
-                    });
-                });
-            }
-        }
-        
-        // Loyalty Program
-        function initLoyaltyProgram() {
-            // This would typically be connected to a backend
-            // For demo purposes, we'll use localStorage
-            let loyaltyPoints = parseInt(localStorage.getItem('loyaltyPoints')) || 0;
-            let loyaltyTier = localStorage.getItem('loyaltyTier') || 'bronze';
-            
-            // Update loyalty display if user is logged in
-            // For demo, we'll assume user is logged in
-            updateLoyaltyDisplay();
-            
-            function updateLoyaltyDisplay() {
-                // This would typically be shown in user profile
-                // For demo, we'll add it to the header
-                const loyaltyBadge = document.createElement('span');
-                loyaltyBadge.className = `loyalty-badge loyalty-${loyaltyTier}`;
-                
-                let tierName = '';
-                switch(loyaltyTier) {
-                    case 'bronze': tierName = 'Đồng'; break;
-                    case 'silver': tierName = 'Bạc'; break;
-                    case 'gold': tierName = 'Vàng'; break;
-                    case 'platinum': tierName = 'Bạch Kim'; break;
-                }
-                
-                loyaltyBadge.textContent = `${tierName} - ${loyaltyPoints} điểm`;
-                
-                const userIcon = document.getElementById('login-btn');
-                userIcon.parentNode.insertBefore(loyaltyBadge, userIcon.nextSibling);
-            }
-        }
-        
-        // Advanced Product Filtering
-        function initAdvancedFilters() {
-            const filtersPanel = document.createElement('div');
-            filtersPanel.className = 'filters-panel';
-            filtersPanel.innerHTML = `
-                <h3 style="margin-bottom: 20px;">Bộ lọc sản phẩm</h3>
-                
-                <div class="filter-group">
-                    <h4>Danh mục</h4>
-                    <div class="filter-options">
-                        <div class="filter-option active" data-category="all">Tất cả</div>
-                        <div class="filter-option" data-category="Son môi">Son môi</div>
-                        <div class="filter-option" data-category="Trang điểm mắt">Trang điểm mắt</div>
-                        <div class="filter-option" data-category="Trang điểm mặt">Trang điểm mặt</div>
-                        <div class="filter-option" data-category="Chăm sóc da">Chăm sóc da</div>
-                        <div class="filter-option" data-category="Nước hoa">Nước hoa</div>
-                    </div>
-                </div>
-                
-                <div class="filter-group">
-                    <h4>Mức giá</h4>
-                    <div class="filter-options">
-                        <div class="filter-option active" data-price="all">Tất cả</div>
-                        <div class="filter-option" data-price="0-100000">Dưới 100.000đ</div>
-                        <div class="filter-option" data-price="100000-300000">100.000đ - 300.000đ</div>
-                        <div class="filter-option" data-price="300000-500000">300.000đ - 500.000đ</div>
-                        <div class="filter-option" data-price="500000-1000000">500.000đ - 1.000.000đ</div>
-                        <div class="filter-option" data-price="1000000-9999999">Trên 1.000.000đ</div>
-                    </div>
-                </div>
-                
-                <div class="filter-group">
-                    <h4>Khuyến mãi</h4>
-                    <div class="filter-options">
-                        <div class="filter-option active" data-sale="all">Tất cả</div>
-                        <div class="filter-option" data-sale="sale">Đang giảm giá</div>
-                        <div class="filter-option" data-sale="bestseller">Bán chạy</div>
-                        <div class="filter-option" data-sale="new">Sản phẩm mới</div>
-                    </div>
-                </div>
-                
-                <button class="btn" id="apply-filters" style="width: 100%; margin-top: 10px;">Áp dụng bộ lọc</button>
-                <button class="btn btn-secondary" id="reset-filters" style="width: 100%; margin-top: 10px;">Đặt lại bộ lọc</button>
-            `;
-            
-            const productsSection = document.querySelector('.section');
-            productsSection.insertBefore(filtersPanel, document.getElementById('products-grid'));
-            
-            // Filter option selection
-            document.querySelectorAll('.filter-option').forEach(option => {
-                option.addEventListener('click', function() {
-                    const parent = this.parentElement;
-                    parent.querySelectorAll('.filter-option').forEach(opt => opt.classList.remove('active'));
-                    this.classList.add('active');
-                });
-            });
-            
-            // Apply filters
-            document.getElementById('apply-filters').addEventListener('click', function() {
-                applyProductFilters();
-            });
-            
-            // Reset filters
-            document.getElementById('reset-filters').addEventListener('click', function() {
-                document.querySelectorAll('.filter-option').forEach(option => {
-                    if (option.getAttribute('data-category') === 'all' || 
-                        option.getAttribute('data-price') === 'all' || 
-                        option.getAttribute('data-sale') === 'all') {
-                        option.classList.add('active');
-                    } else {
-                        option.classList.remove('active');
-                    }
-                });
-                
-                applyProductFilters();
-            });
-            
-            function applyProductFilters() {
-                const categoryFilter = document.querySelector('.filter-options [data-category].active').getAttribute('data-category');
-                const priceFilter = document.querySelector('.filter-options [data-price].active').getAttribute('data-price');
-                const saleFilter = document.querySelector('.filter-options [data-sale].active').getAttribute('data-sale');
-                
-                let filteredProducts = [...products];
-                
-                // Apply category filter
-                if (categoryFilter !== 'all') {
-                    filteredProducts = filteredProducts.filter(product => product.category === categoryFilter);
-                }
-                
-                // Apply price filter
-                if (priceFilter !== 'all') {
-                    const [minPrice, maxPrice] = priceFilter.split('-').map(Number);
-                    filteredProducts = filteredProducts.filter(product => {
-                        return product.salePrice >= minPrice && product.salePrice <= maxPrice;
-                    });
-                }
-                
-                // Apply sale filter
-                if (saleFilter !== 'all') {
-                    if (saleFilter === 'sale') {
-                        filteredProducts = filteredProducts.filter(product => product.salePrice < product.originalPrice);
-                    } else if (saleFilter === 'bestseller') {
-                        // For demo, we'll consider products with ID less than 5 as bestsellers
-                        filteredProducts = filteredProducts.filter(product => product.id < 5);
-                    } else if (saleFilter === 'new') {
-                        // For demo, we'll consider products with ID greater than 5 as new
-                        filteredProducts = filteredProducts.filter(product => product.id > 5);
-                    }
-                }
-                
-                // Update product display
-                updateProductDisplayWithFilters(filteredProducts);
-            }
-            
-            function updateProductDisplayWithFilters(filteredProducts) {
-                const productsGrid = document.getElementById('products-grid');
-                productsGrid.innerHTML = '';
-                
-                if (filteredProducts.length === 0) {
-                    productsGrid.innerHTML = '<p style="text-align: center; grid-column: 1 / -1; padding: 40px; color: #666;">Không tìm thấy sản phẩm phù hợp</p>';
-                    return;
-                }
-                
-                filteredProducts.forEach(product => {
-                    const discount = Math.round((1 - product.salePrice / product.originalPrice) * 100);
-                    
-                    const productCard = document.createElement('div');
-                    productCard.className = 'product-card';
-                    productCard.setAttribute('data-id', product.id);
-                    productCard.innerHTML = `
-                        <div class="sale-badge">-${discount}%</div>
-                        <button class="wishlist-btn ${wishlist.find(item => item.id === product.id) ? 'active' : ''}" data-id="${product.id}" data-name="${product.name}" data-price="${product.salePrice}" data-image="${product.image}">
-                            <i class="${wishlist.find(item => item.id === product.id) ? 'fas' : 'far'} fa-heart"></i>
-                        </button>
-                        <div class="product-image">
-                            <img src="${product.image}" alt="${product.name}">
-                            <div class="product-overlay">
-                                <button class="btn btn-sm quick-view-btn" data-id="${product.id}">Xem nhanh</button>
-                                <button class="btn btn-sm compare-btn" data-id="${product.id}" style="margin-top: 10px; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px);">So sánh</button>
-                            </div>
-                        </div>
-                        <div class="product-info">
-                            <div class="product-category">${product.category}</div>
-                            <h3 class="product-name">${product.name}</h3>
-                            <div class="product-price">
-                                <span class="current-price">${formatPrice(product.salePrice)}</span>
-                                <span class="original-price">${formatPrice(product.originalPrice)}</span>
-                            </div>
-                            <div class="product-actions">
-                                <button class="btn add-to-cart" data-id="${product.id}" data-name="${product.name}" data-price="${product.salePrice}" data-image="${product.image}">
-                                    <i class="fas fa-shopping-cart"></i> Thêm vào giỏ
-                                </button>
-                                <button class="btn btn-outline chat-btn" data-product="${product.name}">
-                                    <i class="fas fa-comment"></i> Chat
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                    
-                    productsGrid.appendChild(productCard);
-                });
-                
-                // Re-attach event listeners
-                attachProductEventListeners();
-            }
-        }
-        
         // ==================== FIX ZOOM TRÊN MOBILE ====================
         
         // Ngăn chặn zoom trên mobile
@@ -4112,92 +3693,18 @@
 
         // Khởi tạo
         document.addEventListener('DOMContentLoaded', function() {
-            // Login functionality
-    const loginBtn = document.getElementById('login-btn');
-    const loginModal = document.getElementById('login-modal');
-    const closeLogin = document.getElementById('close-login');
-    const adminLoginBtn = document.getElementById('admin-login-btn');
-    
-    console.log('Login elements:', {loginBtn, loginModal, closeLogin, adminLoginBtn});
-    
-    if (loginBtn && loginModal) {
-        loginBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            console.log('Login button clicked');
-            loginModal.style.display = 'flex';
-        });
-    }
-    
-    if (closeLogin) {
-        closeLogin.addEventListener('click', () => {
-            console.log('Close login clicked');
-            loginModal.style.display = 'none';
-        });
-    }
-    
-    if (loginModal) {
-        loginModal.addEventListener('click', (e) => {
-            if (e.target === loginModal) {
-                console.log('Clicked outside modal');
-                loginModal.style.display = 'none';
-            }
-        });
-    }
-    
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && loginModal.style.display === 'flex') {
-            console.log('Escape key pressed');
-            loginModal.style.display = 'none';
-        }
-    });
-
-    // Admin login
-    if (adminLoginBtn) {
-        adminLoginBtn.addEventListener('click', () => {
-            const username = document.getElementById('username');
-            const password = document.getElementById('password');
-            
-            if (!username || !password) {
-                console.error('Username or password input not found');
-                showNotification('Lỗi: Không tìm thấy trường nhập liệu!', 'error');
-                return;
-            }
-            
-            const usernameValue = username.value;
-            const passwordValue = password.value;
-            
-            console.log('Login attempt:', {usernameValue, passwordValue});
-            
-            if (usernameValue === ADMIN_USERNAME && passwordValue === ADMIN_PASSWORD) {
-                loginModal.style.display = 'none';
-                localStorage.setItem('adminLoggedIn', 'true');
-                showNotification('Đăng nhập admin thành công!', 'success');
-                
-                // Show admin panel in navigation
-                document.getElementById('admin-nav-desktop').style.display = 'block';
-                document.getElementById('admin-nav-mobile').style.display = 'block';
-                
-                // Clear form
-                username.value = '';
-                password.value = '';
-            } else {
-                showNotification('Tên đăng nhập hoặc mật khẩu không đúng!', 'error');
-            }
-        });
-    }
-});
             // Khởi tạo các tính năng mới
             initAdminPanelResize();
             initAdminCustomization();
             initThemeCustomizer();
             initWishlist();
             initQuickView();
-            initProductComparison();
-            initLoyaltyProgram();
-            initAdvancedFilters();
             preventZoom();
             
-            updateVisitorCountAPI();
+            // Kiểm tra trạng thái đăng nhập admin
+            checkAdminLoginStatus();
+            
+            // Tải sản phẩm ngay lập tức
             loadProductsFromAPI();
             loadMessagesFromAPI();
             loadOrdersFromAPI();
@@ -4247,7 +3754,13 @@
             
             loginBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                loginModal.style.display = 'flex';
+                // Kiểm tra nếu đã đăng nhập thì mở admin panel
+                if (isAdminLoggedIn) {
+                    document.getElementById('admin-panel').classList.add('active');
+                } else {
+                    // Nếu chưa đăng nhập thì hiển thị form đăng nhập
+                    loginModal.style.display = 'flex';
+                }
             });
             
             closeLogin.addEventListener('click', () => {
@@ -4279,7 +3792,7 @@
 
         // ==================== CÁC HÀM CŨ (giữ nguyên) ====================
         
-        // Hàm gọi API để lấy sản phẩm
+        // Hàm gọi API để lấy sản phẩm - ƯU TIÊN SẢN PHẨM KHUYẾN MÃI
         async function loadProductsFromAPI() {
             try {
                 console.log('🔄 Đang tải sản phẩm từ API...');
@@ -4291,16 +3804,92 @@
                     // Cập nhật danh sách sản phẩm từ API
                     if (apiProducts && apiProducts.length > 0) {
                         products = apiProducts;
+                        
+                        // Ưu tiên hiển thị sản phẩm khuyến mãi trước
+                        const saleProducts = products.filter(product => product.salePrice < product.originalPrice);
+                        const regularProducts = products.filter(product => product.salePrice >= product.originalPrice);
+                        
+                        // Sắp xếp lại danh sách: sản phẩm khuyến mãi lên đầu
+                        products = [...saleProducts, ...regularProducts];
+                        
                         renderProductsInAdmin();
                         updateProductDisplay();
                         attachProductEventListeners();
                     }
                 } else {
                     console.warn('⚠️ Không thể tải sản phẩm từ API');
+                    // Hiển thị sản phẩm mẫu nếu không kết nối được API
+                    loadSampleProducts();
                 }
             } catch (error) {
                 console.error('❌ Lỗi khi tải sản phẩm từ API:', error);
+                // Hiển thị sản phẩm mẫu nếu có lỗi
+                loadSampleProducts();
             }
+        }
+
+        // Hàm hiển thị sản phẩm mẫu khi không kết nối được API
+        function loadSampleProducts() {
+            products = [
+                {
+                    id: 1,
+                    name: "Son Lì Cao Cấp Ruby",
+                    category: "Son môi",
+                    originalPrice: 350000,
+                    salePrice: 250000,
+                    image: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1315&q=80",
+                    description: "Son lì cao cấp với độ bền lên đến 12 giờ"
+                },
+                {
+                    id: 2,
+                    name: "Phấn Mắt Nude Palette",
+                    category: "Trang điểm mắt",
+                    originalPrice: 450000,
+                    salePrice: 320000,
+                    image: "https://images.unsplash.com/photo-1515377905703-c4788e51af15?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
+                    description: "Bảng phấn mắt với 12 tông màu nude thời thượng"
+                },
+                {
+                    id: 3,
+                    name: "Kem Nền Che Khuyết Điểm",
+                    category: "Trang điểm mặt",
+                    originalPrice: 280000,
+                    salePrice: 280000,
+                    image: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1187&q=80",
+                    description: "Kem nền mỏng nhẹ, che phủ hoàn hảo"
+                },
+                {
+                    id: 4,
+                    name: "Serum Dưỡng Ẩm Chuyên Sâu",
+                    category: "Chăm sóc da",
+                    originalPrice: 520000,
+                    salePrice: 420000,
+                    image: "https://images.unsplash.com/photo-1556228577-135c319f45c8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
+                    description: "Serum dưỡng ẩm chuyên sâu cho làn da căng mịn"
+                },
+                {
+                    id: 5,
+                    name: "Nước Hoa Hương Hoa Nhài",
+                    category: "Nước hoa",
+                    originalPrice: 680000,
+                    salePrice: 550000,
+                    image: "https://images.unsplash.com/photo-1541643600914-78b084683601?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1048&q=80",
+                    description: "Nước hoa nữ tính với hương hoa nhài tinh tế"
+                },
+                {
+                    id: 6,
+                    name: "Mascara Làm Dài Mi",
+                    category: "Trang điểm mắt",
+                    originalPrice: 220000,
+                    salePrice: 180000,
+                    image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80",
+                    description: "Mascara làm dài và cong mi tự nhiên"
+                }
+            ];
+            
+            renderProductsInAdmin();
+            updateProductDisplay();
+            attachProductEventListeners();
         }
 
         // Hàm lưu sản phẩm lên API
@@ -4906,7 +4495,7 @@
             chatBody.innerHTML = '';
         }
         
-        // Login functionality
+        // Login functionality - ĐÃ SỬA LỖI ĐĂNG NHẬP
         const adminLoginBtn = document.getElementById('admin-login-btn');
         
         adminLoginBtn.addEventListener('click', () => {
@@ -4916,11 +4505,11 @@
             if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
                 document.getElementById('login-modal').style.display = 'none';
                 localStorage.setItem('adminLoggedIn', 'true');
+                isAdminLoggedIn = true;
                 showNotification('Đăng nhập admin thành công!', 'success');
                 
-                // Show admin panel in navigation
-                document.getElementById('admin-nav-desktop').style.display = 'block';
-                document.getElementById('admin-nav-mobile').style.display = 'block';
+                // Cập nhật giao diện sau khi đăng nhập
+                checkAdminLoginStatus();
                 
                 // Clear form
                 document.getElementById('username').value = '';
@@ -4951,25 +4540,56 @@
         const adminNavItems = document.querySelectorAll('.admin-nav-item');
         const adminContents = document.querySelectorAll('.admin-content');
         
-        // Check if admin is already logged in
-        if (localStorage.getItem('adminLoggedIn') === 'true') {
-            document.getElementById('admin-nav-desktop').style.display = 'block';
-            document.getElementById('admin-nav-mobile').style.display = 'block';
+        // Kiểm tra trạng thái đăng nhập admin
+        function checkAdminLoginStatus() {
+            if (isAdminLoggedIn) {
+                // Hiển thị menu admin
+                document.getElementById('admin-nav-desktop').style.display = 'block';
+                document.getElementById('admin-nav-mobile').style.display = 'block';
+                
+                // Hiển thị các tùy chọn giao diện
+                document.getElementById('admin-customization').style.display = 'block';
+                document.getElementById('theme-customizer').style.display = 'block';
+                
+                // Hiển thị nút toggle admin panel
+                document.getElementById('admin-toggle').classList.add('active');
+            } else {
+                // Ẩn menu admin
+                document.getElementById('admin-nav-desktop').style.display = 'none';
+                document.getElementById('admin-nav-mobile').style.display = 'none';
+                
+                // Ẩn các tùy chọn giao diện
+                document.getElementById('admin-customization').style.display = 'none';
+                document.getElementById('theme-customizer').style.display = 'none';
+                
+                // Ẩn nút toggle admin panel
+                document.getElementById('admin-toggle').classList.remove('active');
+            }
         }
         
         adminPanelLink.addEventListener('click', (e) => {
             e.preventDefault();
-            adminPanel.classList.add('active');
+            if (isAdminLoggedIn) {
+                adminPanel.classList.add('active');
+            } else {
+                // Nếu chưa đăng nhập, hiển thị form đăng nhập
+                document.getElementById('login-modal').style.display = 'flex';
+            }
         });
         
         // Mobile admin panel link
         document.getElementById('admin-nav-mobile').addEventListener('click', (e) => {
             e.preventDefault();
-            adminPanel.classList.add('active');
-            // Close mobile nav
-            document.getElementById('mobile-nav').classList.remove('active');
-            document.getElementById('mobile-nav-overlay').classList.remove('active');
-            document.body.style.overflow = '';
+            if (isAdminLoggedIn) {
+                adminPanel.classList.add('active');
+                // Close mobile nav
+                document.getElementById('mobile-nav').classList.remove('active');
+                document.getElementById('mobile-nav-overlay').classList.remove('active');
+                document.body.style.overflow = '';
+            } else {
+                // Nếu chưa đăng nhập, hiển thị form đăng nhập
+                document.getElementById('login-modal').style.display = 'flex';
+            }
         });
         
         closeAdmin.addEventListener('click', () => {
@@ -5099,7 +4719,6 @@
                         <img src="${product.image}" alt="${product.name}">
                         <div class="product-overlay">
                             <button class="btn btn-sm quick-view-btn" data-id="${product.id}">Xem nhanh</button>
-                            <button class="btn btn-sm compare-btn" data-id="${product.id}" style="margin-top: 10px; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px);">So sánh</button>
                         </div>
                     </div>
                     <div class="product-info">
@@ -5168,14 +4787,6 @@
                 button.addEventListener('click', function() {
                     const productId = this.getAttribute('data-id');
                     showQuickView(productId);
-                });
-            });
-            
-            document.querySelectorAll('.compare-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const productId = this.getAttribute('data-id');
-                    // This would add to comparison - implementation depends on comparison system
-                    showNotification('Tính năng so sánh sản phẩm đang được phát triển', 'info');
                 });
             });
             
@@ -5427,7 +5038,8 @@
                 messageList.appendChild(messageItem);
             });
             
-            // Add event listeners
+            // Add event
+
             document.querySelectorAll('.view-conversation').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const phone = this.getAttribute('data-phone');
@@ -5835,10 +5447,18 @@
         document.getElementById('logout-admin').addEventListener('click', function() {
             if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
                 localStorage.removeItem('adminLoggedIn');
+                isAdminLoggedIn = false;
                 document.getElementById('admin-nav-desktop').style.display = 'none';
                 document.getElementById('admin-nav-mobile').style.display = 'none';
                 adminPanel.classList.remove('active');
                 showNotification('Đã đăng xuất khỏi admin!', 'success');
+                
+                // Ẩn các tùy chọn giao diện
+                document.getElementById('admin-customization').style.display = 'none';
+                document.getElementById('theme-customizer').style.display = 'none';
+                
+                // Ẩn nút toggle admin panel
+                document.getElementById('admin-toggle').classList.remove('active');
             }
         });
         
@@ -5926,6 +5546,548 @@
                 }, 300);
             });
         }
+        
+        // ==================== TÍNH NĂNG BỔ SUNG ====================
+        
+        // Advanced Search Functionality
+        function initAdvancedSearch() {
+            const searchInput = document.querySelector('.search-bar input');
+            const searchButton = document.querySelector('.search-bar button');
+            
+            searchButton.addEventListener('click', performSearch);
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+            
+            function performSearch() {
+                const searchTerm = searchInput.value.trim().toLowerCase();
+                if (searchTerm) {
+                    const filteredProducts = products.filter(product => 
+                        product.name.toLowerCase().includes(searchTerm) ||
+                        product.category.toLowerCase().includes(searchTerm) ||
+                        (product.description && product.description.toLowerCase().includes(searchTerm))
+                    );
+                    
+                    if (filteredProducts.length > 0) {
+                        // Hiển thị kết quả tìm kiếm
+                        displaySearchResults(filteredProducts, searchTerm);
+                    } else {
+                        showNotification(`Không tìm thấy sản phẩm nào cho "${searchTerm}"`, 'info');
+                    }
+                }
+            }
+            
+            function displaySearchResults(results, searchTerm) {
+                const productsGrid = document.getElementById('products-grid');
+                const originalTitle = document.querySelector('.section-title h2').textContent;
+                const originalDescription = document.querySelector('.section-title p').textContent;
+                
+                // Cập nhật tiêu đề
+                document.querySelector('.section-title h2').textContent = `Kết quả tìm kiếm cho "${searchTerm}"`;
+                document.querySelector('.section-title p').textContent = `Tìm thấy ${results.length} sản phẩm`;
+                
+                // Hiển thị kết quả
+                productsGrid.innerHTML = '';
+                
+                if (results.length === 0) {
+                    productsGrid.innerHTML = `
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                            <i class="fas fa-search" style="font-size: 3rem; color: var(--gray-400); margin-bottom: 15px;"></i>
+                            <h3 style="color: var(--gray-600); margin-bottom: 10px;">Không tìm thấy sản phẩm</h3>
+                            <p style="color: var(--gray-500);">Hãy thử với từ khóa khác hoặc duyệt danh mục sản phẩm</p>
+                            <button class="btn" style="margin-top: 15px;" onclick="resetSearch()">Xem tất cả sản phẩm</button>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                results.forEach(product => {
+                    const discount = Math.round((1 - product.salePrice / product.originalPrice) * 100);
+                    
+                    const productCard = document.createElement('div');
+                    productCard.className = 'product-card';
+                    productCard.setAttribute('data-id', product.id);
+                    productCard.innerHTML = `
+                        ${discount > 0 ? `<div class="sale-badge">-${discount}%</div>` : ''}
+                        <button class="wishlist-btn ${wishlist.find(item => item.id === product.id) ? 'active' : ''}" data-id="${product.id}" data-name="${product.name}" data-price="${product.salePrice}" data-image="${product.image}">
+                            <i class="${wishlist.find(item => item.id === product.id) ? 'fas' : 'far'} fa-heart"></i>
+                        </button>
+                        <div class="product-image">
+                            <img src="${product.image}" alt="${product.name}">
+                            <div class="product-overlay">
+                                <button class="btn btn-sm quick-view-btn" data-id="${product.id}">Xem nhanh</button>
+                            </div>
+                        </div>
+                        <div class="product-info">
+                            <div class="product-category">${product.category}</div>
+                            <h3 class="product-name">${product.name}</h3>
+                            <div class="product-price">
+                                <span class="current-price">${formatPrice(product.salePrice)}</span>
+                                ${discount > 0 ? `<span class="original-price">${formatPrice(product.originalPrice)}</span>` : ''}
+                            </div>
+                            <div class="product-actions">
+                                <button class="btn add-to-cart" data-id="${product.id}" data-name="${product.name}" data-price="${product.salePrice}" data-image="${product.image}">
+                                    <i class="fas fa-shopping-cart"></i> Thêm vào giỏ
+                                </button>
+                                <button class="btn btn-outline chat-btn" data-product="${product.name}">
+                                    <i class="fas fa-comment"></i> Chat
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    productsGrid.appendChild(productCard);
+                });
+                
+                // Re-attach event listeners
+                attachProductEventListeners();
+                
+                // Lưu trạng thái tìm kiếm
+                window.currentSearchState = {
+                    originalTitle: originalTitle,
+                    originalDescription: originalDescription,
+                    isSearchActive: true
+                };
+            }
+        }
+        
+        // Reset search function
+        function resetSearch() {
+            if (window.currentSearchState && window.currentSearchState.isSearchActive) {
+                document.querySelector('.section-title h2').textContent = window.currentSearchState.originalTitle;
+                document.querySelector('.section-title p').textContent = window.currentSearchState.originalDescription;
+                updateProductDisplay();
+                window.currentSearchState.isSearchActive = false;
+            }
+        }
+        
+        // Initialize advanced search
+        initAdvancedSearch();
+        
+        // ==================== TÍNH NĂNG ĐẾM NGƯỢC KHUYẾN MÃI ====================
+        
+        function initCountdownTimer() {
+            // Set end date for promotion (24 hours from now)
+            const endDate = new Date();
+            endDate.setHours(endDate.getHours() + 24);
+            
+            function updateCountdown() {
+                const now = new Date().getTime();
+                const distance = endDate - now;
+                
+                if (distance < 0) {
+                    // Countdown finished
+                    document.querySelectorAll('.countdown-timer').forEach(timer => {
+                        timer.innerHTML = '<span style="color: var(--danger-color);">Khuyến mãi đã kết thúc!</span>';
+                    });
+                    return;
+                }
+                
+                // Calculate time units
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                
+                // Update countdown display
+                document.querySelectorAll('.countdown-timer').forEach(timer => {
+                    timer.innerHTML = `
+                        <div style="display: flex; gap: 5px; justify-content: center;">
+                            <div style="background: var(--primary-color); color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold;">
+                                ${hours.toString().padStart(2, '0')}
+                            </div>
+                            <div style="padding: 5px 2px;">:</div>
+                            <div style="background: var(--primary-color); color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold;">
+                                ${minutes.toString().padStart(2, '0')}
+                            </div>
+                            <div style="padding: 5px 2px;">:</div>
+                            <div style="background: var(--primary-color); color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold;">
+                                ${seconds.toString().padStart(2, '0')}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            // Update countdown every second
+            setInterval(updateCountdown, 1000);
+            updateCountdown(); // Initial call
+        }
+        
+        // Initialize countdown timer
+        initCountdownTimer();
+        
+        // ==================== TÍNH NĂNG FILTER SẢN PHẨM ====================
+        
+        function initProductFilters() {
+            // Add filter UI to the products section
+            const productsSection = document.querySelector('.section');
+            const filterHTML = `
+                <div class="filters-panel">
+                    <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="margin: 0;">Bộ lọc sản phẩm</h3>
+                        <button class="btn btn-sm" id="reset-filters">Đặt lại</button>
+                    </div>
+                    <div class="filter-group">
+                        <h4>Danh mục</h4>
+                        <div class="filter-options" id="category-filters">
+                            <div class="filter-option active" data-category="all">Tất cả</div>
+                            <div class="filter-option" data-category="Son môi">Son môi</div>
+                            <div class="filter-option" data-category="Trang điểm mắt">Trang điểm mắt</div>
+                            <div class="filter-option" data-category="Trang điểm mặt">Trang điểm mặt</div>
+                            <div class="filter-option" data-category="Chăm sóc da">Chăm sóc da</div>
+                            <div class="filter-option" data-category="Nước hoa">Nước hoa</div>
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <h4>Mức giá</h4>
+                        <div class="filter-options" id="price-filters">
+                            <div class="filter-option active" data-price="all">Tất cả</div>
+                            <div class="filter-option" data-price="0-200000">Dưới 200.000đ</div>
+                            <div class="filter-option" data-price="200000-500000">200.000đ - 500.000đ</div>
+                            <div class="filter-option" data-price="500000-1000000">500.000đ - 1.000.000đ</div>
+                            <div class="filter-option" data-price="1000000+">Trên 1.000.000đ</div>
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <h4>Khuyến mãi</h4>
+                        <div class="filter-options" id="sale-filters">
+                            <div class="filter-option active" data-sale="all">Tất cả</div>
+                            <div class="filter-option" data-sale="sale">Đang giảm giá</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Insert filters before products grid
+            const productsGrid = document.getElementById('products-grid');
+            productsGrid.insertAdjacentHTML('beforebegin', filterHTML);
+            
+            // Add event listeners to filter options
+            document.querySelectorAll('.filter-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    const parent = this.parentElement;
+                    parent.querySelectorAll('.filter-option').forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                    applyFilters();
+                });
+            });
+            
+            // Reset filters
+            document.getElementById('reset-filters').addEventListener('click', function() {
+                document.querySelectorAll('.filter-option').forEach(option => {
+                    if (option.getAttribute('data-category') === 'all' || 
+                        option.getAttribute('data-price') === 'all' ||
+                        option.getAttribute('data-sale') === 'all') {
+                        option.classList.add('active');
+                    } else {
+                        option.classList.remove('active');
+                    }
+                });
+                applyFilters();
+            });
+            
+            function applyFilters() {
+                const selectedCategory = document.querySelector('#category-filters .filter-option.active').getAttribute('data-category');
+                const selectedPrice = document.querySelector('#price-filters .filter-option.active').getAttribute('data-price');
+                const selectedSale = document.querySelector('#sale-filters .filter-option.active').getAttribute('data-sale');
+                
+                let filteredProducts = [...products];
+                
+                // Apply category filter
+                if (selectedCategory !== 'all') {
+                    filteredProducts = filteredProducts.filter(product => product.category === selectedCategory);
+                }
+                
+                // Apply price filter
+                if (selectedPrice !== 'all') {
+                    filteredProducts = filteredProducts.filter(product => {
+                        const price = product.salePrice;
+                        switch (selectedPrice) {
+                            case '0-200000':
+                                return price <= 200000;
+                            case '200000-500000':
+                                return price > 200000 && price <= 500000;
+                            case '500000-1000000':
+                                return price > 500000 && price <= 1000000;
+                            case '1000000+':
+                                return price > 1000000;
+                            default:
+                                return true;
+                        }
+                    });
+                }
+                
+                // Apply sale filter
+                if (selectedSale !== 'all') {
+                    filteredProducts = filteredProducts.filter(product => product.salePrice < product.originalPrice);
+                }
+                
+                // Display filtered products
+                displayFilteredProducts(filteredProducts);
+            }
+            
+            function displayFilteredProducts(filteredProducts) {
+                const productsGrid = document.getElementById('products-grid');
+                productsGrid.innerHTML = '';
+                
+                if (filteredProducts.length === 0) {
+                    productsGrid.innerHTML = `
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                            <i class="fas fa-filter" style="font-size: 3rem; color: var(--gray-400); margin-bottom: 15px;"></i>
+                            <h3 style="color: var(--gray-600); margin-bottom: 10px;">Không tìm thấy sản phẩm</h3>
+                            <p style="color: var(--gray-500);">Hãy thử điều chỉnh bộ lọc để xem nhiều sản phẩm hơn</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                filteredProducts.forEach(product => {
+                    const discount = Math.round((1 - product.salePrice / product.originalPrice) * 100);
+                    
+                    const productCard = document.createElement('div');
+                    productCard.className = 'product-card';
+                    productCard.setAttribute('data-id', product.id);
+                    productCard.innerHTML = `
+                        ${discount > 0 ? `<div class="sale-badge">-${discount}%</div>` : ''}
+                        <button class="wishlist-btn ${wishlist.find(item => item.id === product.id) ? 'active' : ''}" data-id="${product.id}" data-name="${product.name}" data-price="${product.salePrice}" data-image="${product.image}">
+                            <i class="${wishlist.find(item => item.id === product.id) ? 'fas' : 'far'} fa-heart"></i>
+                        </button>
+                        <div class="product-image">
+                            <img src="${product.image}" alt="${product.name}">
+                            <div class="product-overlay">
+                                <button class="btn btn-sm quick-view-btn" data-id="${product.id}">Xem nhanh</button>
+                            </div>
+                        </div>
+                        <div class="product-info">
+                            <div class="product-category">${product.category}</div>
+                            <h3 class="product-name">${product.name}</h3>
+                            <div class="product-price">
+                                <span class="current-price">${formatPrice(product.salePrice)}</span>
+                                ${discount > 0 ? `<span class="original-price">${formatPrice(product.originalPrice)}</span>` : ''}
+                            </div>
+                            <div class="product-actions">
+                                <button class="btn add-to-cart" data-id="${product.id}" data-name="${product.name}" data-price="${product.salePrice}" data-image="${product.image}">
+                                    <i class="fas fa-shopping-cart"></i> Thêm vào giỏ
+                                </button>
+                                <button class="btn btn-outline chat-btn" data-product="${product.name}">
+                                    <i class="fas fa-comment"></i> Chat
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    productsGrid.appendChild(productCard);
+                });
+                
+                // Re-attach event listeners
+                attachProductEventListeners();
+            }
+        }
+        
+        // Initialize product filters
+        initProductFilters();
+        
+        // ==================== TÍNH NĂNG LOADING VÀ HIỆU ỨNG ====================
+        
+        // Add loading animation for better UX
+        function showLoading() {
+            const loading = document.createElement('div');
+            loading.id = 'global-loading';
+            loading.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(255,255,255,0.9);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                flex-direction: column;
+            `;
+            loading.innerHTML = `
+                <div class="loading-spinner" style="width: 50px; height: 50px; border-width: 5px;"></div>
+                <p style="margin-top: 15px; color: var(--gray-600);">Đang tải...</p>
+            `;
+            document.body.appendChild(loading);
+        }
+        
+        function hideLoading() {
+            const loading = document.getElementById('global-loading');
+            if (loading) {
+                document.body.removeChild(loading);
+            }
+        }
+        
+        // Add smooth scrolling for better UX
+        function initSmoothScrolling() {
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+        }
+        
+        // Initialize smooth scrolling
+        initSmoothScrolling();
+        
+        // ==================== TÍNH NĂNG RESPONSIVE ENHANCEMENTS ====================
+        
+        // Enhance mobile experience
+        function initMobileEnhancements() {
+            // Add touch swipe for product carousel (placeholder for future implementation)
+            let touchStartX = 0;
+            let touchEndX = 0;
+            
+            document.addEventListener('touchstart', e => {
+                touchStartX = e.changedTouches[0].screenX;
+            });
+            
+            document.addEventListener('touchend', e => {
+                touchEndX = e.changedTouches[0].screenX;
+                handleSwipe();
+            });
+            
+            function handleSwipe() {
+                const swipeThreshold = 50;
+                const swipeDistance = touchEndX - touchStartX;
+                
+                if (Math.abs(swipeDistance) > swipeThreshold) {
+                    if (swipeDistance > 0) {
+                        // Swipe right - could be used for navigation
+                    } else {
+                        // Swipe left - could be used for navigation
+                    }
+                }
+            }
+        }
+        
+        // Initialize mobile enhancements
+        initMobileEnhancements();
+        
+        // ==================== TÍNH NĂNG ACCESSIBILITY ====================
+        
+        // Enhance accessibility
+        function initAccessibility() {
+            // Add keyboard navigation
+            document.addEventListener('keydown', function(e) {
+                // Close modals with Escape key
+                if (e.key === 'Escape') {
+                    const activeModals = document.querySelectorAll('.chat-modal.active, #login-modal[style*="display: flex"], #payment-modal[style*="display: flex"], #quick-view-modal[style*="display: flex"]');
+                    activeModals.forEach(modal => {
+                        if (modal.classList.contains('chat-modal')) {
+                            modal.classList.remove('active');
+                            resetChat();
+                        } else {
+                            modal.style.display = 'none';
+                        }
+                    });
+                    
+                    // Close admin panel
+                    document.getElementById('admin-panel').classList.remove('active');
+                }
+                
+                // Navigate with arrow keys in product grid
+                if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                    const focusedElement = document.activeElement;
+                    if (focusedElement.classList.contains('product-card') || focusedElement.closest('.product-card')) {
+                        const productCards = Array.from(document.querySelectorAll('.product-card'));
+                        const currentIndex = productCards.indexOf(focusedElement.closest('.product-card'));
+                        let nextIndex;
+                        
+                        if (e.key === 'ArrowRight') {
+                            nextIndex = (currentIndex + 1) % productCards.length;
+                        } else {
+                            nextIndex = (currentIndex - 1 + productCards.length) % productCards.length;
+                        }
+                        
+                        productCards[nextIndex].focus();
+                        e.preventDefault();
+                    }
+                }
+            });
+            
+            // Add focus styles for better accessibility
+            const style = document.createElement('style');
+            style.textContent = `
+                .product-card:focus {
+                    outline: 2px solid var(--primary-color);
+                    outline-offset: 2px;
+                }
+                .btn:focus {
+                    outline: 2px solid var(--primary-color);
+                    outline-offset: 2px;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Initialize accessibility features
+        initAccessibility();
+        
+        // ==================== TÍNH NĂNG PERFORMANCE OPTIMIZATION ====================
+        
+        // Lazy load images for better performance
+        function initLazyLoading() {
+            const lazyImages = document.querySelectorAll('img');
+            
+            const imageObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        img.src = img.dataset.src;
+                        img.classList.remove('lazy');
+                        imageObserver.unobserve(img);
+                    }
+                });
+            });
+            
+            lazyImages.forEach(img => {
+                if (img.dataset.src) {
+                    imageObserver.observe(img);
+                }
+            });
+        }
+        
+        // Initialize lazy loading
+        initLazyLoading();
+        
+        // ==================== FINAL INITIALIZATION ====================
+        
+        // Update visitor count on page load
+        updateVisitorCountAPI();
+        
+        // Show welcome message for first-time visitors
+        if (!localStorage.getItem('hasVisitedBefore')) {
+            setTimeout(() => {
+                showNotification('Chào mừng bạn đến với Trúc Đào Cosmetics! 🎉', 'success');
+                localStorage.setItem('hasVisitedBefore', 'true');
+            }, 2000);
+        }
+        
+        console.log('🎉 Trúc Đào Cosmetics đã được khởi chạy thành công!');
+        console.log('✨ Tính năng đã được kích hoạt:');
+        console.log('   ✅ Admin Panel với tùy chỉnh giao diện');
+        console.log('   ✅ Quản lý sản phẩm và đơn hàng');
+        console.log('   ✅ Giỏ hàng và thanh toán');
+        console.log('   ✅ Chat trực tuyến với khách hàng');
+        console.log('   ✅ Wishlist và Quick View');
+        console.log('   ✅ Tìm kiếm và lọc sản phẩm');
+        console.log('   ✅ Tùy chỉnh theme và màu sắc');
+        console.log('   ✅ Responsive design cho mobile');
+        console.log('   ✅ Tính năng accessibility');
+        console.log('   ✅ Tối ưu hiệu suất');
+        
     </script>
 </body>
 </html>
