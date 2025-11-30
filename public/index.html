@@ -6,6 +6,7 @@
     <title>Trúc Đào Cosmetics - Mỹ phẩm cao cấp</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-color: #e83e8c;
@@ -1750,6 +1751,464 @@
             z-index: 10;
         }
         
+        /* NEW: Preloader */
+        .preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+        
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--gray-200);
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* NEW: Scroll to top button */
+        .scroll-to-top {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+            z-index: 998;
+            box-shadow: var(--box-shadow);
+        }
+        
+        .scroll-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .scroll-to-top:hover {
+            background: var(--primary-dark);
+            transform: translateY(-3px);
+        }
+        
+        /* NEW: Breadcrumb */
+        .breadcrumb {
+            padding: 20px 0;
+            background: var(--gray-100);
+            margin-bottom: 30px;
+        }
+        
+        .breadcrumb ul {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .breadcrumb li {
+            display: flex;
+            align-items: center;
+            margin-right: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .breadcrumb li:not(:last-child)::after {
+            content: '/';
+            margin-left: 10px;
+            color: var(--gray-500);
+        }
+        
+        .breadcrumb a {
+            color: var(--primary-color);
+        }
+        
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+        
+        /* NEW: Wishlist */
+        .wishlist-btn {
+            background: none;
+            border: none;
+            color: var(--gray-500);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 1.2rem;
+        }
+        
+        .wishlist-btn:hover, .wishlist-btn.active {
+            color: var(--danger-color);
+        }
+        
+        /* NEW: Product Rating */
+        .product-rating {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .rating-stars {
+            display: flex;
+            margin-right: 8px;
+        }
+        
+        .rating-star {
+            color: var(--gray-300);
+            font-size: 0.9rem;
+        }
+        
+        .rating-star.filled {
+            color: var(--warning-color);
+        }
+        
+        .rating-count {
+            font-size: 0.8rem;
+            color: var(--gray-500);
+        }
+        
+        /* NEW: Product Filters */
+        .product-filters {
+            background: white;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 30px;
+        }
+        
+        .filter-group {
+            margin-bottom: 20px;
+        }
+        
+        .filter-group h4 {
+            margin-bottom: 10px;
+            font-size: 1rem;
+            color: var(--gray-800);
+        }
+        
+        .filter-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .filter-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .filter-option input {
+            margin: 0;
+        }
+        
+        /* NEW: Quick View Modal */
+        .quick-view-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        
+        .quick-view-content {
+            background: white;
+            width: 90%;
+            max-width: 1000px;
+            max-height: 90vh;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .close-quick-view {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 10;
+        }
+        
+        .quick-view-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .quick-view-images .main-image {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: zoom-in;
+        }
+        
+        .quick-view-images img {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+        }
+        
+        .image-thumbnails {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .thumb-img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 5px;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        
+        .thumb-img.active {
+            border-color: var(--primary-color);
+        }
+        
+        .product-badges {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        
+        .badge.sale {
+            background: var(--danger-color);
+            color: white;
+        }
+        
+        .badge.new {
+            background: var(--success-color);
+            color: white;
+        }
+        
+        .stock-status {
+            margin: 15px 0;
+        }
+        
+        .stock-bar {
+            height: 6px;
+            background: var(--gray-300);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .stock-progress {
+            height: 100%;
+            background: var(--success-color);
+            transition: width 0.3s ease;
+        }
+        
+        .stock-text {
+            font-size: 0.8rem;
+            color: var(--gray-600);
+            margin-top: 5px;
+        }
+        
+        .color-swatches, .size-selection {
+            margin: 20px 0;
+        }
+        
+        .swatches, .sizes {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        
+        .swatch {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+        }
+        
+        .swatch.active {
+            border-color: var(--primary-color);
+        }
+        
+        .size-option {
+            padding: 8px 15px;
+            border: 1px solid var(--gray-300);
+            border-radius: 5px;
+            background: white;
+            cursor: pointer;
+        }
+        
+        .size-option.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .size-guide-btn {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            font-size: 0.8rem;
+            margin-top: 5px;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        
+        .quantity-selector {
+            margin: 20px 0;
+        }
+        
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        
+        .quantity-btn {
+            width: 35px;
+            height: 35px;
+            border: 1px solid var(--gray-300);
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .quantity-input {
+            width: 60px;
+            text-align: center;
+            border: 1px solid var(--gray-300);
+            border-radius: 5px;
+            padding: 8px;
+        }
+        
+        .quick-view-actions {
+            display: flex;
+            gap: 10px;
+            margin: 25px 0;
+        }
+        
+        .quick-view-actions .btn {
+            flex: 1;
+            justify-content: center;
+        }
+        
+        .product-meta {
+            border-top: 1px solid var(--gray-200);
+            padding-top: 20px;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: var(--gray-600);
+        }
+        
+        /* Size Guide Modal */
+        .size-guide-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2100;
+        }
+        
+        .size-guide-content {
+            background: white;
+            width: 90%;
+            max-width: 600px;
+            padding: 30px;
+            border-radius: 10px;
+            position: relative;
+        }
+        
+        .close-size-guide {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .size-table table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .size-table th, .size-table td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid var(--gray-300);
+        }
+        
+        .size-table th {
+            background: var(--gray-100);
+            font-weight: 600;
+        }
+        
+        /* Image Zoom */
+        .image-zoom {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.8);
+            background-size: 200%;
+            background-position: center;
+            display: none;
+            pointer-events: none;
+            border: 2px solid var(--primary-color);
+        }
+        
         /* Responsive */
         @media (max-width: 1200px) {
             .admin-panel {
@@ -1773,6 +2232,10 @@
             }
             
             .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .quick-view-body {
                 grid-template-columns: 1fr;
             }
         }
@@ -1878,6 +2341,13 @@
                 width: 280px;
                 right: -280px;
             }
+            
+            .scroll-to-top {
+                bottom: 70px;
+                right: 15px;
+                width: 45px;
+                height: 45px;
+            }
         }
         
         @media (max-width: 576px) {
@@ -1931,11 +2401,32 @@
             .admin-customization.active {
                 right: 0;
             }
+            
+            .quick-view-body {
+                padding: 20px;
+            }
+            
+            .quick-view-images img {
+                height: 300px;
+            }
+            
+            .quick-view-actions {
+                flex-direction: column;
+            }
         }
     </style>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Preloader -->
+    <div class="preloader" id="preloader">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Scroll to top button -->
+    <button class="scroll-to-top" id="scrollToTop">
+        <i class="fas fa-chevron-up"></i>
+    </button>
+
     <!-- Mobile Navigation Overlay -->
     <div class="mobile-nav-overlay" id="mobile-nav-overlay"></div>
     
@@ -1977,7 +2468,7 @@
                 </div>
                 <div class="header-actions">
                     <a href="#" id="login-btn"><i class="fas fa-user"></i></a>
-                    <a href="#"><i class="fas fa-heart"></i></a>
+                    <a href="#" id="wishlist-btn"><i class="fas fa-heart"></i></a>
                     <a href="#" class="cart-icon" id="cart-icon">
                         <i class="fas fa-shopping-cart"></i>
                         <span class="cart-count">0</span>
@@ -2010,46 +2501,112 @@
         </nav>
     </header>
 
-    <!-- Hero Section (upgraded to slider) -->
-    <section class="hero hero-slider" id="hero-slider">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
         <div class="container">
-            <div class="hero-slides">
-                <div class="hero-slide" data-index="0" style="background-image: url('https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=1400&q=80');">
-                    <div class="hero-content">
-                        <h1>Làm đẹp mỗi ngày với Trúc Đào Cosmetics</h1>
-                        <p>Khám phá bộ sưu tập mỹ phẩm cao cấp với ưu đãi đặc biệt lên đến 50%</p>
-                        <div class="hero-buttons">
-                            <a href="#" class="btn">Mua ngay <i class="fas fa-shopping-cart"></i></a>
-                            <a href="#" class="btn btn-outline">Khám phá bộ sưu tập <i class="fas fa-arrow-right"></i></a>
-                        </div>
-                    </div>
-                </div>
-                <div class="hero-slide" data-index="1" style="background-image: url('https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=1400&q=80');">
-                    <div class="hero-content">
-                        <h1>Chăm sóc da chuyên sâu</h1>
-                        <p>Công thức lành tính, an toàn cho mọi loại da.</p>
-                        <div class="hero-buttons">
-                            <a href="#" class="btn">Xem chi tiết</a>
-                            <a href="#" class="btn btn-outline">Sản phẩm bán chạy</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="hero-slide" data-index="2" style="background-image: url('https://images.unsplash.com/photo-1556228577-135c319f45c8?auto=format&fit=crop&w=1400&q=80');">
-                    <div class="hero-content">
-                        <h1>Bộ sưu tập son mới</h1>
-                        <p>Màu sắc tươi tắn, lâu phai, an toàn cho môi.</p>
-                        <div class="hero-buttons">
-                            <a href="#" class="btn">Mua ngay</a>
-                            <a href="#" class="btn btn-outline">Tìm hiểu thêm</a>
-                        </div>
-                    </div>
+            <ul>
+                <li><a href="#">Trang chủ</a></li>
+                <li><span>Sản phẩm</span></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>Làm đẹp mỗi ngày với Trúc Đào Cosmetics</h1>
+                <p>Khám phá bộ sưu tập mỹ phẩm cao cấp với ưu đãi đặc biệt lên đến 50%</p>
+                <div class="hero-buttons">
+                    <a href="#" class="btn">Mua ngay <i class="fas fa-shopping-cart"></i></a>
+                    <a href="#" class="btn btn-outline">Khám phá bộ sưu tập <i class="fas fa-arrow-right"></i></a>
                 </div>
             </div>
+        </div>
+    </section>
 
-            <div class="hero-controls" style="margin-top:20px; display:flex; justify-content:center; gap:12px; align-items:center;">
-                <label style="color:white; font-weight:600;">Autoplay</label>
-                <input type="checkbox" id="hero-autoplay-toggle" checked>
-                <div id="hero-dots" style="display:flex; gap:8px;"></div>
+    <!-- Product Filters -->
+    <section class="section">
+        <div class="container">
+            <div class="product-filters">
+                <div class="form-row">
+                    <div class="filter-group">
+                        <h4>Danh mục</h4>
+                        <div class="filter-options">
+                            <label class="filter-option">
+                                <input type="checkbox" name="category" value="son-moi"> Son môi
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="category" value="trang-diem-mat"> Trang điểm mặt
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="category" value="trang-diem-mat"> Trang điểm mắt
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="category" value="cham-soc-da"> Chăm sóc da
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" name="category" value="nuoc-hoa"> Nước hoa
+                            </label>
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <h4>Giá</h4>
+                        <div class="filter-options">
+                            <label class="filter-option">
+                                <input type="radio" name="price" value="0-100000"> Dưới 100.000đ
+                            </label>
+                            <label class="filter-option">
+                                <input type="radio" name="price" value="100000-300000"> 100.000đ - 300.000đ
+                            </label>
+                            <label class="filter-option">
+                                <input type="radio" name="price" value="300000-500000"> 300.000đ - 500.000đ
+                            </label>
+                            <label class="filter-option">
+                                <input type="radio" name="price" value="500000+"> Trên 500.000đ
+                            </label>
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <h4>Đánh giá</h4>
+                        <div class="filter-options">
+                            <label class="filter-option">
+                                <input type="radio" name="rating" value="5"> 
+                                <div class="rating-stars">
+                                    <i class="fas fa-star rating-star filled"></i>
+                                    <i class="fas fa-star rating-star filled"></i>
+                                    <i class="fas fa-star rating-star filled"></i>
+                                    <i class="fas fa-star rating-star filled"></i>
+                                    <i class="fas fa-star rating-star filled"></i>
+                                </div>
+                            </label>
+                            <label class="filter-option">
+                                <input type="radio" name="rating" value="4"> 
+                                <div class="rating-stars">
+                                    <i class="fas fa-star rating-star filled"></i>
+                                    <i class="fas fa-star rating-star filled"></i>
+                                    <i class="fas fa-star rating-star filled"></i>
+                                    <i class="fas fa-star rating-star filled"></i>
+                                    <i class="fas fa-star rating-star"></i>
+                                </div>
+                            </label>
+                            <label class="filter-option">
+                                <input type="radio" name="rating" value="3"> 
+                                <div class="rating-stars">
+                                    <i class="fas fa-star rating-star filled"></i>
+                                    <i class="fas fa-star rating-star filled"></i>
+                                    <i class="fas fa-star rating-star filled"></i>
+                                    <i class="fas fa-star rating-star"></i>
+                                    <i class="fas fa-star rating-star"></i>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <button class="btn btn-sm" id="apply-filters">Áp dụng bộ lọc</button>
+                    <button class="btn btn-outline btn-sm" id="reset-filters">Đặt lại</button>
+                </div>
             </div>
         </div>
     </section>
@@ -2266,188 +2823,196 @@
             <button class="btn" id="checkout-btn" style="width: 100%;">Thanh toán</button>
         </div>
     </div>
-    </div>
-</div>
 
-<!-- Quick View Modal -->
-<div class="quick-view-modal" id="quick-view-modal">
-    <div class="quick-view-content">
-        <button class="close-quick-view" id="close-quick-view"><i class="fas fa-times"></i></button>
-        <div class="quick-view-body" id="quick-view-body">
-            <div class="quick-view-images">
-                <div class="main-image">
-                    <img id="quick-view-main-img" src="" alt="">
-                    <div class="image-zoom" id="image-zoom"></div>
-                </div>
-                                <div class="image-thumbnails" id="image-thumbnails">
-                    <!-- Thumbnails sẽ được thêm bằng JavaScript -->
-                </div>
-            </div>
-            <div class="quick-view-info">
-                <div class="product-badges">
-                    <span class="badge sale">-30%</span>
-                    <span class="badge new">Mới</span>
-                </div>
-                <h2 id="quick-view-title">Tên sản phẩm</h2>
-                <div class="product-price">
-                    <span class="current-price" id="quick-view-price">199.000đ</span>
-                    <span class="original-price" id="quick-view-original-price">299.000đ</span>
-                </div>
-                <div class="stock-status">
-                    <div class="stock-bar"><div class="stock-progress" id="stock-progress"></div></div>
-                    <span class="stock-text" id="stock-text">Còn 15 sản phẩm</span>
-                </div>
-                <div class="color-swatches">
-                    <label>Màu sắc:</label>
-                    <div class="swatches" id="color-swatches">
-                        <div class="swatch active" data-color="red" style="background: #ff0000" title="Đỏ"></div>
-                        <div class="swatch" data-color="pink" style="background: #ff69b4" title="Hồng"></div>
-                        <div class="swatch" data-color="nude" style="background: #f5d0c4" title="Nude"></div>
+    <!-- Quick View Modal -->
+    <div class="quick-view-modal" id="quick-view-modal">
+        <div class="quick-view-content">
+            <button class="close-quick-view" id="close-quick-view"><i class="fas fa-times"></i></button>
+            <div class="quick-view-body" id="quick-view-body">
+                <div class="quick-view-images">
+                    <div class="main-image">
+                        <img id="quick-view-main-img" src="" alt="">
+                        <div class="image-zoom" id="image-zoom"></div>
+                    </div>
+                    <div class="image-thumbnails" id="image-thumbnails">
+                        <!-- Thumbnails sẽ được thêm bằng JavaScript -->
                     </div>
                 </div>
-                <div class="size-selection">
-                    <label>Kích thước:</label>
-                    <div class="sizes" id="size-selection">
-                        <button class="size-option active">50ml</button>
-                        <button class="size-option">100ml</button>
-                        <button class="size-option">150ml</button>
+                <div class="quick-view-info">
+                    <div class="product-badges">
+                        <span class="badge sale">-30%</span>
+                        <span class="badge new">Mới</span>
                     </div>
-                    <button class="size-guide-btn" id="size-guide-btn">Hướng dẫn chọn size</button>
-                </div>
-                <div class="quantity-selector">
-                    <label>Số lượng:</label>
-                    <div class="quantity-controls">
-                        <button class="quantity-btn minus">-</button>
-                        <input type="number" class="quantity-input" value="1" min="1" max="10">
-                        <button class="quantity-btn plus">+</button>
+                    <h2 id="quick-view-title">Tên sản phẩm</h2>
+                    <div class="product-rating">
+                        <div class="rating-stars">
+                            <i class="fas fa-star rating-star filled"></i>
+                            <i class="fas fa-star rating-star filled"></i>
+                            <i class="fas fa-star rating-star filled"></i>
+                            <i class="fas fa-star rating-star filled"></i>
+                            <i class="fas fa-star rating-star"></i>
+                        </div>
+                        <span class="rating-count">(24 đánh giá)</span>
                     </div>
-                </div>
-                <div class="quick-view-actions">
-                    <button class="btn btn-primary" id="quick-view-add-cart">
-                        <i class="fas fa-shopping-cart"></i> Thêm vào giỏ hàng
-                    </button>
-                    <button class="btn btn-success" id="quick-view-buy-now">
-                        <i class="fas fa-bolt"></i> Mua ngay
-                    </button>
-                    <button class="btn btn-outline" id="quick-view-wishlist">
-                        <i class="far fa-heart"></i> Yêu thích
-                    </button>
-                </div>
-                <div class="product-meta">
-                    <div class="meta-item">
-                        <i class="fas fa-truck"></i>
-                        <span>Miễn phí vận chuyển đơn từ 500K</span>
+                    <div class="product-price">
+                        <span class="current-price" id="quick-view-price">199.000đ</span>
+                        <span class="original-price" id="quick-view-original-price">299.000đ</span>
                     </div>
-                    <div class="meta-item">
-                        <i class="fas fa-shield-alt"></i>
-                        <span>Bảo hành chính hãng 12 tháng</span>
+                    <div class="stock-status">
+                        <div class="stock-bar"><div class="stock-progress" id="stock-progress"></div></div>
+                        <span class="stock-text" id="stock-text">Còn 15 sản phẩm</span>
                     </div>
-                    <div class="meta-item">
-                        <i class="fas fa-undo"></i>
-                        <span>Đổi trả trong 7 ngày</span>
+                    <div class="color-swatches">
+                        <label>Màu sắc:</label>
+                        <div class="swatches" id="color-swatches">
+                            <div class="swatch active" data-color="red" style="background: #ff0000" title="Đỏ"></div>
+                            <div class="swatch" data-color="pink" style="background: #ff69b4" title="Hồng"></div>
+                            <div class="swatch" data-color="nude" style="background: #f5d0c4" title="Nude"></div>
+                        </div>
+                    </div>
+                    <div class="size-selection">
+                        <label>Kích thước:</label>
+                        <div class="sizes" id="size-selection">
+                            <button class="size-option active">50ml</button>
+                            <button class="size-option">100ml</button>
+                            <button class="size-option">150ml</button>
+                        </div>
+                        <button class="size-guide-btn" id="size-guide-btn">Hướng dẫn chọn size</button>
+                    </div>
+                    <div class="quantity-selector">
+                        <label>Số lượng:</label>
+                        <div class="quantity-controls">
+                            <button class="quantity-btn minus">-</button>
+                            <input type="number" class="quantity-input" value="1" min="1" max="10">
+                            <button class="quantity-btn plus">+</button>
+                        </div>
+                    </div>
+                    <div class="quick-view-actions">
+                        <button class="btn btn-primary" id="quick-view-add-cart">
+                            <i class="fas fa-shopping-cart"></i> Thêm vào giỏ hàng
+                        </button>
+                        <button class="btn btn-success" id="quick-view-buy-now">
+                            <i class="fas fa-bolt"></i> Mua ngay
+                        </button>
+                        <button class="btn btn-outline" id="quick-view-wishlist">
+                            <i class="far fa-heart"></i> Yêu thích
+                        </button>
+                    </div>
+                    <div class="product-meta">
+                        <div class="meta-item">
+                            <i class="fas fa-truck"></i>
+                            <span>Miễn phí vận chuyển đơn từ 500K</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>Bảo hành chính hãng 12 tháng</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-undo"></i>
+                            <span>Đổi trả trong 7 ngày</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Size Guide Modal -->
-<div class="size-guide-modal" id="size-guide-modal">
-    <div class="size-guide-content">
-        <button class="close-size-guide" id="close-size-guide"><i class="fas fa-times"></i></button>
-        <h3>Hướng dẫn chọn size</h3>
-        <div class="size-table">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Size</th>
-                        <th>Chiều dài (cm)</th>
-                        <th>Chiều rộng (cm)</th>
-                        <th>Trọng lượng (g)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>50ml</td>
-                        <td>8.5</td>
-                        <td>3.2</td>
-                        <td>65</td>
-                    </tr>
-                    <tr>
-                        <td>100ml</td>
-                        <td>12.0</td>
-                        <td>4.5</td>
-                        <td>120</td>
-                    </tr>
-                    <tr>
-                        <td>150ml</td>
-                        <td>15.5</td>
-                        <td>5.8</td>
-                        <td>180</td>
-                    </tr>
-                </tbody>
-            </table>
+    <!-- Size Guide Modal -->
+    <div class="size-guide-modal" id="size-guide-modal">
+        <div class="size-guide-content">
+            <button class="close-size-guide" id="close-size-guide"><i class="fas fa-times"></i></button>
+            <h3>Hướng dẫn chọn size</h3>
+            <div class="size-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Size</th>
+                            <th>Chiều dài (cm)</th>
+                            <th>Chiều rộng (cm)</th>
+                            <th>Trọng lượng (g)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>50ml</td>
+                            <td>8.5</td>
+                            <td>3.2</td>
+                            <td>65</td>
+                        </tr>
+                        <tr>
+                            <td>100ml</td>
+                            <td>12.0</td>
+                            <td>4.5</td>
+                            <td>120</td>
+                        </tr>
+                        <tr>
+                            <td>150ml</td>
+                            <td>15.5</td>
+                            <td>5.8</td>
+                            <td>180</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- Payment Modal -->
-<div class="payment-modal" id="payment-modal">
-    <div class="payment-form">
-        <button class="close-login" id="close-payment"><i class="fas fa-times"></i></button>
-        <h2>Thanh toán đơn hàng</h2>
-        
-        <div class="bank-info">
-            <h3>Thông tin chuyển khoản</h3>
-            <div class="bank-info-item">
-                <div class="bank-info-label">Ngân hàng:</div>
-                <div class="bank-info-value">Sacombank</div>
+    <!-- Payment Modal -->
+    <div class="payment-modal" id="payment-modal">
+        <div class="payment-form">
+            <button class="close-login" id="close-payment"><i class="fas fa-times"></i></button>
+            <h2>Thanh toán đơn hàng</h2>
+            
+            <div class="bank-info">
+                <h3>Thông tin chuyển khoản</h3>
+                <div class="bank-info-item">
+                    <div class="bank-info-label">Ngân hàng:</div>
+                    <div class="bank-info-value">Sacombank</div>
+                </div>
+                <div class="bank-info-item">
+                    <div class="bank-info-label">Số tài khoản:</div>
+                    <div class="bank-info-value">123022988888</div>
+                </div>
+                <div class="bank-info-item">
+                    <div class="bank-info-label">Tên thụ hưởng:</div>
+                    <div class="bank-info-value">Nguyễn Thị Trúc Đào</div>
+                </div>
+                <div class="bank-info-item">
+                    <div class="bank-info-label">Nội dung:</div>
+                    <div class="bank-info-value" id="payment-content">Tên Khách_Sản Phẩm Mua_Số Lượng</div>
+                </div>
+                <div class="bank-info-item">
+                    <div class="bank-info-label">Số tiền:</div>
+                    <div class="bank-info-value" id="payment-amount">0đ</div>
+                </div>
             </div>
-            <div class="bank-info-item">
-                <div class="bank-info-label">Số tài khoản:</div>
-                <div class="bank-info-value">123022988888</div>
+            
+            <div class="customer-info">
+                <h3>Thông tin khách hàng</h3>
+                <div class="form-group">
+                    <label for="customer-name">Họ và tên *</label>
+                    <input type="text" id="customer-name" placeholder="Nhập họ và tên">
+                </div>
+                <div class="form-group">
+                    <label for="customer-phone">Số điện thoại *</label>
+                    <input type="tel" id="customer-phone" placeholder="Nhập số điện thoại">
+                </div>
+                <div class="form-group">
+                    <label for="customer-address">Địa chỉ nhận hàng *</label>
+                    <textarea id="customer-address" placeholder="Nhập địa chỉ nhận hàng" rows="3"></textarea>
+                </div>
             </div>
-            <div class="bank-info-item">
-                <div class="bank-info-label">Tên thụ hưởng:</div>
-                <div class="bank-info-value">Nguyễn Thị Trúc Đào</div>
+            
+            <div class="file-upload">
+                <label class="file-upload-label">Ảnh chụp màn hình chuyển khoản *</label>
+                <input type="file" id="payment-screenshot" accept="image/*" style="display: none;">
+                <button class="upload-btn" id="upload-payment-btn"><i class="fas fa-upload"></i> Chọn ảnh</button>
+                <img id="payment-preview" class="file-preview" alt="Preview">
             </div>
-            <div class="bank-info-item">
-                <div class="bank-info-label">Nội dung:</div>
-                <div class="bank-info-value" id="payment-content">Tên Khách_Sản Phẩm Mua_Số Lượng</div>
-            </div>
-            <div class="bank-info-item">
-                <div class="bank-info-label">Số tiền:</div>
-                <div class="bank-info-value" id="payment-amount">0đ</div>
-            </div>
+            
+            <button class="btn" id="confirm-payment" style="width: 100%;">Xác nhận đơn hàng</button>
         </div>
-        
-        <div class="customer-info">
-            <h3>Thông tin khách hàng</h3>
-            <div class="form-group">
-                <label for="customer-name">Họ và tên *</label>
-                <input type="text" id="customer-name" placeholder="Nhập họ và tên">
-            </div>
-            <div class="form-group">
-                <label for="customer-phone">Số điện thoại *</label>
-                <input type="tel" id="customer-phone" placeholder="Nhập số điện thoại">
-            </div>
-            <div class="form-group">
-                <label for="customer-address">Địa chỉ nhận hàng *</label>
-                <textarea id="customer-address" placeholder="Nhập địa chỉ nhận hàng" rows="3"></textarea>
-            </div>
-        </div>
-        
-        <div class="file-upload">
-            <label class="file-upload-label">Ảnh chụp màn hình chuyển khoản *</label>
-            <input type="file" id="payment-screenshot" accept="image/*" style="display: none;">
-            <button class="upload-btn" id="upload-payment-btn"><i class="fas fa-upload"></i> Chọn ảnh</button>
-            <img id="payment-preview" class="file-preview" alt="Preview">
-        </div>
-        
-        <button class="btn" id="confirm-payment" style="width: 100%;">Xác nhận đơn hàng</button>
     </div>
-</div>
 
     <!-- Admin Panel -->
     <div class="admin-panel" id="admin-panel">
@@ -2487,210 +3052,7 @@
                 <h2>Trúc Đào Admin Dashboard</h2>
                 <button id="close-admin"><i class="fas fa-times"></i></button>
             </div>
-            <script>
-    // Quick View Functionality
-    function initQuickView() {
-        const quickViewModal = document.getElementById('quick-view-modal');
-        const closeQuickView = document.getElementById('close-quick-view');
-        const quickViewBody = document.getElementById('quick-view-body');
-        const sizeGuideModal = document.getElementById('size-guide-modal');
-        const closeSizeGuide = document.getElementById('close-size-guide');
-        const sizeGuideBtn = document.getElementById('size-guide-btn');
-
-        // Open Quick View
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('.quick-view-btn')) {
-                const productCard = e.target.closest('.product-card');
-                const productId = productCard.getAttribute('data-id');
-                openQuickView(productId);
-            }
-        });
-
-        // Close Quick View
-        closeQuickView.addEventListener('click', closeQuickViewModal);
-        quickViewModal.addEventListener('click', function(e) {
-            if (e.target === quickViewModal) {
-                closeQuickViewModal();
-            }
-        });
-
-        // Size Guide
-        sizeGuideBtn.addEventListener('click', openSizeGuide);
-        closeSizeGuide.addEventListener('click', closeSizeGuideModal);
-        sizeGuideModal.addEventListener('click', function(e) {
-            if (e.target === sizeGuideModal) {
-                closeSizeGuideModal();
-            }
-        });
-
-        // Color Swatches
-        document.querySelectorAll('.swatch').forEach(swatch => {
-            swatch.addEventListener('click', function() {
-                document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
-                this.classList.add('active');
-            });
-        });
-
-        // Size Options
-        document.querySelectorAll('.size-option').forEach(option => {
-            option.addEventListener('click', function() {
-                document.querySelectorAll('.size-option').forEach(o => o.classList.remove('active'));
-                this.classList.add('active');
-            });
-        });
-
-        // Quantity Controls
-        document.querySelectorAll('.quantity-btn.minus').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const input = this.nextElementSibling;
-                if (input.value > 1) input.value = parseInt(input.value) - 1;
-            });
-        });
-
-        document.querySelectorAll('.quantity-btn.plus').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const input = this.previousElementSibling;
-                if (input.value < 10) input.value = parseInt(input.value) + 1;
-            });
-        });
-
-        // Image Zoom
-        initImageZoom();
-    }
-
-    function openQuickView(productId) {
-        const product = products.find(p => p.id == productId);
-        if (!product) return;
-
-        const modal = document.getElementById('quick-view-modal');
-        modal.style.display = 'flex';
-
-        // Populate product data
-        document.getElementById('quick-view-title').textContent = product.name;
-        document.getElementById('quick-view-price').textContent = formatPrice(product.salePrice);
-        document.getElementById('quick-view-original-price').textContent = formatPrice(product.originalPrice);
-        document.getElementById('quick-view-main-img').src = product.image;
-
-        // Add to cart button
-        document.getElementById('quick-view-add-cart').setAttribute('data-id', product.id);
-        document.getElementById('quick-view-buy-now').setAttribute('data-id', product.id);
-        document.getElementById('quick-view-wishlist').setAttribute('data-id', product.id);
-
-        // Simulate stock (random for demo)
-        const stockPercent = Math.floor(Math.random() * 100) + 1;
-        document.getElementById('stock-progress').style.width = stockPercent + '%';
-        document.getElementById('stock-text').textContent = `Còn ${Math.floor(stockPercent / 10)} sản phẩm`;
-    }
-
-    function closeQuickViewModal() {
-        document.getElementById('quick-view-modal').style.display = 'none';
-    }
-
-    function openSizeGuide() {
-        document.getElementById('size-guide-modal').style.display = 'flex';
-    }
-
-    function closeSizeGuideModal() {
-        document.getElementById('size-guide-modal').style.display = 'none';
-    }
-
-    function initImageZoom() {
-        const mainImage = document.getElementById('quick-view-main-img');
-        const zoomOverlay = document.getElementById('image-zoom');
-
-        if (mainImage && zoomOverlay) {
-            mainImage.addEventListener('mousemove', function(e) {
-                const rect = this.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                
-                const xPercent = (x / rect.width) * 100;
-                const yPercent = (y / rect.height) * 100;
-                
-                zoomOverlay.style.backgroundImage = `url(${this.src})`;
-                zoomOverlay.style.backgroundPosition = `${xPercent}% ${yPercent}%`;
-                zoomOverlay.style.display = 'block';
-                zoomOverlay.style.left = (e.clientX - 100) + 'px';
-                zoomOverlay.style.top = (e.clientY - 100) + 'px';
-            });
-
-            mainImage.addEventListener('mouseleave', function() {
-                zoomOverlay.style.display = 'none';
-            });
-        }
-    }
-
-    // Add quick view buttons to product cards
-    function addQuickViewButtons() {
-        document.querySelectorAll('.product-card').forEach(card => {
-            if (!card.querySelector('.quick-view-btn')) {
-                const quickViewBtn = document.createElement('button');
-                quickViewBtn.className = 'quick-view-btn';
-                quickViewBtn.innerHTML = '<i class="fas fa-eye"></i> Xem nhanh';
-                quickViewBtn.style.cssText = `
-                    position: absolute;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    background: rgba(255,255,255,0.9);
-                    border: none;
-                    padding: 10px 15px;
-                    border-radius: 20px;
-                    cursor: pointer;
-                    opacity: 0;
-                    transition: opacity 0.3s ease;
-                    z-index: 3;
-                `;
-                
-                card.querySelector('.product-image').style.position = 'relative';
-                card.querySelector('.product-image').appendChild(quickViewBtn);
-                
-                card.addEventListener('mouseenter', function() {
-                    quickViewBtn.style.opacity = '1';
-                });
-                
-                card.addEventListener('mouseleave', function() {
-                    quickViewBtn.style.opacity = '0';
-                });
-            }
-        });
-    }
-
-    // Initialize when DOM is loaded
-    document.addEventListener('DOMContentLoaded', function() {
-        initQuickView();
-        addQuickViewButtons();
-    });
-
-    // Add event listeners for quick view actions
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('#quick-view-add-cart')) {
-            const productId = e.target.closest('#quick-view-add-cart').getAttribute('data-id');
-            const product = products.find(p => p.id == productId);
-            if (product) {
-                addToCart(product.id, product.name, product.salePrice, product.image);
-                showNotification('Đã thêm vào giỏ hàng!', 'success');
-                closeQuickViewModal();
-            }
-        }
-        
-        if (e.target.closest('#quick-view-buy-now')) {
-            const productId = e.target.closest('#quick-view-buy-now').getAttribute('data-id');
-            const product = products.find(p => p.id == productId);
-            if (product) {
-                addToCart(product.id, product.name, product.salePrice, product.image);
-                closeQuickViewModal();
-                document.getElementById('cart-modal').classList.add('active');
-            }
-        }
-        
-        if (e.target.closest('#quick-view-wishlist')) {
-            const productId = e.target.closest('#quick-view-wishlist').getAttribute('data-id');
-            // Add to wishlist functionality here
-            showNotification('Đã thêm vào yêu thích!', 'success');
-        }
-    });
-</script>
+            
             <!-- Dashboard Tab -->
             <div class="admin-content active" id="dashboard-tab">
                 <div class="dashboard-cards">
@@ -3068,6 +3430,7 @@
         let visitors = { total: 0, today: 0, date: new Date().toDateString() };
         let productViews = {};
         let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        let wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
 
         // ==================== CẢI THIỆN ADMIN PANEL ====================
         
@@ -3288,6 +3651,14 @@
             initAdminCustomization();
             preventZoom();
             
+            // Hide preloader
+            setTimeout(function() {
+                document.getElementById('preloader').style.opacity = '0';
+                setTimeout(function() {
+                    document.getElementById('preloader').style.display = 'none';
+                }, 500);
+            }, 1000);
+            
             updateVisitorCountAPI();
             loadProductsFromAPI();
             loadMessagesFromAPI();
@@ -3296,6 +3667,7 @@
             updateAnalytics();
             updateCartCount();
             renderCartItems();
+            updateWishlistCount();
             
             // Mobile navigation
             const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
@@ -3365,6 +3737,49 @@
                         alert('Tính năng đang được công ty cập nhật và phát triển');
                     });
                 }
+            });
+            
+            // Scroll to top functionality
+            const scrollToTopBtn = document.getElementById('scrollToTop');
+            
+            window.addEventListener('scroll', function() {
+                if (window.pageYOffset > 300) {
+                    scrollToTopBtn.classList.add('visible');
+                } else {
+                    scrollToTopBtn.classList.remove('visible');
+                }
+            });
+            
+            scrollToTopBtn.addEventListener('click', function() {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+            
+            // Wishlist functionality
+            const wishlistBtn = document.getElementById('wishlist-btn');
+            wishlistBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                // In a real app, this would open a wishlist modal or page
+                showNotification('Tính năng wishlist đang được phát triển!', 'info');
+            });
+            
+            // Product filters
+            const applyFiltersBtn = document.getElementById('apply-filters');
+            const resetFiltersBtn = document.getElementById('reset-filters');
+            
+            applyFiltersBtn.addEventListener('click', function() {
+                // In a real app, this would filter products
+                showNotification('Bộ lọc đã được áp dụng!', 'success');
+            });
+            
+            resetFiltersBtn.addEventListener('click', function() {
+                // Reset all filter inputs
+                document.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(input => {
+                    input.checked = false;
+                });
+                showNotification('Bộ lọc đã được đặt lại!', 'success');
             });
         });
 
@@ -3599,7 +4014,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                    }
+                        }
                 });
                 
                 if (response.ok) {
@@ -3732,6 +4147,27 @@
                 updateCartCount();
                 renderCartItems();
             }
+        }
+        
+        // Wishlist functionality
+        function updateWishlistCount() {
+            const wishlistCount = document.querySelector('.wishlist-count');
+            if (wishlistCount) {
+                wishlistCount.textContent = wishlist.length;
+            }
+        }
+        
+        function toggleWishlist(productId) {
+            const index = wishlist.indexOf(productId);
+            if (index === -1) {
+                wishlist.push(productId);
+                showNotification('Đã thêm vào danh sách yêu thích!', 'success');
+            } else {
+                wishlist.splice(index, 1);
+                showNotification('Đã xóa khỏi danh sách yêu thích!', 'info');
+            }
+            localStorage.setItem('wishlist', JSON.stringify(wishlist));
+            updateWishlistCount();
         }
         
         // Image upload functionality
@@ -4176,6 +4612,7 @@
             
             products.forEach(product => {
                 const discount = Math.round((1 - product.salePrice / product.originalPrice) * 100);
+                const isInWishlist = wishlist.includes(product.id);
                 
                 const productCard = document.createElement('div');
                 productCard.className = 'product-card';
@@ -4185,12 +4622,22 @@
                     <div class="product-image">
                         <img src="${product.image}" alt="${product.name}">
                         <div class="product-overlay">
-                            <button class="btn btn-sm" style="background: rgba(255,255,255,0.2); backdrop-filter: blur(10px);">Xem nhanh</button>
+                            <button class="btn btn-sm quick-view-btn" data-id="${product.id}" style="background: rgba(255,255,255,0.2); backdrop-filter: blur(10px);">Xem nhanh</button>
                         </div>
                     </div>
                     <div class="product-info">
                         <div class="product-category">${product.category}</div>
                         <h3 class="product-name">${product.name}</h3>
+                        <div class="product-rating">
+                            <div class="rating-stars">
+                                <i class="fas fa-star rating-star filled"></i>
+                                <i class="fas fa-star rating-star filled"></i>
+                                <i class="fas fa-star rating-star filled"></i>
+                                <i class="fas fa-star rating-star filled"></i>
+                                <i class="fas fa-star rating-star"></i>
+                            </div>
+                            <span class="rating-count">(${Math.floor(Math.random() * 50) + 10} đánh giá)</span>
+                        </div>
                         <div class="product-price">
                             <span class="current-price">${formatPrice(product.salePrice)}</span>
                             <span class="original-price">${formatPrice(product.originalPrice)}</span>
@@ -4201,6 +4648,9 @@
                             </button>
                             <button class="btn btn-outline chat-btn" data-product="${product.name}">
                                 <i class="fas fa-comment"></i> Chat
+                            </button>
+                            <button class="wishlist-btn ${isInWishlist ? 'active' : ''}" data-id="${product.id}">
+                                <i class="${isInWishlist ? 'fas' : 'far'} fa-heart"></i>
                             </button>
                         </div>
                     </div>
@@ -4234,6 +4684,32 @@
                 });
             });
             
+            document.querySelectorAll('.wishlist-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const productId = this.getAttribute('data-id');
+                    toggleWishlist(productId);
+                    
+                    // Update button appearance
+                    const icon = this.querySelector('i');
+                    if (wishlist.includes(productId)) {
+                        this.classList.add('active');
+                        icon.classList.remove('far');
+                        icon.classList.add('fas');
+                    } else {
+                        this.classList.remove('active');
+                        icon.classList.remove('fas');
+                        icon.classList.add('far');
+                    }
+                });
+            });
+            
+            document.querySelectorAll('.quick-view-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const productId = this.getAttribute('data-id');
+                    openQuickView(productId);
+                });
+            });
+            
             // Track product views
             document.querySelectorAll('.product-card').forEach(card => {
                 card.addEventListener('click', function() {
@@ -4244,6 +4720,161 @@
                 });
             });
         }
+        
+        // Quick View Functionality
+        function initQuickView() {
+            const quickViewModal = document.getElementById('quick-view-modal');
+            const closeQuickView = document.getElementById('close-quick-view');
+            const quickViewBody = document.getElementById('quick-view-body');
+            const sizeGuideModal = document.getElementById('size-guide-modal');
+            const closeSizeGuide = document.getElementById('close-size-guide');
+            const sizeGuideBtn = document.getElementById('size-guide-btn');
+
+            // Close Quick View
+            closeQuickView.addEventListener('click', closeQuickViewModal);
+            quickViewModal.addEventListener('click', function(e) {
+                if (e.target === quickViewModal) {
+                    closeQuickViewModal();
+                }
+            });
+
+            // Size Guide
+            sizeGuideBtn.addEventListener('click', openSizeGuide);
+            closeSizeGuide.addEventListener('click', closeSizeGuideModal);
+            sizeGuideModal.addEventListener('click', function(e) {
+                if (e.target === sizeGuideModal) {
+                    closeSizeGuideModal();
+                }
+            });
+
+            // Color Swatches
+            document.querySelectorAll('.swatch').forEach(swatch => {
+                swatch.addEventListener('click', function() {
+                    document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+
+            // Size Options
+            document.querySelectorAll('.size-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('.size-option').forEach(o => o.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+
+            // Quantity Controls
+            document.querySelectorAll('.quantity-btn.minus').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const input = this.nextElementSibling;
+                    if (input.value > 1) input.value = parseInt(input.value) - 1;
+                });
+            });
+
+            document.querySelectorAll('.quantity-btn.plus').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const input = this.previousElementSibling;
+                    if (input.value < 10) input.value = parseInt(input.value) + 1;
+                });
+            });
+
+            // Image Zoom
+            initImageZoom();
+        }
+
+        function openQuickView(productId) {
+            const product = products.find(p => p.id == productId);
+            if (!product) return;
+
+            const modal = document.getElementById('quick-view-modal');
+            modal.style.display = 'flex';
+
+            // Populate product data
+            document.getElementById('quick-view-title').textContent = product.name;
+            document.getElementById('quick-view-price').textContent = formatPrice(product.salePrice);
+            document.getElementById('quick-view-original-price').textContent = formatPrice(product.originalPrice);
+            document.getElementById('quick-view-main-img').src = product.image;
+
+            // Add to cart button
+            document.getElementById('quick-view-add-cart').setAttribute('data-id', product.id);
+            document.getElementById('quick-view-buy-now').setAttribute('data-id', product.id);
+            document.getElementById('quick-view-wishlist').setAttribute('data-id', product.id);
+
+            // Simulate stock (random for demo)
+            const stockPercent = Math.floor(Math.random() * 100) + 1;
+            document.getElementById('stock-progress').style.width = stockPercent + '%';
+            document.getElementById('stock-text').textContent = `Còn ${Math.floor(stockPercent / 10)} sản phẩm`;
+        }
+
+        function closeQuickViewModal() {
+            document.getElementById('quick-view-modal').style.display = 'none';
+        }
+
+        function openSizeGuide() {
+            document.getElementById('size-guide-modal').style.display = 'flex';
+        }
+
+        function closeSizeGuideModal() {
+            document.getElementById('size-guide-modal').style.display = 'none';
+        }
+
+        function initImageZoom() {
+            const mainImage = document.getElementById('quick-view-main-img');
+            const zoomOverlay = document.getElementById('image-zoom');
+
+            if (mainImage && zoomOverlay) {
+                mainImage.addEventListener('mousemove', function(e) {
+                    const rect = this.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    const xPercent = (x / rect.width) * 100;
+                    const yPercent = (y / rect.height) * 100;
+                    
+                    zoomOverlay.style.backgroundImage = `url(${this.src})`;
+                    zoomOverlay.style.backgroundPosition = `${xPercent}% ${yPercent}%`;
+                    zoomOverlay.style.display = 'block';
+                    zoomOverlay.style.left = (e.clientX - 100) + 'px';
+                    zoomOverlay.style.top = (e.clientY - 100) + 'px';
+                });
+
+                mainImage.addEventListener('mouseleave', function() {
+                    zoomOverlay.style.display = 'none';
+                });
+            }
+        }
+
+        // Add event listeners for quick view actions
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('#quick-view-add-cart')) {
+                const productId = e.target.closest('#quick-view-add-cart').getAttribute('data-id');
+                const product = products.find(p => p.id == productId);
+                if (product) {
+                    addToCart(product.id, product.name, product.salePrice, product.image);
+                    showNotification('Đã thêm vào giỏ hàng!', 'success');
+                    closeQuickViewModal();
+                }
+            }
+            
+            if (e.target.closest('#quick-view-buy-now')) {
+                const productId = e.target.closest('#quick-view-buy-now').getAttribute('data-id');
+                const product = products.find(p => p.id == productId);
+                if (product) {
+                    addToCart(product.id, product.name, product.salePrice, product.image);
+                    closeQuickViewModal();
+                    document.getElementById('cart-modal').classList.add('active');
+                }
+            }
+            
+            if (e.target.closest('#quick-view-wishlist')) {
+                const productId = e.target.closest('#quick-view-wishlist').getAttribute('data-id');
+                toggleWishlist(productId);
+                showNotification('Đã thêm vào yêu thích!', 'success');
+            }
+        });
+
+        // Initialize quick view
+        initQuickView();
         
         // Add new product
         document.getElementById('add-product-btn').addEventListener('click', function() {
@@ -4982,1843 +5613,5 @@
             });
         }
     </script>
-
-<script>
-(function(){
-    // Theme color picker
-    function applyPrimaryColor(color) {
-        document.documentElement.style.setProperty('--primary-color', color);
-        // Slightly darker variant
-        try {
-            const dark = color;
-            document.documentElement.style.setProperty('--primary-dark', dark);
-        } catch(e){}
-    }
-    document.querySelectorAll('.preset-color').forEach(btn=>{
-        btn.addEventListener('click', ()=>{
-            const c = btn.getAttribute('data-color');
-            applyPrimaryColor(c);
-            localStorage.setItem('td_primary_color', c);
-        });
-    });
-    const savedColor = localStorage.getItem('td_primary_color');
-    if (savedColor) applyPrimaryColor(savedColor);
-
-    // Font selector
-    const fontSelect = document.getElementById('font-select');
-    if (fontSelect) {
-        fontSelect.addEventListener('change', ()=>{
-            document.body.style.fontFamily = fontSelect.value;
-            localStorage.setItem('td_font_family', fontSelect.value);
-        });
-        const savedFont = localStorage.getItem('td_font_family');
-        if (savedFont) {
-            fontSelect.value = savedFont;
-            document.body.style.fontFamily = savedFont;
-        }
-    }
-
-    // Custom CSS injector
-    const applyCssBtn = document.getElementById('apply-custom-css');
-    if (applyCssBtn) {
-        applyCssBtn.addEventListener('click', ()=>{
-            const css = document.getElementById('custom-css').value || '';
-            let el = document.getElementById('td-custom-css-el');
-            if (!el) {
-                el = document.createElement('style');
-                el.id = 'td-custom-css-el';
-                document.head.appendChild(el);
-            }
-            el.textContent = css;
-            localStorage.setItem('td_custom_css', css);
-            showNotification('Custom CSS đã được áp dụng!', 'success');
-        });
-        const savedCss = localStorage.getItem('td_custom_css');
-        if (savedCss) {
-            let el = document.getElementById('td-custom-css-el');
-            if (!el) {
-                el = document.createElement('style');
-                el.id = 'td-custom-css-el';
-                document.head.appendChild(el);
-            }
-            el.textContent = savedCss;
-            document.getElementById('custom-css').value = savedCss;
-        }
-    }
-
-    // Product layout toggle
-    const layoutToggle = document.getElementById('product-layout-toggle');
-    function applyProductLayout(layout) {
-        document.documentElement.setAttribute('data-product-layout', layout);
-        localStorage.setItem('td_product_layout', layout);
-        // Re-render if products already loaded
-        if (typeof updateProductDisplay === 'function') {
-            updateProductDisplay();
-        }
-    }
-    if (layoutToggle) {
-        layoutToggle.addEventListener('change', ()=>applyProductLayout(layoutToggle.value));
-        const savedLayout = localStorage.getItem('td_product_layout') || 'overlay';
-        layoutToggle.value = savedLayout;
-        applyProductLayout(savedLayout);
-    }
-
-    // Hero slider (simple)
-    const hero = document.getElementById('hero-slider');
-    if (hero) {
-        const slides = hero.querySelectorAll('.hero-slide');
-        const dots = document.getElementById('hero-dots');
-        let current = 0;
-        slides.forEach((s,i)=>{
-            s.style.backgroundSize = 'cover';
-            s.style.backgroundPosition = 'center';
-            s.style.padding = '120px 0';
-            s.style.display = i===0 ? 'block' : 'none';
-            const dot = document.createElement('button');
-            dot.className = 'hero-dot';
-            dot.style.width='10px';
-            dot.style.height='10px';
-            dot.style.borderRadius='50%';
-            dot.style.border='none';
-            dot.style.cursor='pointer';
-            dot.style.background = i===0 ? 'white' : 'rgba(255,255,255,0.5)';
-            dot.dataset.index = i;
-            dot.addEventListener('click', ()=>goToSlide(i));
-            dots.appendChild(dot);
-        });
-        const autoplayToggle = document.getElementById('hero-autoplay-toggle');
-        let interval = null;
-        function goToSlide(i) {
-            slides[current].style.display='none';
-            dots.children[current].style.background='rgba(255,255,255,0.5)';
-            current = i;
-            slides[current].style.display='block';
-            dots.children[current].style.background='white';
-        }
-        function nextSlide() {
-            goToSlide((current+1) % slides.length);
-        }
-        function startAutoplay() {
-            if (interval) clearInterval(interval);
-            interval = setInterval(nextSlide, 4000);
-            localStorage.setItem('td_hero_autoplay','1');
-        }
-        function stopAutoplay() {
-            if (interval) clearInterval(interval);
-            interval = null;
-            localStorage.setItem('td_hero_autoplay','0');
-        }
-        autoplayToggle.addEventListener('change', ()=>{
-            if (autoplayToggle.checked) startAutoplay(); else stopAutoplay();
-        });
-        const savedAutoplay = localStorage.getItem('td_hero_autoplay');
-        if (savedAutoplay === null || savedAutoplay === '1') {
-            autoplayToggle.checked = true;
-            startAutoplay();
-        } else {
-            autoplayToggle.checked = false;
-            stopAutoplay();
-        }
-    }
-
-    // Simple showNotification fallback if not present
-    function showNotification(msg, type) {
-        if (typeof window.showNotification === 'function') {
-            window.showNotification(msg, type);
-            return;
-        }
-        // small toast
-        const el = document.createElement('div');
-        el.textContent = msg;
-        el.style.position='fixed';
-        el.style.right='20px';
-        el.style.bottom='100px';
-        el.style.background = type==='error' ? '#ef4444' : (type==='success' ? '#10b981' : '#111827');
-        el.style.color='white';
-        el.style.padding='10px 14px';
-        el.style.borderRadius='8px';
-        el.style.boxShadow='0 6px 24px rgba(0,0,0,0.15)';
-        el.style.zIndex=99999;
-        document.body.appendChild(el);
-        setTimeout(()=>el.remove(), 3000);
-    }
-
-    // Hook into existing product render function if present to support layout change
-    // The existing code likely calls updateProductDisplay(); we add a lightweight override here
-    window.updateProductDisplay = window.updateProductDisplay || function() {
-        const grid = document.getElementById('products-grid');
-        if (!grid) return;
-        // If products variable exists (from original code), use it; otherwise read markup
-        const productsData = window.products && window.products.length ? window.products : null;
-        // Minimal rendering fallback: if grid is empty and productsData missing, do nothing
-        if (!productsData) return;
-        grid.innerHTML = '';
-        const layout = document.documentElement.getAttribute('data-product-layout') || 'overlay';
-        productsData.forEach(p=>{
-            const card = document.createElement('div');
-            card.className = 'product-card';
-            card.setAttribute('data-id', p.id || '');
-            const imgSrc = p.image || 'https://via.placeholder.com/400x300?text=No+Image';
-            if (layout === 'minimal') {
-                card.innerHTML = `
-                    <div class="product-image"><img loading="lazy" src="${imgSrc}" alt="${p.name}"></div>
-                    <div class="product-info">
-                        <div class="product-name">${p.name}</div>
-                        <div class="product-price"><div class="current-price">${p.salePrice ? p.salePrice + 'đ' : ''}</div></div>
-                    </div>
-                `;
-            } else if (layout === 'detailed') {
-                card.innerHTML = `
-                    <div class="product-image"><img loading="lazy" src="${imgSrc}" alt="${p.name}"></div>
-                    <div class="product-info">
-                        <div class="product-category">${p.category || ''}</div>
-                        <div class="product-name">${p.name}</div>
-                        <div class="product-price"><div class="current-price">${p.salePrice ? p.salePrice + 'đ' : ''}</div><div class="original-price">${p.originalPrice ? p.originalPrice + 'đ' : ''}</div></div>
-                        <p style="color:#6b7280; font-size:0.9rem; margin-top:8px;">${p.description ? p.description.slice(0,120) : ''}</p>
-                        <div class="product-actions"><button class="btn">Thêm vào giỏ</button><button class="btn btn-outline">Xem nhanh</button></div>
-                    </div>
-                `;
-            } else {
-                // overlay default
-                card.innerHTML = `
-                    <div class="product-image"><img loading="lazy" src="${imgSrc}" alt="${p.name}"></div>
-                    <div class="product-overlay"><div class="product-info"><div class="product-category">${p.category || ''}</div><div class="product-name">${p.name}</div><div class="product-price"><div class="current-price">${p.salePrice ? p.salePrice + 'đ' : ''}</div></div></div></div>
-                    <div class="product-info" style="display:none;"><div class="product-name">${p.name}</div></div>
-                `;
-            }
-            grid.appendChild(card);
-        });
-    };
-
-    // Run update after DOM ready if products exist
-    document.addEventListener('DOMContentLoaded', function() {
-        if (typeof updateProductDisplay === 'function') updateProductDisplay();
-    });
-
-})();
-</script>
-
-
-<!-- BEGIN: Enhanced Admin Customization Controls (Injected) -->
-<div style="display:none;" id="__enh_inject_marker"></div>
-<script>
-(function(){
-    // Wait for DOM ready
-    function ready(fn){ if (document.readyState!='loading') fn(); else document.addEventListener('DOMContentLoaded',fn); }
-
-    ready(function(){
-        // Find existing admin-customization panel if present
-        var panel = document.querySelector('.admin-customization');
-        if(!panel){
-            // create one if not present
-            panel = document.createElement('div');
-            panel.className = 'admin-customization';
-            document.body.appendChild(panel);
-        }
-
-        // Build UI
-        panel.innerHTML = `
-            <div class="customization-toggle" id="customization-toggle" title="Tùy chỉnh">
-                <i class="fas fa-cog"></i>
-            </div>
-            <div class="customization-content">
-                <h3>Tùy chỉnh Giao diện & Trang</h3>
-
-                <div class="customization-group">
-                    <label>Theme color (primary)</label>
-                    <input type="color" id="inp-primary-color" value="#e83e8c">
-                    <div style="margin-top:8px;">
-                        <button class="btn-sm" id="preset-rose">Preset Rose</button>
-                        <button class="btn-sm" id="preset-sun">Preset Sun</button>
-                        <button class="btn-sm" id="preset-ocean">Preset Ocean</button>
-                    </div>
-                </div>
-
-                <div class="customization-group">
-                    <label>Layout selector</label>
-                    <select id="layout-selector">
-                        <option value="vertical">Dọc (mặc định)</option>
-                        <option value="horizontal">Ngang</option>
-                        <option value="grid">Grid</option>
-                        <option value="masonry">Masonry (CSS column)</option>
-                    </select>
-                </div>
-
-                <div class="customization-group">
-                    <label>Font family (Google Fonts)</label>
-                    <select id="font-selector">
-                        <option value="Inter">Inter</option>
-                        <option value="Poppins">Poppins</option>
-                        <option value="Montserrat">Montserrat</option>
-                        <option value="Playfair+Display">Playfair Display</option>
-                        <option value="Roboto">Roboto</option>
-                    </select>
-                </div>
-
-                <div class="customization-group">
-                    <label>Custom CSS (applied live)</label>
-                    <textarea id="custom-css" rows="6" placeholder="/* Viết CSS tùy chỉnh ở đây */"></textarea>
-                    <div style="display:flex; gap:8px; margin-top:8px;">
-                        <button class="btn-sm" id="apply-css">Áp dụng CSS</button>
-                        <button class="btn-sm" id="reset-css">Reset CSS</button>
-                    </div>
-                </div>
-
-                <div class="customization-group">
-                    <label>Custom JS (applied once)</label>
-                    <textarea id="custom-js" rows="6" placeholder="// Viết JS tùy chỉnh ở đây"></textarea>
-                    <div style="display:flex; gap:8px; margin-top:8px;">
-                        <button class="btn-sm" id="apply-js">Áp dụng JS</button>
-                    </div>
-                </div>
-
-                <hr>
-
-                <div class="customization-group">
-                    <label>Hero: Parallax</label>
-                    <div><input type="checkbox" id="hero-parallax"> Bật Parallax cho hero</div>
-                </div>
-                <div class="customization-group">
-                    <label>Hero: Autoplay</label>
-                    <div>
-                        <input type="checkbox" id="hero-autoplay-custom"> Autoplay
-                        <input type="range" id="hero-speed" min="1000" max="10000" step="250" value="4000" style="width:100%; margin-top:8px;">
-                        <div style="font-size:0.85rem; opacity:0.8;">Tốc độ tự chuyển (ms): <span id="hero-speed-val">4000</span></div>
-                    </div>
-                </div>
-
-                <div class="customization-group">
-                    <label>Hero overlay opacity</label>
-                    <input type="range" id="hero-overlay-opacity" min="0" max="1" step="0.05" value="0.3">
-                </div>
-
-                <hr>
-
-                <div class="customization-group">
-                    <label>Product card layout</label>
-                    <select id="product-card-layout">
-                        <option value="minimal">Minimal</option>
-                        <option value="detailed" selected>Detailed</option>
-                        <option value="overlay">Overlay</option>
-                        <option value="creative">Creative</option>
-                    </select>
-                </div>
-
-                <div class="customization-group">
-                    <label>Hover effect</label>
-                    <select id="product-hover-effect">
-                        <option value="zoom">Zoom</option>
-                        <option value="fade">Fade</option>
-                        <option value="slide">Slide</option>
-                        <option value="3d">3D</option>
-                    </select>
-                </div>
-
-                <div class="customization-group">
-                    <label>Infinite scroll</label>
-                    <div><input type="checkbox" id="infinite-scroll-toggle"> Bật Infinite Scroll (thay pagination)</div>
-                </div>
-
-                <hr>
-
-                <div style="display:flex; gap:8px; justify-content:space-between;">
-                    <button class="btn" id="save-settings">Lưu cấu hình</button>
-                    <button class="btn btn-outline" id="export-html">Tải file HTML</button>
-                </div>
-
-                <div style="margin-top:10px; font-size:0.9rem; opacity:0.8;">
-                    <strong>Ghi chú:</strong> Những thay đổi áp dụng trực tiếp trên trình duyệt và lưu trong LocalStorage. "Tải file HTML" sẽ lưu snapshot hiện tại ra file để tải xuống.
-                </div>
-            </div>
-        `;
-
-        // Toggle open/close
-        var toggle = panel.querySelector('#customization-toggle');
-        toggle.addEventListener('click', function(){
-            panel.classList.toggle('active');
-        });
-
-        // Utilities: apply theme color
-        var primaryInput = panel.querySelector('#inp-primary-color');
-        function applyPrimaryColor(c){
-            document.documentElement.style.setProperty('--primary-color', c);
-            // slightly darker variant
-            try{
-                var rgb = hexToRgb(c);
-                var darker = rgb ? shadeColor(rgb, -20) : c;
-                document.documentElement.style.setProperty('--primary-dark', darker);
-            }catch(e){}
-        }
-        primaryInput.addEventListener('input', function(e){ applyPrimaryColor(e.target.value); });
-
-        // Presets
-        panel.querySelector('#preset-rose').addEventListener('click', function(){ primaryInput.value='#e83e8c'; primaryInput.dispatchEvent(new Event('input')); });
-        panel.querySelector('#preset-sun').addEventListener('click', function(){ primaryInput.value='#ff7a18'; primaryInput.dispatchEvent(new Event('input')); });
-        panel.querySelector('#preset-ocean').addEventListener('click', function(){ primaryInput.value='#0ea5e9'; primaryInput.dispatchEvent(new Event('input')); });
-
-        // Font selector: dynamically inject Google Font link and apply to body
-        var fontSel = panel.querySelector('#font-selector');
-        fontSel.addEventListener('change', function(e){
-            var fam = e.target.value;
-            var href = 'https://fonts.googleapis.com/css2?family='+fam.replace(' ','+')+':wght@300;400;500;600;700&display=swap';
-            // remove old custom font link if exists
-            var old = document.getElementById('__gd_font_link');
-            if(old) old.remove();
-            var link = document.createElement('link');
-            link.rel='stylesheet';
-            link.href=href;
-            link.id='__gd_font_link';
-            document.head.appendChild(link);
-            // apply after short delay
-            setTimeout(function(){ document.body.style.fontFamily = fam.replace('+',' ')+', Inter, system-ui, sans-serif'; }, 300);
-        });
-
-        // Custom CSS apply/reset
-        var styleTag = document.getElementById('__custom_css_tag') || (function(){ var s=document.createElement('style'); s.id='__custom_css_tag'; document.head.appendChild(s); return s; })();
-        panel.querySelector('#apply-css').addEventListener('click', function(){
-            var css = panel.querySelector('#custom-css').value || '';
-            styleTag.textContent = css;
-            alert('CSS đã được áp dụng (live).');
-        });
-        panel.querySelector('#reset-css').addEventListener('click', function(){
-            panel.querySelector('#custom-css').value = '';
-            styleTag.textContent = '';
-            alert('CSS đã được reset.');
-        });
-
-        // Custom JS apply (creates a new script tag)
-        panel.querySelector('#apply-js').addEventListener('click', function(){
-            var js = panel.querySelector('#custom-js').value || '';
-            try{
-                var script = document.createElement('script');
-                script.type='text/javascript';
-                script.id='__custom_js_tag';
-                script.textContent = js;
-                document.body.appendChild(script);
-                alert('JS đã được chèn (chạy một lần).');
-            }catch(e){
-                alert('Lỗi khi áp dụng JS: '+e.message);
-            }
-        });
-
-        // Hero parallax
-        var parallaxToggle = panel.querySelector('#hero-parallax');
-        var hero = document.querySelector('.hero');
-        var parallaxHandler = function(){};
-        parallaxToggle.addEventListener('change', function(e){
-            if(e.target.checked){
-                parallaxHandler = function(){
-                    var sc = window.scrollY;
-                    if(hero){
-                        hero.style.backgroundPosition = 'center calc(50% + '+(sc*0.2)+'px)';
-                    }
-                };
-                window.addEventListener('scroll', parallaxHandler);
-            } else {
-                window.removeEventListener('scroll', parallaxHandler);
-                if(hero) hero.style.backgroundPosition = '';
-            }
-        });
-
-        // Hero autoplay custom (integrate with existing hero slider if present)
-        var autoplayInput = panel.querySelector('#hero-autoplay-custom');
-        var heroSpeed = panel.querySelector('#hero-speed');
-        var heroSpeedVal = panel.querySelector('#hero-speed-val');
-        heroSpeed.addEventListener('input', function(e){ heroSpeedVal.textContent = e.target.value; });
-
-        var heroSlider = document.getElementById('hero-slider');
-        var slides = heroSlider ? heroSlider.querySelectorAll('.hero-slide') : [];
-        var current = 0;
-        var autoplayTimer = null;
-        function goToSlide(i){
-            if(!slides || !slides.length) return;
-            slides.forEach(function(s){ s.style.opacity = 0; s.style.transition='opacity 0.6s'; });
-            slides[i].style.opacity = 1;
-            current = i;
-        }
-        // initialize slide visibility
-        if(slides && slides.length){
-            slides.forEach(function(s, idx){ s.style.opacity = (idx===0?1:0); s.style.position='absolute'; s.style.top=0; s.style.left=0; s.style.width='100%'; s.style.height='100%'; });
-            if(document.getElementById('hero-dots')){
-                var dots = document.getElementById('hero-dots');
-                dots.innerHTML = '';
-                slides.forEach(function(_,i){
-                    var b = document.createElement('button');
-                    b.className='btn-sm';
-                    b.textContent = i+1;
-                    b.addEventListener('click', function(){ goToSlide(i); });
-                    dots.appendChild(b);
-                });
-            }
-        }
-
-        function startAutoplay(){
-            stopAutoplay();
-            autoplayTimer = setInterval(function(){
-                var next = (current+1) % slides.length;
-                goToSlide(next);
-            }, parseInt(heroSpeed.value,10));
-        }
-        function stopAutoplay(){ if(autoplayTimer) clearInterval(autoplayTimer); autoplayTimer=null; }
-
-        autoplayInput.addEventListener('change', function(e){
-            if(e.target.checked) startAutoplay(); else stopAutoplay();
-        });
-        heroSpeed.addEventListener('change', function(e){
-            if(autoplayTimer) startAutoplay();
-        });
-        // start if prechecked in UI
-        if(autoplayInput.checked) startAutoplay();
-
-        // Hero overlay opacity
-        var overlayRange = panel.querySelector('#hero-overlay-opacity');
-        overlayRange.addEventListener('input', function(e){
-            var v = parseFloat(e.target.value);
-            var before = document.querySelector('.hero::before'); // can't select pseudo via JS
-            // We will inject a CSS rule to control hero overlay
-            var heroOverlayStyle = document.getElementById('__hero_overlay_style') || (function(){ var s=document.createElement('style'); s.id='__hero_overlay_style'; document.head.appendChild(s); return s; })();
-            heroOverlayStyle.textContent = ".hero::before{ opacity: "+v+" !important; }";
-        });
-
-        // Product card layout and hover effect
-        var productLayout = panel.querySelector('#product-card-layout');
-        var hoverEffect = panel.querySelector('#product-hover-effect');
-
-        function applyProductLayout(){
-            var grid = document.getElementById('products-grid');
-            if(!grid) return;
-            grid.dataset.layout = productLayout.value;
-            // Simplified: add class to product-card elements; actual cards should check for these classes
-            grid.querySelectorAll('.product-card').forEach(function(card){
-                card.classList.remove('layout-minimal','layout-detailed','layout-overlay','layout-creative');
-                card.classList.add('layout-'+productLayout.value);
-            });
-        }
-        function applyHoverEffect(){
-            var grid = document.getElementById('products-grid');
-            if(!grid) return;
-            grid.querySelectorAll('.product-image img').forEach(function(img){
-                img.style.transition='transform 0.4s';
-                if(hoverEffect.value==='zoom') img.style.transform='scale(1)';
-                if(hoverEffect.value==='fade') img.style.opacity=1;
-                // we'll manage hover via CSS injection for simplicity
-            });
-            // inject small CSS
-            var hstyle = document.getElementById('__product_hover_style') || (function(){ var s=document.createElement('style'); s.id='__product_hover_style'; document.head.appendChild(s); return s; })();
-            var css = '';
-            if(hoverEffect.value==='zoom') css = ".product-card:hover .product-image img{ transform: scale(1.12); }";
-            if(hoverEffect.value==='fade') css = ".product-card:hover .product-image img{ opacity: 0.6; transform: scale(1.02); }";
-            if(hoverEffect.value==='slide') css = ".product-card .product-image img{ transition: transform 0.5s; } .product-card:hover .product-image img{ transform: translateY(-10px); }";
-            if(hoverEffect.value==='3d') css = ".product-card{ perspective:800px; } .product-card:hover .product-image img{ transform: rotateY(8deg) scale(1.05); }";
-            hstyle.textContent = css;
-        }
-
-        productLayout.addEventListener('change', applyProductLayout);
-        hoverEffect.addEventListener('change', applyHoverEffect);
-
-        // Infinite scroll toggle (simple implementation)
-        var infiniteToggle = panel.querySelector('#infinite-scroll-toggle');
-        infiniteToggle.addEventListener('change', function(e){
-            if(e.target.checked){
-                // attach a scroll listener to bottom to fetch more (mock)
-                window.__infinite_handler = function(){
-                    if((window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 120)){
-                        // simulate loading more items if container exists
-                        var grid = document.getElementById('products-grid');
-                        if(grid && !grid.dataset.loading){
-                            grid.dataset.loading = '1';
-                            // mock: clone existing first card if any
-                            var first = grid.querySelector('.product-card');
-                            if(first){
-                                var clone = first.cloneNode(true);
-                                setTimeout(function(){ grid.appendChild(clone); grid.dataset.loading=''; }, 600);
-                            } else {
-                                grid.dataset.loading='';
-                            }
-                        }
-                    }
-                };
-                window.addEventListener('scroll', window.__infinite_handler);
-            } else {
-                if(window.__infinite_handler) window.removeEventListener('scroll', window.__infinite_handler);
-            }
-        });
-
-        // Save settings to localStorage
-        panel.querySelector('#save-settings').addEventListener('click', function(){
-            var cfg = {
-                primary: primaryInput.value,
-                font: fontSel.value,
-                layout: panel.querySelector('#layout-selector').value,
-                productLayout: productLayout.value,
-                hoverEffect: hoverEffect.value,
-                infiniteScroll: infiniteToggle.checked,
-                heroParallax: parallaxToggle.checked,
-                heroAutoplay: autoplayInput.checked,
-                heroSpeed: heroSpeed.value
-            };
-            localStorage.setItem('__trucdao_cfg', JSON.stringify(cfg));
-            alert('Cấu hình đã được lưu vào LocalStorage.');
-        });
-
-        // Load saved settings
-        (function loadCfg(){
-            try{
-                var raw = localStorage.getItem('__trucdao_cfg');
-                if(!raw) return;
-                var cfg = JSON.parse(raw);
-                if(cfg.primary) { primaryInput.value = cfg.primary; applyPrimaryColor(cfg.primary); }
-                if(cfg.font) { fontSel.value = cfg.font; fontSel.dispatchEvent(new Event('change')); }
-                if(cfg.layout) panel.querySelector('#layout-selector').value = cfg.layout;
-                if(cfg.productLayout) productLayout.value = cfg.productLayout;
-                if(cfg.hoverEffect) hoverEffect.value = cfg.hoverEffect;
-                if(cfg.infiniteScroll) infiniteToggle.checked = cfg.infiniteScroll;
-                if(cfg.heroParallax) parallaxToggle.checked = cfg.heroParallax;
-                if(cfg.heroAutoplay) autoplayInput.checked = cfg.heroAutoplay;
-                if(cfg.heroSpeed) { heroSpeed.value = cfg.heroSpeed; heroSpeedVal.textContent = cfg.heroSpeed; }
-                // apply dependent ones
-                applyProductLayout(); applyHoverEffect();
-                if(infiniteToggle.checked) infiniteToggle.dispatchEvent(new Event('change'));
-                if(parallaxToggle.checked) parallaxToggle.dispatchEvent(new Event('change'));
-                if(autoplayInput.checked) autoplayInput.dispatchEvent(new Event('change'));
-            }catch(e){}
-        })();
-
-        // Export HTML button: send simple request to backend endpoint if available, otherwise trigger in-browser download of current DOM snapshot
-        panel.querySelector('#export-html').addEventListener('click', function(){
-            // create snapshot of current HTML with inline injected CSS/JS content from the custom style/script tags
-            var cloned = document.documentElement.cloneNode(true);
-            // inline styles from style tags with ids we created
-            var extraStyles = '';
-            ['__custom_css_tag','__hero_overlay_style','__product_hover_style'].forEach(function(id){
-                var el = document.getElementById(id);
-                if(el) extraStyles += '<style id="'+id+'">'+el.textContent+'</style>';
-            });
-            var extraScript = '';
-            var cj = document.getElementById('__custom_js_tag');
-            if(cj) extraScript += '<script id="__custom_js_tag">'+cj.textContent+'<\/script>';
-            // get DOCTYPE and outer HTML
-            var doctype = "<!DOCTYPE html>\n";
-            var html = doctype + document.documentElement.outerHTML;
-            // inject extraStyles and extraScript before closing </head> and 
-<!-- BEGIN: Mega Menu Builder + Hero A/B Testing -->
-<script>
-(function(){
-    document.addEventListener('DOMContentLoaded', function(){
-        let panel = document.querySelector('.customization-content');
-        if(!panel) return;
-
-        // === Add Mega Menu Builder UI ===
-        const megaMenuUI = `
-        <hr>
-        <h3>Mega Menu Builder</h3>
-        <div class="customization-group">
-            <label>Thêm mục menu</label>
-            <input type="text" id="mega-menu-label" placeholder="Tên menu">
-            <textarea id="mega-menu-html" rows="4" placeholder="HTML nội dung mega menu (columns, links...)"></textarea>
-            <button class="btn-sm" id="add-mega-menu">Thêm Mega Menu</button>
-        </div>
-        `;
-        panel.insertAdjacentHTML('beforeend', megaMenuUI);
-
-        // Insert mega menu container if missing
-        let nav = document.querySelector('nav');
-        if(nav && !nav.querySelector('.mega-menu-container')){
-            let div = document.createElement('div');
-            div.className = 'mega-menu-container';
-            nav.appendChild(div);
-        }
-        let megaContainer = document.querySelector('.mega-menu-container');
-
-        panel.querySelector('#add-mega-menu').addEventListener('click', function(){
-            let label = panel.querySelector('#mega-menu-label').value.trim();
-            let html = panel.querySelector('#mega-menu-html').value.trim();
-            if(!label || !html) { alert('Vui lòng nhập đầy đủ thông tin'); return; }
-
-            let item = document.createElement('div');
-            item.className = 'mega-item';
-            item.innerHTML = `
-                <div class="mega-trigger">${label}</div>
-                <div class="mega-dropdown">${html}</div>
-            `;
-            megaContainer.appendChild(item);
-
-            // simple behavior
-            item.querySelector('.mega-trigger').addEventListener('mouseover', ()=> item.classList.add('open'));
-            item.addEventListener('mouseleave', ()=> item.classList.remove('open'));
-
-            alert('Đã thêm mega menu');
-        });
-
-        // === Hero A/B Testing ===
-        const abUI = `
-        <hr>
-        <h3>A/B Testing Hero</h3>
-        <div class="customization-group">
-            <label>Hero A Content</label>
-            <textarea id="hero-a" rows="3" placeholder="HTML cho Hero A"></textarea>
-        </div>
-        <div class="customization-group">
-            <label>Hero B Content</label>
-            <textarea id="hero-b" rows="3" placeholder="HTML cho Hero B"></textarea>
-        </div>
-        <button class="btn-sm" id="apply-ab">Áp dụng A/B Testing</button>
-        `;
-        panel.insertAdjacentHTML('beforeend', abUI);
-
-        document.querySelector('#apply-ab').addEventListener('click', ()=>{
-            let A = panel.querySelector('#hero-a').value.trim();
-            let B = panel.querySelector('#hero-b').value.trim();
-            if(!A || !B){ alert('Điền đầy đủ A và B'); return; }
-
-            // random assign
-            let variant = Math.random()<0.5?'A':'B';
-            localStorage.setItem('__hero_variant', variant);
-
-            let hero = document.querySelector('.hero');
-            if(hero){
-                hero.innerHTML = variant==='A'?A:B;
-            }
-            alert('Đã áp dụng variant ' + variant);
-        });
-
-        // Load saved variant
-        let hero = document.querySelector('.hero');
-        let savedVar = localStorage.getItem('__hero_variant');
-        if(savedVar && hero){
-            let A = localStorage.getItem('__hero_lastA');
-            let B = localStorage.getItem('__hero_lastB');
-            if(A && B){
-                hero.innerHTML = savedVar==='A'?A:B;
-            }
-        }
-
-    });
-})();
-</script>
-
-<style>
-.mega-menu-container { position: relative; display:flex; gap:20px; }
-.mega-item { position: relative; }
-.mega-trigger { cursor:pointer; padding:8px 10px; font-weight:600; }
-.mega-dropdown { 
-    position:absolute; left:0; top:100%; 
-    background:white; padding:20px; border-radius:10px; 
-    box-shadow:0 10px 30px rgba(0,0,0,0.12);
-    display:none; min-width:300px; z-index:999;
-}
-.mega-item.open .mega-dropdown { display:block; }
-</style>
-<!-- END: Mega Menu Builder + Hero A/B Testing -->
-
-
-<!-- BEGIN: Mega Menu Drag-Drop + AB Testing Analytics -->
-<script>
-document.addEventListener("DOMContentLoaded", function(){
-
-    /* ==========================
-       DRAG & DROP MEGA MENU BUILDER
-       ========================== */
-    const mega = document.querySelector('.mega-menu-container');
-    if(mega){
-        mega.style.display = "flex";
-        mega.style.gap = "20px";
-
-        // make items draggable
-        mega.querySelectorAll('.mega-item').forEach((item, index)=>{
-            item.setAttribute("draggable","true");
-            item.dataset.index = index;
-        });
-
-        let dragSrc = null;
-
-        mega.addEventListener("dragstart", function(e){
-            if(e.target.classList.contains("mega-item")){
-                dragSrc = e.target;
-                e.dataTransfer.effectAllowed = 'move';
-            }
-        });
-
-        mega.addEventListener("dragover", function(e){
-            e.preventDefault();
-        });
-
-        mega.addEventListener("drop", function(e){
-            if(e.target.classList.contains("mega-item")){
-                if(dragSrc !== e.target){
-                    const temp = dragSrc.outerHTML;
-                    dragSrc.outerHTML = e.target.outerHTML;
-                    e.target.outerHTML = temp;
-                }
-            }
-        });
-    }
-
-    /* =========================================
-       HERO A/B TESTING — CONVERSION ANALYTICS
-       ========================================= */
-    const hero = document.querySelector('.hero');
-    if(hero){
-        // count impressions
-        let variant = localStorage.getItem('__hero_variant');
-        if(variant){
-            let key = "__hero_impress_"+variant;
-            let count = parseInt(localStorage.getItem(key) || "0", 10);
-            count++;
-            localStorage.setItem(key, count);
-        }
-
-        // record button clicks inside hero as conversions
-        hero.addEventListener('click', function(e){
-            if(e.target.tagName === "BUTTON" || e.target.closest("button")){
-                let v = localStorage.getItem('__hero_variant');
-                if(v){
-                    let key = "__hero_conv_"+v;
-                    let c = parseInt(localStorage.getItem(key) || "0", 10);
-                    localStorage.setItem(key, c+1);
-                }
-            }
-        });
-    }
-
-    /* UI to show analytics */
-    let panel = document.querySelector('.customization-content');
-    if(panel){
-        const analytics = `
-        <hr>
-        <h3>A/B Analytics</h3>
-        <button class="btn-sm" id="show-ab-stats">Xem thống kê A/B</button>
-        <div id="ab-stats-box" style="margin-top:10px; font-size:14px;"></div>
-        `;
-        panel.insertAdjacentHTML("beforeend", analytics);
-
-        document.querySelector("#show-ab-stats").addEventListener("click", ()=>{
-            let A_imp = parseInt(localStorage.getItem("__hero_impress_A")||"0",10);
-            let B_imp = parseInt(localStorage.getItem("__hero_impress_B")||"0",10);
-            let A_conv = parseInt(localStorage.getItem("__hero_conv_A")||"0",10);
-            let B_conv = parseInt(localStorage.getItem("__hero_conv_B")||"0",10);
-
-            let A_rate = A_imp? ((A_conv/A_imp)*100).toFixed(1)+"%" : "0%";
-            let B_rate = B_imp? ((B_conv/B_imp)*100).toFixed(1)+"%" : "0%";
-
-            document.querySelector("#ab-stats-box").innerHTML = `
-                <div><strong>Hero A:</strong> Lượt xem: ${A_imp}, Chuyển đổi: ${A_conv}, Tỷ lệ: ${A_rate}</div>
-                <div><strong>Hero B:</strong> Lượt xem: ${B_imp}, Chuyển đổi: ${B_conv}, Tỷ lệ: ${B_rate}</div>
-            `;
-        });
-    }
-
-});
-</script>
-<style>
-.mega-item[draggable="true"] { border:1px dashed #ccc; padding:4px; border-radius:6px; }
-    
-</style>
-<!-- END: Mega Menu Drag-Drop + AB Testing Analytics -->
-
-</body>
-            html = html.replace('</head>', extraStyles + '</head>');
-            html = html.replace('
-<!-- BEGIN: Mega Menu Builder + Hero A/B Testing -->
-<script>
-(function(){
-    document.addEventListener('DOMContentLoaded', function(){
-        let panel = document.querySelector('.customization-content');
-        if(!panel) return;
-
-        // === Add Mega Menu Builder UI ===
-        const megaMenuUI = `
-        <hr>
-        <h3>Mega Menu Builder</h3>
-        <div class="customization-group">
-            <label>Thêm mục menu</label>
-            <input type="text" id="mega-menu-label" placeholder="Tên menu">
-            <textarea id="mega-menu-html" rows="4" placeholder="HTML nội dung mega menu (columns, links...)"></textarea>
-            <button class="btn-sm" id="add-mega-menu">Thêm Mega Menu</button>
-        </div>
-        `;
-        panel.insertAdjacentHTML('beforeend', megaMenuUI);
-
-        // Insert mega menu container if missing
-        let nav = document.querySelector('nav');
-        if(nav && !nav.querySelector('.mega-menu-container')){
-            let div = document.createElement('div');
-            div.className = 'mega-menu-container';
-            nav.appendChild(div);
-        }
-        let megaContainer = document.querySelector('.mega-menu-container');
-
-        panel.querySelector('#add-mega-menu').addEventListener('click', function(){
-            let label = panel.querySelector('#mega-menu-label').value.trim();
-            let html = panel.querySelector('#mega-menu-html').value.trim();
-            if(!label || !html) { alert('Vui lòng nhập đầy đủ thông tin'); return; }
-
-            let item = document.createElement('div');
-            item.className = 'mega-item';
-            item.innerHTML = `
-                <div class="mega-trigger">${label}</div>
-                <div class="mega-dropdown">${html}</div>
-            `;
-            megaContainer.appendChild(item);
-
-            // simple behavior
-            item.querySelector('.mega-trigger').addEventListener('mouseover', ()=> item.classList.add('open'));
-            item.addEventListener('mouseleave', ()=> item.classList.remove('open'));
-
-            alert('Đã thêm mega menu');
-        });
-
-        // === Hero A/B Testing ===
-        const abUI = `
-        <hr>
-        <h3>A/B Testing Hero</h3>
-        <div class="customization-group">
-            <label>Hero A Content</label>
-            <textarea id="hero-a" rows="3" placeholder="HTML cho Hero A"></textarea>
-        </div>
-        <div class="customization-group">
-            <label>Hero B Content</label>
-            <textarea id="hero-b" rows="3" placeholder="HTML cho Hero B"></textarea>
-        </div>
-        <button class="btn-sm" id="apply-ab">Áp dụng A/B Testing</button>
-        `;
-        panel.insertAdjacentHTML('beforeend', abUI);
-
-        document.querySelector('#apply-ab').addEventListener('click', ()=>{
-            let A = panel.querySelector('#hero-a').value.trim();
-            let B = panel.querySelector('#hero-b').value.trim();
-            if(!A || !B){ alert('Điền đầy đủ A và B'); return; }
-
-            // random assign
-            let variant = Math.random()<0.5?'A':'B';
-            localStorage.setItem('__hero_variant', variant);
-
-            let hero = document.querySelector('.hero');
-            if(hero){
-                hero.innerHTML = variant==='A'?A:B;
-            }
-            alert('Đã áp dụng variant ' + variant);
-        });
-
-        // Load saved variant
-        let hero = document.querySelector('.hero');
-        let savedVar = localStorage.getItem('__hero_variant');
-        if(savedVar && hero){
-            let A = localStorage.getItem('__hero_lastA');
-            let B = localStorage.getItem('__hero_lastB');
-            if(A && B){
-                hero.innerHTML = savedVar==='A'?A:B;
-            }
-        }
-
-    });
-})();
-</script>
-
-<style>
-.mega-menu-container { position: relative; display:flex; gap:20px; }
-.mega-item { position: relative; }
-.mega-trigger { cursor:pointer; padding:8px 10px; font-weight:600; }
-.mega-dropdown { 
-    position:absolute; left:0; top:100%; 
-    background:white; padding:20px; border-radius:10px; 
-    box-shadow:0 10px 30px rgba(0,0,0,0.12);
-    display:none; min-width:300px; z-index:999;
-}
-.mega-item.open .mega-dropdown { display:block; }
-</style>
-<!-- END: Mega Menu Builder + Hero A/B Testing -->
-
-
-<!-- BEGIN: Mega Menu Drag-Drop + AB Testing Analytics -->
-<script>
-document.addEventListener("DOMContentLoaded", function(){
-
-    /* ==========================
-       DRAG & DROP MEGA MENU BUILDER
-       ========================== */
-    const mega = document.querySelector('.mega-menu-container');
-    if(mega){
-        mega.style.display = "flex";
-        mega.style.gap = "20px";
-
-        // make items draggable
-        mega.querySelectorAll('.mega-item').forEach((item, index)=>{
-            item.setAttribute("draggable","true");
-            item.dataset.index = index;
-        });
-
-        let dragSrc = null;
-
-        mega.addEventListener("dragstart", function(e){
-            if(e.target.classList.contains("mega-item")){
-                dragSrc = e.target;
-                e.dataTransfer.effectAllowed = 'move';
-            }
-        });
-
-        mega.addEventListener("dragover", function(e){
-            e.preventDefault();
-        });
-
-        mega.addEventListener("drop", function(e){
-            if(e.target.classList.contains("mega-item")){
-                if(dragSrc !== e.target){
-                    const temp = dragSrc.outerHTML;
-                    dragSrc.outerHTML = e.target.outerHTML;
-                    e.target.outerHTML = temp;
-                }
-            }
-        });
-    }
-
-    /* =========================================
-       HERO A/B TESTING — CONVERSION ANALYTICS
-       ========================================= */
-    const hero = document.querySelector('.hero');
-    if(hero){
-        // count impressions
-        let variant = localStorage.getItem('__hero_variant');
-        if(variant){
-            let key = "__hero_impress_"+variant;
-            let count = parseInt(localStorage.getItem(key) || "0", 10);
-            count++;
-            localStorage.setItem(key, count);
-        }
-
-        // record button clicks inside hero as conversions
-        hero.addEventListener('click', function(e){
-            if(e.target.tagName === "BUTTON" || e.target.closest("button")){
-                let v = localStorage.getItem('__hero_variant');
-                if(v){
-                    let key = "__hero_conv_"+v;
-                    let c = parseInt(localStorage.getItem(key) || "0", 10);
-                    localStorage.setItem(key, c+1);
-                }
-            }
-        });
-    }
-
-    /* UI to show analytics */
-    let panel = document.querySelector('.customization-content');
-    if(panel){
-        const analytics = `
-        <hr>
-        <h3>A/B Analytics</h3>
-        <button class="btn-sm" id="show-ab-stats">Xem thống kê A/B</button>
-        <div id="ab-stats-box" style="margin-top:10px; font-size:14px;"></div>
-        `;
-        panel.insertAdjacentHTML("beforeend", analytics);
-
-        document.querySelector("#show-ab-stats").addEventListener("click", ()=>{
-            let A_imp = parseInt(localStorage.getItem("__hero_impress_A")||"0",10);
-            let B_imp = parseInt(localStorage.getItem("__hero_impress_B")||"0",10);
-            let A_conv = parseInt(localStorage.getItem("__hero_conv_A")||"0",10);
-            let B_conv = parseInt(localStorage.getItem("__hero_conv_B")||"0",10);
-
-            let A_rate = A_imp? ((A_conv/A_imp)*100).toFixed(1)+"%" : "0%";
-            let B_rate = B_imp? ((B_conv/B_imp)*100).toFixed(1)+"%" : "0%";
-
-            document.querySelector("#ab-stats-box").innerHTML = `
-                <div><strong>Hero A:</strong> Lượt xem: ${A_imp}, Chuyển đổi: ${A_conv}, Tỷ lệ: ${A_rate}</div>
-                <div><strong>Hero B:</strong> Lượt xem: ${B_imp}, Chuyển đổi: ${B_conv}, Tỷ lệ: ${B_rate}</div>
-            `;
-        });
-    }
-
-});
-</script>
-<style>
-.mega-item[draggable="true"] { border:1px dashed #ccc; padding:4px; border-radius:6px; }
-</style>
-<!-- END: Mega Menu Drag-Drop + AB Testing Analytics -->
-
-</body>', extraScript + '
-<!-- BEGIN: Mega Menu Builder + Hero A/B Testing -->
-<script>
-(function(){
-    document.addEventListener('DOMContentLoaded', function(){
-        let panel = document.querySelector('.customization-content');
-        if(!panel) return;
-
-        // === Add Mega Menu Builder UI ===
-        const megaMenuUI = `
-        <hr>
-        <h3>Mega Menu Builder</h3>
-        <div class="customization-group">
-            <label>Thêm mục menu</label>
-            <input type="text" id="mega-menu-label" placeholder="Tên menu">
-            <textarea id="mega-menu-html" rows="4" placeholder="HTML nội dung mega menu (columns, links...)"></textarea>
-            <button class="btn-sm" id="add-mega-menu">Thêm Mega Menu</button>
-        </div>
-        `;
-        panel.insertAdjacentHTML('beforeend', megaMenuUI);
-
-        // Insert mega menu container if missing
-        let nav = document.querySelector('nav');
-        if(nav && !nav.querySelector('.mega-menu-container')){
-            let div = document.createElement('div');
-            div.className = 'mega-menu-container';
-            nav.appendChild(div);
-        }
-        let megaContainer = document.querySelector('.mega-menu-container');
-
-        panel.querySelector('#add-mega-menu').addEventListener('click', function(){
-            let label = panel.querySelector('#mega-menu-label').value.trim();
-            let html = panel.querySelector('#mega-menu-html').value.trim();
-            if(!label || !html) { alert('Vui lòng nhập đầy đủ thông tin'); return; }
-
-            let item = document.createElement('div');
-            item.className = 'mega-item';
-            item.innerHTML = `
-                <div class="mega-trigger">${label}</div>
-                <div class="mega-dropdown">${html}</div>
-            `;
-            megaContainer.appendChild(item);
-
-            // simple behavior
-            item.querySelector('.mega-trigger').addEventListener('mouseover', ()=> item.classList.add('open'));
-            item.addEventListener('mouseleave', ()=> item.classList.remove('open'));
-
-            alert('Đã thêm mega menu');
-        });
-
-        // === Hero A/B Testing ===
-        const abUI = `
-        <hr>
-        <h3>A/B Testing Hero</h3>
-        <div class="customization-group">
-            <label>Hero A Content</label>
-            <textarea id="hero-a" rows="3" placeholder="HTML cho Hero A"></textarea>
-        </div>
-        <div class="customization-group">
-            <label>Hero B Content</label>
-            <textarea id="hero-b" rows="3" placeholder="HTML cho Hero B"></textarea>
-        </div>
-        <button class="btn-sm" id="apply-ab">Áp dụng A/B Testing</button>
-        `;
-        panel.insertAdjacentHTML('beforeend', abUI);
-
-        document.querySelector('#apply-ab').addEventListener('click', ()=>{
-            let A = panel.querySelector('#hero-a').value.trim();
-            let B = panel.querySelector('#hero-b').value.trim();
-            if(!A || !B){ alert('Điền đầy đủ A và B'); return; }
-
-            // random assign
-            let variant = Math.random()<0.5?'A':'B';
-            localStorage.setItem('__hero_variant', variant);
-
-            let hero = document.querySelector('.hero');
-            if(hero){
-                hero.innerHTML = variant==='A'?A:B;
-            }
-            alert('Đã áp dụng variant ' + variant);
-        });
-
-        // Load saved variant
-        let hero = document.querySelector('.hero');
-        let savedVar = localStorage.getItem('__hero_variant');
-        if(savedVar && hero){
-            let A = localStorage.getItem('__hero_lastA');
-            let B = localStorage.getItem('__hero_lastB');
-            if(A && B){
-                hero.innerHTML = savedVar==='A'?A:B;
-            }
-        }
-
-    });
-})();
-</script>
-
-<style>
-.mega-menu-container { position: relative; display:flex; gap:20px; }
-.mega-item { position: relative; }
-.mega-trigger { cursor:pointer; padding:8px 10px; font-weight:600; }
-.mega-dropdown { 
-    position:absolute; left:0; top:100%; 
-    background:white; padding:20px; border-radius:10px; 
-    box-shadow:0 10px 30px rgba(0,0,0,0.12);
-    display:none; min-width:300px; z-index:999;
-}
-.mega-item.open .mega-dropdown { display:block; }
-</style>
-<!-- END: Mega Menu Builder + Hero A/B Testing -->
-
-
-<!-- BEGIN: Mega Menu Drag-Drop + AB Testing Analytics -->
-<script>
-document.addEventListener("DOMContentLoaded", function(){
-
-    /* ==========================
-       DRAG & DROP MEGA MENU BUILDER
-       ========================== */
-    const mega = document.querySelector('.mega-menu-container');
-    if(mega){
-        mega.style.display = "flex";
-        mega.style.gap = "20px";
-
-        // make items draggable
-        mega.querySelectorAll('.mega-item').forEach((item, index)=>{
-            item.setAttribute("draggable","true");
-            item.dataset.index = index;
-        });
-
-        let dragSrc = null;
-
-        mega.addEventListener("dragstart", function(e){
-            if(e.target.classList.contains("mega-item")){
-                dragSrc = e.target;
-                e.dataTransfer.effectAllowed = 'move';
-            }
-        });
-
-        mega.addEventListener("dragover", function(e){
-            e.preventDefault();
-        });
-
-        mega.addEventListener("drop", function(e){
-            if(e.target.classList.contains("mega-item")){
-                if(dragSrc !== e.target){
-                    const temp = dragSrc.outerHTML;
-                    dragSrc.outerHTML = e.target.outerHTML;
-                    e.target.outerHTML = temp;
-                }
-            }
-        });
-    }
-
-    /* =========================================
-       HERO A/B TESTING — CONVERSION ANALYTICS
-       ========================================= */
-    const hero = document.querySelector('.hero');
-    if(hero){
-        // count impressions
-        let variant = localStorage.getItem('__hero_variant');
-        if(variant){
-            let key = "__hero_impress_"+variant;
-            let count = parseInt(localStorage.getItem(key) || "0", 10);
-            count++;
-            localStorage.setItem(key, count);
-        }
-
-        // record button clicks inside hero as conversions
-        hero.addEventListener('click', function(e){
-            if(e.target.tagName === "BUTTON" || e.target.closest("button")){
-                let v = localStorage.getItem('__hero_variant');
-                if(v){
-                    let key = "__hero_conv_"+v;
-                    let c = parseInt(localStorage.getItem(key) || "0", 10);
-                    localStorage.setItem(key, c+1);
-                }
-            }
-        });
-    }
-
-    /* UI to show analytics */
-    let panel = document.querySelector('.customization-content');
-    if(panel){
-        const analytics = `
-        <hr>
-        <h3>A/B Analytics</h3>
-        <button class="btn-sm" id="show-ab-stats">Xem thống kê A/B</button>
-        <div id="ab-stats-box" style="margin-top:10px; font-size:14px;"></div>
-        `;
-        panel.insertAdjacentHTML("beforeend", analytics);
-
-        document.querySelector("#show-ab-stats").addEventListener("click", ()=>{
-            let A_imp = parseInt(localStorage.getItem("__hero_impress_A")||"0",10);
-            let B_imp = parseInt(localStorage.getItem("__hero_impress_B")||"0",10);
-            let A_conv = parseInt(localStorage.getItem("__hero_conv_A")||"0",10);
-            let B_conv = parseInt(localStorage.getItem("__hero_conv_B")||"0",10);
-
-            let A_rate = A_imp? ((A_conv/A_imp)*100).toFixed(1)+"%" : "0%";
-            let B_rate = B_imp? ((B_conv/B_imp)*100).toFixed(1)+"%" : "0%";
-
-            document.querySelector("#ab-stats-box").innerHTML = `
-                <div><strong>Hero A:</strong> Lượt xem: ${A_imp}, Chuyển đổi: ${A_conv}, Tỷ lệ: ${A_rate}</div>
-                <div><strong>Hero B:</strong> Lượt xem: ${B_imp}, Chuyển đổi: ${B_conv}, Tỷ lệ: ${B_rate}</div>
-            `;
-        });
-    }
-
-});
-</script>
-<style>
-.mega-item[draggable="true"] { border:1px dashed #ccc; padding:4px; border-radius:6px; }
-/* Quick View Modal */
-.quick-view-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-}
-
-.quick-view-content {
-    background: white;
-    width: 90%;
-    max-width: 1000px;
-    max-height: 90vh;
-    border-radius: 15px;
-    overflow: hidden;
-    position: relative;
-}
-
-.close-quick-view {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-    border: none;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    cursor: pointer;
-    z-index: 10;
-}
-
-.quick-view-body {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
-    padding: 30px;
-    max-height: 80vh;
-    overflow-y: auto;
-}
-
-.quick-view-images .main-image {
-    position: relative;
-    border-radius: 10px;
-    overflow: hidden;
-    cursor: zoom-in;
-}
-
-.quick-view-images img {
-    width: 100%;
-    height: 400px;
-    object-fit: cover;
-}
-
-.image-thumbnails {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
-}
-
-.thumb-img {
-    width: 60px;
-    height: 60px;
-    object-fit: cover;
-    border-radius: 5px;
-    cursor: pointer;
-    border: 2px solid transparent;
-}
-
-.thumb-img.active {
-    border-color: var(--primary-color);
-}
-
-.product-badges {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 15px;
-}
-
-.badge {
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.7rem;
-    font-weight: 600;
-}
-
-.badge.sale {
-    background: var(--danger-color);
-    color: white;
-}
-
-.badge.new {
-    background: var(--success-color);
-    color: white;
-}
-
-.stock-status {
-    margin: 15px 0;
-}
-
-.stock-bar {
-    height: 6px;
-    background: var(--gray-300);
-    border-radius: 3px;
-    overflow: hidden;
-}
-
-.stock-progress {
-    height: 100%;
-    background: var(--success-color);
-    transition: width 0.3s ease;
-}
-
-.stock-text {
-    font-size: 0.8rem;
-    color: var(--gray-600);
-    margin-top: 5px;
-}
-
-.color-swatches, .size-selection {
-    margin: 20px 0;
-}
-
-.swatches, .sizes {
-    display: flex;
-    gap: 10px;
-    margin-top: 8px;
-}
-
-.swatch {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    cursor: pointer;
-    border: 3px solid transparent;
-}
-
-.swatch.active {
-    border-color: var(--primary-color);
-}
-
-.size-option {
-    padding: 8px 15px;
-    border: 1px solid var(--gray-300);
-    border-radius: 5px;
-    background: white;
-    cursor: pointer;
-}
-
-.size-option.active {
-    background: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
-}
-
-.size-guide-btn {
-    background: none;
-    border: none;
-    color: var(--primary-color);
-    font-size: 0.8rem;
-    margin-top: 5px;
-    cursor: pointer;
-    text-decoration: underline;
-}
-
-.quantity-selector {
-    margin: 20px 0;
-}
-
-.quantity-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 8px;
-}
-
-.quantity-btn {
-    width: 35px;
-    height: 35px;
-    border: 1px solid var(--gray-300);
-    background: white;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-.quantity-input {
-    width: 60px;
-    text-align: center;
-    border: 1px solid var(--gray-300);
-    border-radius: 5px;
-    padding: 8px;
-}
-
-.quick-view-actions {
-    display: flex;
-    gap: 10px;
-    margin: 25px 0;
-}
-
-.quick-view-actions .btn {
-    flex: 1;
-    justify-content: center;
-}
-
-.product-meta {
-    border-top: 1px solid var(--gray-200);
-    padding-top: 20px;
-}
-
-.meta-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 8px;
-    font-size: 0.9rem;
-    color: var(--gray-600);
-}
-
-/* Size Guide Modal */
-.size-guide-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 2100;
-}
-
-.size-guide-content {
-    background: white;
-    width: 90%;
-    max-width: 600px;
-    padding: 30px;
-    border-radius: 10px;
-    position: relative;
-}
-
-.close-size-guide {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-}
-
-.size-table table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-}
-
-.size-table th, .size-table td {
-    padding: 12px;
-    text-align: center;
-    border: 1px solid var(--gray-300);
-}
-
-.size-table th {
-    background: var(--gray-100);
-    font-weight: 600;
-}
-
-/* Image Zoom */
-.image-zoom {
-    position: absolute;
-    width: 200px;
-    height: 200px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.8);
-    background-size: 200%;
-    background-position: center;
-    display: none;
-    pointer-events: none;
-    border: 2px solid var(--primary-color);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .quick-view-body {
-        grid-template-columns: 1fr;
-        gap: 20px;
-        padding: 20px;
-    }
-    
-    .quick-view-actions {
-        flex-direction: column;
-    }
-    
-    .quick-view-images img {
-        height: 300px;
-    }
-}    
-</style>
-<!-- END: Mega Menu Drag-Drop + AB Testing Analytics -->
-
-</body>');
-            // create blob and trigger download
-            var blob = new Blob([html], {type: 'text/html;charset=utf-8'});
-            var url = URL.createObjectURL(blob);
-            var a = document.createElement('a');
-            a.href = url;
-            a.download = 'truc-dao-enhanced-snapshot.html';
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
-        });
-
-        // simple helpers
-        function hexToRgb(hex) {
-            var m = hex.replace('#','');
-            if(m.length===3) m = m.split('').map(function(c){ return c+c; }).join('');
-            var bigint = parseInt(m,16);
-            return { r: (bigint>>16)&255, g: (bigint>>8)&255, b: bigint&255 };
-        }
-        function shadeColor(rgb, percent){
-            var r = Math.max(Math.min(Math.round(rgb.r * (100+percent)/100),255),0);
-            var g = Math.max(Math.min(Math.round(rgb.g * (100+percent)/100),255),0);
-            var b = Math.max(Math.min(Math.round(rgb.b * (100+percent)/100),255),0);
-            return 'rgb('+r+','+g+','+b+')';
-        }
-
-        // Ensure panel visible toggle when admin link (if admin toggle exists)
-        var adminToggle = document.querySelector('.admin-toggle');
-        if(adminToggle) adminToggle.classList.add('active');
-
-        // Make sure products grid exists; if empty populate a few mock items for demonstration (non-destructive)
-        var grid = document.getElementById('products-grid');
-        if(grid && !grid.querySelector('.product-card')){
-            var sample = `
-                <div class="product-card">
-                    <div class="product-image"><img src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=60" alt=""></div>
-                    <div class="product-info">
-                        <div class="product-category">Chăm sóc da</div>
-                        <div class="product-name">Kem dưỡng ẩm Trúc Đào - Mini</div>
-                        <div class="product-price"><div class="current-price">199.000đ</div><div class="original-price">249.000đ</div></div>
-                        <div class="product-actions"><button class="btn btn-sm">Thêm vào giỏ</button><button class="btn btn-outline btn-sm">Xem nhanh</button></div>
-                    </div>
-                </div>
-            `;
-            for(var i=0;i<6;i++){ var div=document.createElement('div'); div.innerHTML=sample; grid.appendChild(div.firstElementChild); }
-        }
-
-    });
-})();
-</script>
-<!-- END: Enhanced Admin Customization Controls (Injected) -->
-
-
-<!-- BEGIN: Mega Menu Builder + Hero A/B Testing -->
-<script>
-(function(){
-    document.addEventListener('DOMContentLoaded', function(){
-        let panel = document.querySelector('.customization-content');
-        if(!panel) return;
-
-        // === Add Mega Menu Builder UI ===
-        const megaMenuUI = `
-        <hr>
-        <h3>Mega Menu Builder</h3>
-        <div class="customization-group">
-            <label>Thêm mục menu</label>
-            <input type="text" id="mega-menu-label" placeholder="Tên menu">
-            <textarea id="mega-menu-html" rows="4" placeholder="HTML nội dung mega menu (columns, links...)"></textarea>
-            <button class="btn-sm" id="add-mega-menu">Thêm Mega Menu</button>
-        </div>
-        `;
-        panel.insertAdjacentHTML('beforeend', megaMenuUI);
-
-        // Insert mega menu container if missing
-        let nav = document.querySelector('nav');
-        if(nav && !nav.querySelector('.mega-menu-container')){
-            let div = document.createElement('div');
-            div.className = 'mega-menu-container';
-            nav.appendChild(div);
-        }
-        let megaContainer = document.querySelector('.mega-menu-container');
-
-        panel.querySelector('#add-mega-menu').addEventListener('click', function(){
-            let label = panel.querySelector('#mega-menu-label').value.trim();
-            let html = panel.querySelector('#mega-menu-html').value.trim();
-            if(!label || !html) { alert('Vui lòng nhập đầy đủ thông tin'); return; }
-
-            let item = document.createElement('div');
-            item.className = 'mega-item';
-            item.innerHTML = `
-                <div class="mega-trigger">${label}</div>
-                <div class="mega-dropdown">${html}</div>
-            `;
-            megaContainer.appendChild(item);
-
-            // simple behavior
-            item.querySelector('.mega-trigger').addEventListener('mouseover', ()=> item.classList.add('open'));
-            item.addEventListener('mouseleave', ()=> item.classList.remove('open'));
-
-            alert('Đã thêm mega menu');
-        });
-
-        // === Hero A/B Testing ===
-        const abUI = `
-        <hr>
-        <h3>A/B Testing Hero</h3>
-        <div class="customization-group">
-            <label>Hero A Content</label>
-            <textarea id="hero-a" rows="3" placeholder="HTML cho Hero A"></textarea>
-        </div>
-        <div class="customization-group">
-            <label>Hero B Content</label>
-            <textarea id="hero-b" rows="3" placeholder="HTML cho Hero B"></textarea>
-        </div>
-        <button class="btn-sm" id="apply-ab">Áp dụng A/B Testing</button>
-        `;
-        panel.insertAdjacentHTML('beforeend', abUI);
-
-        document.querySelector('#apply-ab').addEventListener('click', ()=>{
-            let A = panel.querySelector('#hero-a').value.trim();
-            let B = panel.querySelector('#hero-b').value.trim();
-            if(!A || !B){ alert('Điền đầy đủ A và B'); return; }
-
-            // random assign
-            let variant = Math.random()<0.5?'A':'B';
-            localStorage.setItem('__hero_variant', variant);
-
-            let hero = document.querySelector('.hero');
-            if(hero){
-                hero.innerHTML = variant==='A'?A:B;
-            }
-            alert('Đã áp dụng variant ' + variant);
-        });
-
-        // Load saved variant
-        let hero = document.querySelector('.hero');
-        let savedVar = localStorage.getItem('__hero_variant');
-        if(savedVar && hero){
-            let A = localStorage.getItem('__hero_lastA');
-            let B = localStorage.getItem('__hero_lastB');
-            if(A && B){
-                hero.innerHTML = savedVar==='A'?A:B;
-            }
-        }
-
-    });
-})();
-</script>
-
-<style>
-.mega-menu-container { position: relative; display:flex; gap:20px; }
-.mega-item { position: relative; }
-.mega-trigger { cursor:pointer; padding:8px 10px; font-weight:600; }
-.mega-dropdown { 
-    position:absolute; left:0; top:100%; 
-    background:white; padding:20px; border-radius:10px; 
-    box-shadow:0 10px 30px rgba(0,0,0,0.12);
-    display:none; min-width:300px; z-index:999;
-}
-.mega-item.open .mega-dropdown { display:block; }
-</style>
-<!-- END: Mega Menu Builder + Hero A/B Testing -->
-
-
-<!-- BEGIN: Mega Menu Drag-Drop + AB Testing Analytics -->
-<script>
-document.addEventListener("DOMContentLoaded", function(){
-
-    /* ==========================
-       DRAG & DROP MEGA MENU BUILDER
-       ========================== */
-    const mega = document.querySelector('.mega-menu-container');
-    if(mega){
-        mega.style.display = "flex";
-        mega.style.gap = "20px";
-
-        // make items draggable
-        mega.querySelectorAll('.mega-item').forEach((item, index)=>{
-            item.setAttribute("draggable","true");
-            item.dataset.index = index;
-        });
-
-        let dragSrc = null;
-
-        mega.addEventListener("dragstart", function(e){
-            if(e.target.classList.contains("mega-item")){
-                dragSrc = e.target;
-                e.dataTransfer.effectAllowed = 'move';
-            }
-        });
-
-        mega.addEventListener("dragover", function(e){
-            e.preventDefault();
-        });
-
-        mega.addEventListener("drop", function(e){
-            if(e.target.classList.contains("mega-item")){
-                if(dragSrc !== e.target){
-                    const temp = dragSrc.outerHTML;
-                    dragSrc.outerHTML = e.target.outerHTML;
-                    e.target.outerHTML = temp;
-                }
-            }
-        });
-    }
-
-    /* =========================================
-       HERO A/B TESTING — CONVERSION ANALYTICS
-       ========================================= */
-    const hero = document.querySelector('.hero');
-    if(hero){
-        // count impressions
-        let variant = localStorage.getItem('__hero_variant');
-        if(variant){
-            let key = "__hero_impress_"+variant;
-            let count = parseInt(localStorage.getItem(key) || "0", 10);
-            count++;
-            localStorage.setItem(key, count);
-        }
-
-        // record button clicks inside hero as conversions
-        hero.addEventListener('click', function(e){
-            if(e.target.tagName === "BUTTON" || e.target.closest("button")){
-                let v = localStorage.getItem('__hero_variant');
-                if(v){
-                    let key = "__hero_conv_"+v;
-                    let c = parseInt(localStorage.getItem(key) || "0", 10);
-                    localStorage.setItem(key, c+1);
-                }
-            }
-        });
-    }
-
-    /* UI to show analytics */
-    let panel = document.querySelector('.customization-content');
-    if(panel){
-        const analytics = `
-        <hr>
-        <h3>A/B Analytics</h3>
-        <button class="btn-sm" id="show-ab-stats">Xem thống kê A/B</button>
-        <div id="ab-stats-box" style="margin-top:10px; font-size:14px;"></div>
-        `;
-        panel.insertAdjacentHTML("beforeend", analytics);
-
-        document.querySelector("#show-ab-stats").addEventListener("click", ()=>{
-            let A_imp = parseInt(localStorage.getItem("__hero_impress_A")||"0",10);
-            let B_imp = parseInt(localStorage.getItem("__hero_impress_B")||"0",10);
-            let A_conv = parseInt(localStorage.getItem("__hero_conv_A")||"0",10);
-            let B_conv = parseInt(localStorage.getItem("__hero_conv_B")||"0",10);
-
-            let A_rate = A_imp? ((A_conv/A_imp)*100).toFixed(1)+"%" : "0%";
-            let B_rate = B_imp? ((B_conv/B_imp)*100).toFixed(1)+"%" : "0%";
-
-            document.querySelector("#ab-stats-box").innerHTML = `
-                <div><strong>Hero A:</strong> Lượt xem: ${A_imp}, Chuyển đổi: ${A_conv}, Tỷ lệ: ${A_rate}</div>
-                <div><strong>Hero B:</strong> Lượt xem: ${B_imp}, Chuyển đổi: ${B_conv}, Tỷ lệ: ${B_rate}</div>
-            `;
-        });
-    }
-
-});
-</script>
-<style>
-.mega-item[draggable="true"] { border:1px dashed #ccc; padding:4px; border-radius:6px; }
-</style>
-<!-- END: Mega Menu Drag-Drop + AB Testing Analytics -->
-
 </body>
 </html>
