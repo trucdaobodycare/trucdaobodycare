@@ -270,6 +270,7 @@ app.use(compression());
 // CORS configuration - FIXED: Better mobile support
 app.use(cors({
     origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
         
         const allowedOrigins = [
@@ -278,10 +279,15 @@ app.use(cors({
             'http://localhost:3000',
             'http://127.0.0.1:10000',
             'http://127.0.0.1:3000',
-            'https://trucdaobodycare.onrender.com'
+            'https://trucdaobodycare.onrender.com',
+            'http://localhost:5500', // Added for Live Server
+            'http://127.0.0.1:5500'  // Added for Live Server
         ];
         
-        if (allowedOrigins.indexOf(origin) !== -1 || origin.includes('render.com')) {
+        if (allowedOrigins.indexOf(origin) !== -1 || 
+            origin.includes('render.com') ||
+            origin.includes('localhost') ||
+            origin.includes('127.0.0.1')) {
             callback(null, true);
         } else {
             console.log('🔒 Blocked by CORS:', origin);
@@ -292,7 +298,6 @@ app.use(cors({
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
-
 // Body parsing
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -547,11 +552,8 @@ async function updateStatistics() {
 
 // ==================== ROUTES ====================
 
-// Basic routes
-app.get('/favicon.ico', (req, res) => res.status(204).end());
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+// Basic routes - FIXED: Serve static files properly
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Health check
 app.get('/health', async (req, res) => {
@@ -578,6 +580,16 @@ app.get('/health', async (req, res) => {
     }
 });
 
+// Serve main HTML file - FIXED: Add explicit route
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Serve all other routes with the main HTML file (for SPA)
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // ==================== AUTHENTICATION ROUTES ====================
 
 app.post('/api/auth/login', async (req, res) => {
@@ -587,19 +599,28 @@ app.post('/api/auth/login', async (req, res) => {
         console.log('🔐 Login attempt for user:', username);
         
         if (!username || !password) {
-            return res.status(400).json({ error: 'Vui lòng nhập tên đăng nhập và mật khẩu' });
+            return res.status(400).json({ 
+                success: false,
+                error: 'Vui lòng nhập tên đăng nhập và mật khẩu' 
+            });
         }
         
         const user = await User.findOne({ username });
         if (!user) {
             console.log('❌ User not found:', username);
-            return res.status(401).json({ error: 'Tên đăng nhập hoặc mật khẩu không đúng' });
+            return res.status(401).json({ 
+                success: false,
+                error: 'Tên đăng nhập hoặc mật khẩu không đúng' 
+            });
         }
         
         const isValidPassword = await bcrypt.compare(password, user.password);
         if (!isValidPassword) {
             console.log('❌ Invalid password for user:', username);
-            return res.status(401).json({ error: 'Tên đăng nhập hoặc mật khẩu không đúng' });
+            return res.status(401).json({ 
+                success: false,
+                error: 'Tên đăng nhập hoặc mật khẩu không đúng' 
+            });
         }
         
         // Update last login
@@ -627,17 +648,12 @@ app.post('/api/auth/login', async (req, res) => {
         });
     } catch (error) {
         console.error('Login error:', error);
-        res.status(500).json({ error: 'Lỗi server khi đăng nhập' });
+        res.status(500).json({ 
+            success: false,
+            error: 'Lỗi server khi đăng nhập' 
+        });
     }
 });
-
-app.post('/api/auth/verify', authenticateToken, (req, res) => {
-    res.json({
-        valid: true,
-        user: req.user
-    });
-});
-
 // ==================== API ROUTES ====================
 
 // Apply API rate limiting to all API routes
@@ -1751,3 +1767,4 @@ async function startServer() {
 startServer();
 
 module.exports = app;
+
