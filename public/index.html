@@ -7,13 +7,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Thêm thư viện SHA256 để băm mật khẩu -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js"></script>
     <style>
         :root {
             --primary-color: #e83e8c;
             --primary-dark: #d81b60;
             --secondary-color: #ffc107;
             --dark-color: #2d3748;
-            --light-color: #f8f9fa;
+            --light-color: #f8f9fa;`
             --success-color: #10b981;
             --danger-color: #ef4444;
             --warning-color: #f59e0b;
@@ -47,8 +49,14 @@
             line-height: 1.6;
             overflow-x: hidden;
             /* Ngăn chặn zoom trên mobile */
+            /* Lưu ý: user-scalable=no không được khuyến khích vì lý do trợ năng, 
+               nhưng được giữ lại theo cấu trúc hiện có của trang. */
             touch-action: pan-y;
             -webkit-text-size-adjust: 100%;
+        }
+        img {
+            max-width: 100%; /* Đảm bảo hình ảnh không tràn ra ngoài container */
+            height: auto; /* Giữ đúng tỷ lệ khung hình */
         }
         
         a {
@@ -308,54 +316,167 @@
         }
         
         /* Hero Section */
-        .hero {
-            background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.4) 100%), url('https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1187&q=80');
-            background-size: cover;
-            background-position: center;
-            color: white;
-            padding: 120px 0;
-            text-align: center;
+        .hero-slider {
             position: relative;
+            width: 100%;
+            height: 600px; /* Tăng chiều cao để có không gian cho hình ảnh */
             overflow: hidden;
+            background-color: var(--gray-100);
         }
-        
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
+
+        .slider-wrapper {
+            display: flex;
+            height: 100%;
+            transition: transform 0.7s cubic-bezier(0.65, 0, 0.35, 1);
+        }
+
+        .slide {
+            flex: 0 0 100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, var(--primary-color) 0%, transparent 70%);
-            opacity: 0.3;
+            position: relative;
+            display: flex;
+            align-items: center;
+            padding: 0 5%;
+            overflow: hidden;
+        }
+
+        /* NEW: Lớp phủ cho slide để làm nổi bật text */
+        .slide::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 60%);
             z-index: 1;
         }
-        
+        .slide:nth-child(1) { background: linear-gradient(135deg, #fde4f2 0%, #fef5f9 100%); }
+        .slide:nth-child(2) { background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%); }
+        .slide:nth-child(3) { background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%); }
+
         .hero-content {
             position: relative;
             z-index: 2;
-            max-width: 800px;
-            margin: 0 auto;
+            max-width: 550px;
+            text-align: left; /* Giữ nguyên */
+        }
+
+        .slide .hero-content > * {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .slide.active .hero-content {
+            opacity: 1;
+            transform: translateY(0);
         }
         
-        .hero h1 {
-            font-size: 3.5rem;
+        .slide.active .hero-content h1 { transition-delay: 0.3s; }
+        .slide.active .hero-content p { transition-delay: 0.5s; }
+        .slide.active .hero-content .hero-buttons { transition-delay: 0.7s; }
+
+        .slide.active .hero-content > * {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hero-content h1 {
+            font-size: clamp(2.5rem, 5vw, 3.8rem);
             margin-bottom: 20px;
             font-weight: 700;
             line-height: 1.2;
+            color: var(--dark-color);            
+            /* Hiệu ứng chữ gradient */
+            background: linear-gradient(135deg, var(--primary-dark), var(--dark-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-fill-color: transparent;
         }
-        
-        .hero p {
-            font-size: 1.2rem;
-            margin: 0 auto 30px;
-            max-width: 600px;
-            opacity: 0.9;
+
+        .hero-content p {
+            font-size: clamp(1rem, 2vw, 1.2rem);
+            margin-bottom: 30px;
+            max-width: 500px;
+            color: var(--gray-700);
+        }
+
+        .hero-image {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            width: 60%; /* Điều chỉnh chiều rộng của vùng chứa ảnh */
+            height: 100%; /* Cho ảnh cao bằng slide */
+            z-index: 0; /* Đưa ảnh xuống dưới lớp phủ và nội dung */
+            opacity: 0;
+            transform: translateX(50px) scale(1.2); /* Tăng scale ban đầu */
+            transition: opacity 1.2s ease, transform 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            object-fit: cover; /* Đảm bảo ảnh vừa vặn mà không bị méo */
+            object-position: center; /* Căn giữa ảnh */
+        }
+
+        .slide.active .hero-image {
+            opacity: 1;
+            transform: translateX(0) scale(1.05); /* Hiệu ứng Ken Burns - phóng to nhẹ */
+            /* Thêm animation cho hiệu ứng Ken Burns */
+            animation: kenburns 20s infinite;
+            transition-duration: 1.5s; /* Kéo dài hiệu ứng cho ảnh */
+            transition-timing-function: cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        .slider-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(255, 255, 255, 0.7);
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            cursor: pointer;
+            z-index: 10;
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+        }
+        .slider-nav:hover { background-color: white; color: var(--primary-color); }
+        .slider-nav.prev { left: 20px; }
+        .slider-nav.next { right: 20px; }
+
+        .slider-dots {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .dot.active {
+            background-color: var(--primary-color);
+            transform: scale(1.2);
+        }
+
+        /* NEW: Keyframes cho hiệu ứng Ken Burns */
+        @keyframes kenburns {
+            0%, 100% {
+                transform: scale(1.05) translate(0, 0);
+            }
+            50% { transform: scale(1.15) translate(-10px, 5px); }
         }
         
         .hero-buttons {
             display: flex;
             gap: 15px;
-            justify-content: center;
             flex-wrap: wrap;
         }
         
@@ -370,7 +491,8 @@
         }
         
         .section-title h2 {
-            font-size: 2.5rem;
+            /* Fluid Typography */
+            font-size: clamp(2rem, 1.5rem + 2vw, 2.5rem);
             font-weight: 700;
             color: var(--gray-800);
             margin-bottom: 15px;
@@ -394,7 +516,8 @@
             color: var(--gray-600);
             max-width: 600px;
             margin: 0 auto;
-            font-size: 1.1rem;
+            font-size: clamp(1rem, 0.9rem + 0.5vw, 1.1rem);
+            line-height: 1.7; /* Cải thiện khả năng đọc */
         }
         
         /* Products Grid */
@@ -468,11 +591,12 @@
         .product-name {
             font-weight: 600;
             margin-bottom: 10px;
-            height: 48px;
+            min-height: 48px; /* Sử dụng min-height thay cho height */
             overflow: hidden;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
+            line-height: 1.5; /* Điều chỉnh line-height để vừa vặn hơn */
         }
         
         .product-price {
@@ -503,6 +627,11 @@
         .product-actions .btn {
             flex: 1;
             justify-content: center;
+        }
+        
+        /* Đảm bảo nút không bị co lại quá mức trên mobile */
+        .product-actions .btn {
+            flex-shrink: 0;
         }
         
         /* Categories Section */
@@ -968,26 +1097,41 @@
         
         /* Admin Panel - NEW DESIGN ON LEFT SIDE */
         .admin-panel {
+            /* Thay đổi thành modal toàn màn hình */
             position: fixed;
             top: 0;
-            left: -600px;
-            width: 600px;
-            height: 100vh;
-            background-color: white;
-            box-shadow: 5px 0 15px rgba(0, 0, 0, 0.1);
-            transition: var(--transition);
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Nền mờ */
+            display: none; /* Ẩn mặc định */
+            align-items: center;
+            justify-content: center;
             z-index: 1500;
-            display: flex;
-            overflow: hidden;
-            resize: horizontal;
-            min-width: 500px;
-            max-width: 90vw;
+            transition: opacity 0.3s ease;
+            opacity: 0;
         }
         
         .admin-panel.active {
-            left: 0;
+            display: flex;
+            opacity: 1;
         }
         
+        .admin-panel-content {
+            background-color: white;
+            width: 95%;
+            height: 95%;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--box-shadow-lg);
+            display: flex;
+            overflow: hidden;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        .admin-panel.active .admin-panel-content {
+            transform: scale(1);
+        }
+
         .admin-sidebar {
             width: 80px;
             background: linear-gradient(135deg, var(--gray-800) 0%, var(--gray-900) 100%);
@@ -1040,6 +1184,14 @@
             font-size: 0.7rem;
             text-align: center;
         }
+
+        /* Tối ưu Admin Panel cho màn hình hẹp */
+        @media (max-width: 768px) {
+            .admin-sidebar {
+                width: 60px; /* Thu nhỏ sidebar */
+            }
+            .admin-nav-label { display: none; } /* Ẩn chữ, chỉ hiện icon */
+        }
         
         .admin-main {
             flex: 1;
@@ -1062,14 +1214,20 @@
             font-weight: 700;
         }
         
-        .admin-content {
+        .admin-content-container {
             flex: 1;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .tab-pane {
+            height: 100%;
             overflow-y: auto;
             padding: 20px;
             display: none;
         }
         
-        .admin-content.active {
+        .tab-pane.active {
             display: block;
         }
         
@@ -1099,6 +1257,41 @@
             transform: translateX(5px);
         }
         
+        /* NEW: Admin Tabs */
+        .admin-tabs-bar {
+            display: flex;
+            background-color: var(--gray-100);
+            padding: 5px 10px 0;
+            border-bottom: 1px solid var(--gray-200);
+            overflow-x: auto;
+            flex-shrink: 0;
+        }
+
+        .admin-tab {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            background-color: transparent;
+            border: 1px solid transparent;
+            border-bottom: none;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+
+        .admin-tab:hover {
+            background-color: var(--gray-200);
+        }
+
+        .admin-tab.active {
+            background-color: white;
+            border-color: var(--gray-200);
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
         /* Dashboard Cards */
         .dashboard-cards {
             display: grid;
@@ -1857,6 +2050,7 @@
         }
         
         .wishlist-btn:hover, .wishlist-btn.active {
+            background-color: var(--gray-100); /* Thêm hiệu ứng nền khi hover */
             color: var(--danger-color);
         }
         
@@ -1921,6 +2115,80 @@
             margin: 0;
         }
         
+        /* NEW: Product Filters Redesign */
+        .filters-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .filter-group-redesigned {
+            background: white;
+            padding: 15px 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            flex: 1;
+            min-width: 220px;
+        }
+
+        .filter-group-redesigned h4 {
+            font-size: 1rem;
+            margin-bottom: 15px;
+            color: var(--gray-700);
+            border-bottom: 1px solid var(--gray-200);
+            padding-bottom: 10px;
+        }
+
+        .filter-options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .filter-option-redesigned {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            border-radius: 5px;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+        }
+
+        .filter-option-redesigned:hover {
+            background-color: var(--gray-100);
+        }
+
+        .price-slider-container {
+            padding: 10px 0;
+        }
+
+        .price-slider-container input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .price-range-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--gray-600);
+            margin-top: 5px;
+        }
+
+        .rating-filter-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            border-radius: 5px;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+        }
+        .rating-filter-option:hover { background-color: var(--gray-100); }
+
         /* NEW: Quick View Modal */
         .quick-view-modal {
             position: fixed;
@@ -2223,10 +2491,6 @@
         }
         
         @media (max-width: 1024px) {
-            .hero h1 {
-                font-size: 2.8rem;
-            }
-            
             .products-grid {
                 grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             }
@@ -2234,9 +2498,11 @@
             .form-row {
                 grid-template-columns: 1fr;
             }
-            
+
+            /* Chuyển Quick View sang 1 cột cho tablet */
             .quick-view-body {
                 grid-template-columns: 1fr;
+                max-height: 80vh;
             }
         }
         
@@ -2247,6 +2513,7 @@
             
             .logo {
                 order: 1;
+                flex-shrink: 0; /* Không cho logo co lại */
             }
             
             .mobile-menu-toggle {
@@ -2261,28 +2528,21 @@
                 width: 100%;
                 justify-content: center;
                 margin-top: 15px;
+                /* Bỏ width 100% để nằm cùng hàng với mobile toggle */
+                /* width: 100%; */
+                /* justify-content: center; */
+                /* margin-top: 15px; */
             }
             
             .search-bar {
                 order: 4;
+                width: 100%; /* Search bar chiếm toàn bộ hàng dưới */
                 margin: 15px 0 0;
                 max-width: 100%;
             }
             
             .nav-links {
                 display: none;
-            }
-            
-            .hero {
-                padding: 80px 0;
-            }
-            
-            .hero h1 {
-                font-size: 2.2rem;
-            }
-            
-            .hero p {
-                font-size: 1rem;
             }
             
             .hero-buttons {
@@ -2292,10 +2552,7 @@
             
             .section {
                 padding: 60px 0;
-            }
-            
-            .section-title h2 {
-                font-size: 2rem;
+                padding: 50px 0; /* Giảm padding cho tablet */
             }
             
             .products-grid {
@@ -2316,8 +2573,8 @@
             }
             
             .chat-modal {
-                width: 90%;
-                right: 5%;
+                width: 350px; /* Giảm chiều rộng để đẹp hơn */
+                right: calc(50% - 175px); /* Căn giữa màn hình */
                 bottom: 10px;
             }
             
@@ -2351,10 +2608,6 @@
         }
         
         @media (max-width: 576px) {
-            .hero h1 {
-                font-size: 1.8rem;
-            }
-            
             .products-grid {
                 grid-template-columns: 1fr;
             }
@@ -2412,6 +2665,16 @@
             
             .quick-view-actions {
                 flex-direction: column;
+            }
+
+            .quick-view-body {
+                padding: 15px;
+            }
+
+            /* Ngăn nút trong chat và giỏ hàng bị co lại */
+            .customer-info-form .btn,
+            .quantity-controls .quantity-btn {
+                flex-shrink: 0;
             }
         }
     </style>
@@ -2512,97 +2775,98 @@
     </div>
 
     <!-- Hero Section -->
-    <section class="hero">
-        <div class="container">
-            <div class="hero-content">
-                <h1>Làm đẹp mỗi ngày với Trúc Đào Cosmetics</h1>
-                <p>Khám phá bộ sưu tập mỹ phẩm cao cấp với ưu đãi đặc biệt lên đến 50%</p>
-                <div class="hero-buttons">
-                    <a href="#" class="btn">Mua ngay <i class="fas fa-shopping-cart"></i></a>
-                    <a href="#" class="btn btn-outline">Khám phá bộ sưu tập <i class="fas fa-arrow-right"></i></a>
+    <section class="hero-slider" id="hero-slider">
+        <div class="slider-wrapper">
+            <!-- Slide 1 -->
+            <div class="slide active">
+                <div class="hero-content">
+                    <h1>Vẻ Đẹp Rạng Rỡ, Tự Tin Tỏa Sáng</h1>
+                    <p>Khám phá bộ sưu tập mỹ phẩm cao cấp với ưu đãi đặc biệt lên đến 50% chỉ trong tháng này.</p>
+                    <div class="hero-buttons">
+                        <a href="#" class="btn">Mua ngay <i class="fas fa-shopping-cart"></i></a>
+                        <a href="#" class="btn btn-outline">Khám phá <i class="fas fa-arrow-right"></i></a>
+                    </div>
                 </div>
+                <img src="https://i.pinimg.com/736x/85/c8/06/85c806e9fa80a049a01e73addbeb32ec.jpg" alt="Cosmetics Model 1" class="hero-image">
+            </div>
+            <!-- Slide 2 -->
+            <div class="slide">
+                <div class="hero-content">
+                    <h1>Dưỡng Da Chuyên Sâu Trắng Sáng Tự Nhiên</h1>
+                    <p>Trải nghiệm dòng sản phẩm chăm sóc da mới, an toàn cho mọi loại da.</p>
+                    <div class="hero-buttons">
+                        <a href="#" class="btn">Xem sản phẩm <i class="fas fa-spa"></i></a>
+                    </div>
+                </div>
+                <img src="https://i.pinimg.com/736x/45/42/25/454225e7546ed3d56a125c2b0d2fff80.jpg" alt="Cosmetics Model 2" class="hero-image">
+            </div>
+            <!-- Slide 3 -->
+            <div class="slide">
+            <div class="hero-content">
+                    <h1>Sắc Màu Mới, Phong Cách Mới</h1>
+                    <p>Bộ sưu tập kem Face mới nhất đã ra mắt. Hãy là người đầu tiên sở hữu những màu sắc thời thượng.</p>
+                <div class="hero-buttons">
+                        <a href="#" class="btn">Khám phá ngay <i class="fas fa-kiss-wink-heart"></i></a>
+                    </div>
+                </div>
+                <img src="https://i.pinimg.com/736x/53/b0/58/53b058eb6f07a7456531a30968324e70.jpg" alt="Cosmetics Model 3" class="hero-image">
             </div>
         </div>
+        <button class="slider-nav prev" id="prev-slide"><i class="fas fa-chevron-left"></i></button>
+        <button class="slider-nav next" id="next-slide"><i class="fas fa-chevron-right"></i></button>
+        <div class="slider-dots" id="slider-dots"></div>
     </section>
 
     <!-- Product Filters -->
     <section class="section">
         <div class="container">
-            <div class="product-filters">
-                <div class="form-row">
-                    <div class="filter-group">
-                        <h4>Danh mục</h4>
-                        <div class="filter-options">
-                            <label class="filter-option">
-                                <input type="checkbox" name="category" value="son-moi"> Son môi
-                            </label>
-                            <label class="filter-option">
-                                <input type="checkbox" name="category" value="trang-diem-mat"> Trang điểm mặt
-                            </label>
-                            <label class="filter-option">
-                                <input type="checkbox" name="category" value="trang-diem-mat"> Trang điểm mắt
-                            </label>
-                            <label class="filter-option">
-                                <input type="checkbox" name="category" value="cham-soc-da"> Chăm sóc da
-                            </label>
-                            <label class="filter-option">
-                                <input type="checkbox" name="category" value="nuoc-hoa"> Nước hoa
-                            </label>
-                        </div>
+            <div class="filters-container">
+                <!-- Filter by Category -->
+                <div class="filter-group-redesigned">
+                    <h4>Danh mục</h4>
+                    <div class="filter-options-grid">
+                        <label class="filter-option-redesigned"><input type="checkbox" name="category" value="son-moi"> Son môi</label>
+                        <label class="filter-option-redesigned"><input type="checkbox" name="category" value="trang-diem-mat"> Trang điểm mặt</label>
+                        <label class="filter-option-redesigned"><input type="checkbox" name="category" value="trang-diem-mat"> Trang điểm mắt</label>
+                        <label class="filter-option-redesigned"><input type="checkbox" name="category" value="cham-soc-da"> Chăm sóc da</label>
+                        <label class="filter-option-redesigned"><input type="checkbox" name="category" value="nuoc-hoa"> Nước hoa</label>
                     </div>
-                    <div class="filter-group">
-                        <h4>Giá</h4>
-                        <div class="filter-options">
-                            <label class="filter-option">
-                                <input type="radio" name="price" value="0-100000"> Dưới 100.000đ
-                            </label>
-                            <label class="filter-option">
-                                <input type="radio" name="price" value="100000-300000"> 100.000đ - 300.000đ
-                            </label>
-                            <label class="filter-option">
-                                <input type="radio" name="price" value="300000-500000"> 300.000đ - 500.000đ
-                            </label>
-                            <label class="filter-option">
-                                <input type="radio" name="price" value="500000+"> Trên 500.000đ
-                            </label>
-                        </div>
-                    </div>
-                    <div class="filter-group">
-                        <h4>Đánh giá</h4>
-                        <div class="filter-options">
-                            <label class="filter-option">
-                                <input type="radio" name="rating" value="5"> 
-                                <div class="rating-stars">
-                                    <i class="fas fa-star rating-star filled"></i>
-                                    <i class="fas fa-star rating-star filled"></i>
-                                    <i class="fas fa-star rating-star filled"></i>
-                                    <i class="fas fa-star rating-star filled"></i>
-                                    <i class="fas fa-star rating-star filled"></i>
-                                </div>
-                            </label>
-                            <label class="filter-option">
-                                <input type="radio" name="rating" value="4"> 
-                                <div class="rating-stars">
-                                    <i class="fas fa-star rating-star filled"></i>
-                                    <i class="fas fa-star rating-star filled"></i>
-                                    <i class="fas fa-star rating-star filled"></i>
-                                    <i class="fas fa-star rating-star filled"></i>
-                                    <i class="fas fa-star rating-star"></i>
-                                </div>
-                            </label>
-                            <label class="filter-option">
-                                <input type="radio" name="rating" value="3"> 
-                                <div class="rating-stars">
-                                    <i class="fas fa-star rating-star filled"></i>
-                                    <i class="fas fa-star rating-star filled"></i>
-                                    <i class="fas fa-star rating-star filled"></i>
-                                    <i class="fas fa-star rating-star"></i>
-                                    <i class="fas fa-star rating-star"></i>
-                                </div>
-                            </label>
+                </div>
+
+                <!-- Filter by Price -->
+                <div class="filter-group-redesigned">
+                    <h4>Khoảng giá</h4>
+                    <div class="price-slider-container">
+                        <input type="range" id="price-slider" min="0" max="1000000" step="50000" value="500000">
+                        <div class="price-range-display">
+                            <span id="min-price">0đ</span>
+                            <span id="max-price">1.000.000đ</span>
                         </div>
                     </div>
                 </div>
+
+                <!-- Filter by Rating -->
+                <div class="filter-group-redesigned">
+                    <h4>Đánh giá</h4>
+                    <div class="filter-options">
+                        <label class="rating-filter-option">
+                            <input type="radio" name="rating" value="5">
+                            <div class="rating-stars"><i class="fas fa-star rating-star filled"></i><i class="fas fa-star rating-star filled"></i><i class="fas fa-star rating-star filled"></i><i class="fas fa-star rating-star filled"></i><i class="fas fa-star rating-star filled"></i></div>
+                        </label>
+                        <label class="rating-filter-option">
+                            <input type="radio" name="rating" value="4">
+                            <div class="rating-stars"><i class="fas fa-star rating-star filled"></i><i class="fas fa-star rating-star filled"></i><i class="fas fa-star rating-star filled"></i><i class="fas fa-star rating-star filled"></i><i class="fas fa-star rating-star"></i></div>
+                            <span>& trở lên</span>
+                        </label>
+                        <label class="rating-filter-option">
+                            <input type="radio" name="rating" value="3">
+                            <div class="rating-stars"><i class="fas fa-star rating-star filled"></i><i class="fas fa-star rating-star filled"></i><i class="fas fa-star rating-star filled"></i><i class="fas fa-star rating-star"></i><i class="fas fa-star rating-star"></i></div>
+                            <span>& trở lên</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="product-filters" style="background: none; box-shadow: none; padding: 0;">
                 <div class="filter-actions">
                     <button class="btn btn-sm" id="apply-filters">Áp dụng bộ lọc</button>
                     <button class="btn btn-outline btn-sm" id="reset-filters">Đặt lại</button>
@@ -2688,6 +2952,67 @@
         </div>
     </section>
 
+    <!-- NEW: Testimonials Section -->
+    <style>
+        .testimonial-section {
+            background-color: var(--light-color);
+            overflow: hidden; /* Ngăn thanh trượt tràn ra ngoài */
+        }
+        .testimonial-slider-container {
+            width: 100%;
+            overflow: hidden;
+        }
+        .testimonial-slider {
+            display: flex;
+            gap: 30px;
+            animation: slide 60s linear infinite;
+        }
+        .testimonial-card {
+            flex: 0 0 350px; /* Không co giãn, không thu nhỏ, chiều rộng cơ bản 350px */
+            background: white;
+            border-radius: var(--border-radius-lg);
+            padding: 30px;
+            box-shadow: var(--box-shadow);
+            text-align: center;
+        }
+        .testimonial-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 15px;
+            border: 3px solid var(--primary-color);
+        }
+        .testimonial-text {
+            font-style: italic;
+            color: var(--gray-600);
+            margin: 15px 0;
+        }
+        .testimonial-name {
+            font-weight: 700;
+            color: var(--gray-800);
+        }
+        @keyframes slide {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); } /* Di chuyển một nửa chiều dài */
+        }
+    </style>
+
+    <section class="section testimonial-section">
+        <div class="container">
+            <div class="section-title">
+                <h2>Khách hàng nói gì về chúng tôi</h2>
+                <p>Những chia sẻ chân thực từ những khách hàng đã tin dùng sản phẩm của Trúc Đào Cosmetics</p>
+            </div>
+        </div>
+        <div class="testimonial-slider-container">
+            <div class="testimonial-slider" id="testimonial-slider">
+                <!-- Testimonials will be loaded here by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+
     <!-- Footer -->
     <footer>
         <div class="container">
@@ -2696,10 +3021,10 @@
                     <h3>Về chúng tôi</h3>
                     <p>Trúc Đào Cosmetics là thương hiệu mỹ phẩm cao cấp với sứ mệnh mang đến vẻ đẹp tự nhiên và sự tự tin cho phụ nữ Việt.</p>
                     <div class="social-links">
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-tiktok"></i></a>
-                        <a href="#"><i class="fab fa-youtube"></i></a>
+                        <a href="https://www.facebook.com/share/1FxR43oyPF/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" onclick="alert('Trang Instagram đang được cập nhật. Vui lòng quay lại sau!'); return false;" title="Instagram (Đang cập nhật)"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.tiktok.com/@trucdaobodycare?_r=1&_t=ZS-91rE8zUEIWl" target="_blank" rel="noopener noreferrer"><i class="fab fa-tiktok"></i></a>
+                        <a href="https://www.youtube.com/@trucdaobodycare?si=8IecjDX96_1o1pWa" target="_blank" rel="noopener noreferrer"><i class="fab fa-youtube"></i></a>
                     </div>
                 </div>
                 <div class="footer-column">
@@ -2727,15 +3052,15 @@
                     <ul class="contact-info">
                         <li>
                             <i class="fas fa-map-marker-alt"></i>
-                            <span>123 Nguyễn Văn Linh, Quận 7, TP.HCM</span>
+                            <span>150 Điện Biên Phủ, Phường 15, Quận Bình Thạnh TP.HCM</span>
                         </li>
                         <li>
                             <i class="fas fa-phone"></i>
-                            <span>1900 1234</span>
+                            <span> (Zalo) 0327160353</span>
                         </li>
                         <li>
                             <i class="fas fa-envelope"></i>
-                            <span>info@trucdaocosmetics.vn</span>
+                            <span>trucdaobodycare@gmail.com</span>
                         </li>
                     </ul>
                 </div>
@@ -2769,6 +3094,11 @@
             <button id="start-chat-btn" class="btn">Bắt đầu chat</button>
         </div>
         <div class="chat-body">
+            <!-- Thêm tin nhắn chào mừng mặc định -->
+            <div class="message received">
+                <div>Chào bạn! Trúc Đào Cosmetics có thể giúp gì cho bạn?</div>
+                <div class="message-time">Bây giờ</div>
+            </div>
             <!-- Messages will appear here -->
         </div>
         <div class="chat-footer">
@@ -3016,7 +3346,7 @@
 
     <!-- Admin Panel -->
     <div class="admin-panel" id="admin-panel">
-        <div class="admin-sidebar">
+        <div class="admin-panel-content">            <div class="admin-sidebar">
             <div class="admin-logo">
                 <i class="fas fa-palette logo-icon"></i>
             </div>
@@ -3053,8 +3383,15 @@
                 <button id="close-admin"><i class="fas fa-times"></i></button>
             </div>
             
-            <!-- Dashboard Tab -->
-            <div class="admin-content active" id="dashboard-tab">
+            <!-- Tab Bar -->
+            <div class="admin-tabs-bar" id="admin-tabs-bar">
+                <!-- Tabs will be dynamically added here -->
+            </div>
+
+            <!-- Tab Content Container -->
+            <div class="admin-content-container" id="admin-content-container">
+                <!-- Dashboard Tab (Initial) -->
+                <div class="tab-pane active" id="tab-pane-dashboard">
                 <div class="dashboard-cards">
                     <div class="dashboard-card orders">
                         <div class="card-header">
@@ -3153,8 +3490,8 @@
                 </div>
             </div>
             
-            <!-- Products Tab -->
-            <div class="admin-content" id="products-tab">
+                <!-- Products Tab Content will be generated here -->
+                <div class="tab-pane" id="tab-pane-products">
                 <div class="admin-table">
                     <div class="table-header">
                         <h3>Quản lý sản phẩm</h3>
@@ -3225,8 +3562,8 @@
                 </div>
             </div>
             
-            <!-- Orders Tab -->
-            <div class="admin-content" id="orders-tab">
+                <!-- Orders Tab Content will be generated here -->
+                <div class="tab-pane" id="tab-pane-orders">
                 <div class="admin-table">
                     <div class="table-header">
                         <h3>Quản lý đơn hàng</h3>
@@ -3260,8 +3597,8 @@
                 </div>
             </div>
             
-            <!-- Messages Tab -->
-            <div class="admin-content" id="messages-tab">
+                <!-- Messages Tab Content will be generated here -->
+                <div class="tab-pane" id="tab-pane-messages">
                 <div class="admin-table">
                     <div class="table-header">
                         <h3>Quản lý tin nhắn</h3>
@@ -3273,8 +3610,8 @@
                 </div>
             </div>
             
-            <!-- Analytics Tab -->
-            <div class="admin-content" id="analytics-tab">
+                <!-- Analytics Tab Content will be generated here -->
+                <div class="tab-pane" id="tab-pane-analytics">
                 <div class="dashboard-cards">
                     <div class="dashboard-card">
                         <div class="card-header">
@@ -3344,8 +3681,8 @@
                 </div>
             </div>
             
-            <!-- Settings Tab -->
-            <div class="admin-content" id="settings-tab">
+                <!-- Settings Tab Content will be generated here -->
+                <div class="tab-pane" id="tab-pane-settings">
                 <div class="admin-form">
                     <h4>Cài đặt hệ thống</h4>
                     <div class="form-row">
@@ -3369,12 +3706,14 @@
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="resize-handle"></div>
+            </div>
+        </div>        <div class="resize-handle" style="display: none;"></div> <!-- Ẩn resize handle vì không còn phù hợp -->
+</div>
     </div>
 
     <!-- Admin Customization Panel -->
     <div class="admin-customization" id="admin-customization">
+    <div class="admin-customization" id="admin-customization" style="display: none;">
         <div class="customization-toggle" id="customization-toggle">
             <i class="fas fa-palette"></i>
         </div>
@@ -3417,20 +3756,88 @@
 
     <script>
         // Admin credentials
-        const ADMIN_USERNAME = "Trucdaoadminlogin";
-        const ADMIN_PASSWORD = "Thanhduy@060596";
-        
+        // KHÔNG BAO GIỜ LƯU MẬT KHẨU TRỰC TIẾP. Đây là giải pháp tạm thời.
+        // Mật khẩu gốc là "Thanhduy@060596"
+        const ADMIN_USERNAME = "Trucdaoadminlogin"; 
+        const ADMIN_PASSWORD_HASH = "a5a554491c33b7cb326883386a375837ace1338a6aaec7139359a3c909899557"; // SHA-256 hash of the password
+
         // API Base URL
         const API_BASE = '/api';
 
         // Data storage
-        let products = [];
-        let messages = [];
-        let orders = [];
+        // --- BẮT ĐẦU: THÊM DỮ LIỆU MẪU ---
+        let products = [
+            { id: 1, name: 'Kem Body Trắng Da Toàn Thân', category: 'Chăm sóc da', originalPrice: 599000, salePrice: 399000, image: 'https://i.pravatar.cc/400?img=51', description: 'Dưỡng trắng da toàn thân, làm mờ vết thâm, cho làn da trắng hồng rạng rỡ.' },
+            { id: 2, name: 'Son Kem Lì Mịn Môi Cao Cấp', category: 'Son môi', originalPrice: 299000, salePrice: 199000, image: 'https://i.pravatar.cc/400?img=52', description: 'Chất son kem lì, mịn mượt, không gây khô môi, lên màu chuẩn.' },
+            { id: 3, name: 'Phấn Nước Che Phủ Hoàn Hảo', category: 'Trang điểm mặt', originalPrice: 450000, salePrice: 350000, image: 'https://i.pravatar.cc/400?img=53', description: 'Lớp nền mỏng nhẹ, che phủ tốt các khuyết điểm, kiềm dầu hiệu quả.' },
+            { id: 4, name: 'Mascara Làm Dài Và Cong Mi', category: 'Trang điểm mắt', originalPrice: 250000, salePrice: 180000, image: 'https://i.pravatar.cc/400?img=54', description: 'Giúp mi dài và cong vút tự nhiên, không lem, không trôi.' },
+            { id: 5, name: 'Nước Hoa Nữ Quyến Rũ', category: 'Nước hoa', originalPrice: 890000, salePrice: 690000, image: 'https://i.pravatar.cc/400?img=55', description: 'Hương thơm ngọt ngào, quyến rũ, lưu hương bền lâu suốt cả ngày dài.' },
+            { id: 6, name: 'Serum Cấp Ẩm Phục Hồi Da', category: 'Chăm sóc da', originalPrice: 650000, salePrice: 450000, image: 'https://i.pravatar.cc/400?img=56', description: 'Cung cấp độ ẩm sâu, phục hồi làn da hư tổn, giúp da căng bóng, khỏe mạnh.' },
+            { id: 7, name: 'Bảng Phấn Mắt 12 Ô Đa Dạng', category: 'Trang điểm mắt', originalPrice: 480000, salePrice: 320000, image: 'https://i.pravatar.cc/400?img=57', description: 'Gồm 12 màu mắt thời thượng, dễ phối, chất phấn mịn, bám màu tốt.' },
+            { id: 8, name: 'Son Dưỡng Môi Căng Mọng', category: 'Son môi', originalPrice: 180000, salePrice: 120000, image: 'https://i.pravatar.cc/400?img=58', description: 'Dưỡng ẩm cho môi, giảm thâm môi, giúp môi luôn căng mọng, hồng hào.' }
+        ];
+        let messages = [
+            {
+                id: 1,
+                text: 'Chào shop, tôi muốn hỏi về sản phẩm kem body.',
+                timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+                read: false,
+                customerInfo: { name: 'Ngọc Anh', phone: '0901234567' }
+            },
+            {
+                id: 2,
+                text: 'Sản phẩm này có an toàn cho da nhạy cảm không?',
+                timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+                read: true,
+                customerInfo: { name: 'Minh Thư', phone: '0987654321' }
+            },
+            {
+                id: 3,
+                text: 'Chào bạn, shop có thể tư vấn giúp mình.',
+                timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+                read: false,
+                isAdminReply: true,
+                customerInfo: { name: 'Minh Thư', phone: '0987654321' }
+            }
+        ];
+        let orders = [
+            {
+                id: 101,
+                customerName: 'Hồng Nhung',
+                customerPhone: '0912345678',
+                customerAddress: '123 Lê Lợi, Quận 1, TP.HCM',
+                products: [
+                    { id: 1, name: 'Kem Body Trắng Da Toàn Thân', price: 399000, quantity: 1 },
+                    { id: 2, name: 'Son Kem Lì Mịn Môi Cao Cấp', price: 199000, quantity: 2 }
+                ],
+                totalAmount: 399000 + 199000 * 2 + 30000,
+                status: 'completed',
+                createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+                paymentScreenshot: 'https://via.placeholder.com/400x200.png?text=Chuyen+Khoan+Thanh+Cong'
+            },
+            {
+                id: 102,
+                customerName: 'Thanh Trúc',
+                customerPhone: '0923456789',
+                customerAddress: '456 Nguyễn Trãi, Quận 5, TP.HCM',
+                products: [
+                    { id: 3, name: 'Phấn Nước Che Phủ Hoàn Hảo', price: 350000, quantity: 1 }
+                ],
+                totalAmount: 350000 + 30000,
+                status: 'pending',
+                createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+                paymentScreenshot: 'https://via.placeholder.com/400x200.png?text=Chuyen+Khoan+Thanh+Cong'
+            }
+        ];
+        // --- KẾT THÚC: THÊM DỮ LIỆU MẪU ---
         let visitors = { total: 0, today: 0, date: new Date().toDateString() };
         let productViews = {};
         let cart = JSON.parse(localStorage.getItem('cart')) || [];
         let wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
+
+        // NEW: Admin Multi-tab state
+        let openTabs = [];
+        let activeTabId = null;
 
         // ==================== CẢI THIỆN ADMIN PANEL ====================
         
@@ -3505,14 +3912,13 @@
                 document.querySelector('.admin-header h2').textContent = newTitle;
                 
                 // Apply font size
-                const fontSize = fontSizeSelect.value;
-                const adminContent = document.querySelector('.admin-main');
-                if (fontSize === 'small') {
-                    adminContent.style.fontSize = '12px';
-                } else if (fontSize === 'medium') {
-                    adminContent.style.fontSize = '14px';
-                } else if (fontSize === 'large') {
-                    adminContent.style.fontSize = '16px';
+                const fontSize = fontSizeSelect.value; const adminContentContainer = document.getElementById('admin-content-container');
+                if (fontSize === 'small') { 
+                    adminContentContainer.style.fontSize = '12px';
+                } else if (fontSize === 'medium') { 
+                    adminContentContainer.style.fontSize = '14px';
+                } else if (fontSize === 'large') { 
+                    adminContentContainer.style.fontSize = '16px';
                 }
                 
                 // Apply panel size
@@ -3551,7 +3957,7 @@
                 
                 // Reset font size
                 fontSizeSelect.value = 'medium';
-                document.querySelector('.admin-main').style.fontSize = '14px';
+                document.getElementById('admin-content-container').style.fontSize = '14px';
                 
                 // Reset panel size
                 panelSizeSelect.value = 'medium';
@@ -3582,13 +3988,13 @@
                 
                 if (customization.fontSize) {
                     fontSizeSelect.value = customization.fontSize;
-                    const adminContent = document.querySelector('.admin-main');
-                    if (customization.fontSize === 'small') {
-                        adminContent.style.fontSize = '12px';
-                    } else if (customization.fontSize === 'medium') {
-                        adminContent.style.fontSize = '14px';
-                    } else if (customization.fontSize === 'large') {
-                        adminContent.style.fontSize = '16px';
+                    const adminContentContainer = document.getElementById('admin-content-container');
+                    if (customization.fontSize === 'small') { 
+                        adminContentContainer.style.fontSize = '12px';
+                    } else if (customization.fontSize === 'medium') { 
+                        adminContentContainer.style.fontSize = '14px';
+                    } else if (customization.fontSize === 'large') { 
+                        adminContentContainer.style.fontSize = '16px';
                     }
                 }
                 
@@ -3644,13 +4050,117 @@
         
         // ==================== KHỞI ĐỘNG ====================
 
+        // NEW: Testimonials data and rendering
+        const testimonials = [
+            { name: 'Ngọc Anh', avatar: 'https://i.pravatar.cc/80?img=1', text: 'Kem body này đỉnh thật sự, da mình trắng bật tone chỉ sau 2 tuần sử dụng. Chất kem mịn, thấm nhanh không bết dính, mùi thơm sang chảnh lắm.' },
+            { name: 'Minh Thư', avatar: 'https://i.pravatar.cc/80?img=2', text: 'Ban đầu cũng bán tín bán nghi, ai ngờ hiệu quả bất ngờ. Da sáng và đều màu hơn hẳn, các vết thâm cũng mờ đi trông thấy.' },
+            { name: 'Hồng Nhung', avatar: 'https://i.pravatar.cc/80?img=3', text: 'Sản phẩm đáng đồng tiền bát gạo. Dùng hết hũ này chắc chắn sẽ mua lại. Da mình không chỉ trắng mà còn căng bóng, mịn màng.' },
+            { name: 'Thanh Trúc', avatar: 'https://i.pravatar.cc/80?img=4', text: 'Da mình thuộc dạng nhạy cảm mà dùng em này êm ru, không bị kích ứng gì cả. 10 điểm cho chất lượng!' },
+            { name: 'Bảo Ngọc', avatar: 'https://i.pravatar.cc/80?img=5', text: 'Mùi kem thơm nhẹ nhàng, dễ chịu cực kỳ. Mỗi lần thoa kem là một lần thư giãn. Da trắng sáng lên từng ngày.' },
+            { name: 'Khánh Vy', avatar: 'https://i.pravatar.cc/80?img=6', text: 'Mình đã dùng qua nhiều loại kem body nhưng đây là sản phẩm mình ưng ý nhất. Hiệu quả làm trắng rõ rệt mà không gây bào mòn da.' },
+            { name: 'Phương Linh', avatar: 'https://i.pravatar.cc/80?img=7', text: 'Chất kem lotion mỏng nhẹ, thoa lên da mát rượi, thấm ngay lập tức. Mùa hè dùng em này là chân ái.' },
+            { name: 'Gia Hân', avatar: 'https://i.pravatar.cc/80?img=8', text: 'Da mình từ ngăm đen giờ đã lên được 2-3 tone. Bạn bè ai cũng hỏi bí quyết. Sẽ giới thiệu cho mọi người cùng dùng.' },
+            { name: 'Mai Anh', avatar: 'https://i.pravatar.cc/80?img=9', text: 'Shop tư vấn nhiệt tình, giao hàng nhanh. Sản phẩm dùng rất thích, da mềm và sáng hơn sau 1 tháng.' },
+            { name: 'Tuyết Trinh', avatar: 'https://i.pravatar.cc/80?img=10', text: 'Kem có chỉ số chống nắng nhẹ nên mình khá yên tâm khi dùng ban ngày. Da vừa được dưỡng trắng vừa được bảo vệ.' },
+            { name: 'Diễm My', avatar: 'https://i.pravatar.cc/80?img=11', text: 'Hiệu quả làm trắng từ từ nhưng rất an toàn. Da trắng hồng tự nhiên chứ không phải trắng bệch.' },
+            { name: 'Quỳnh Hương', avatar: 'https://i.pravatar.cc/80?img=12', text: 'Mình dùng kết hợp với tẩy tế bào chết của shop, hiệu quả nhân đôi luôn. Da mịn như da em bé.' },
+            { name: 'Ánh Dương', avatar: 'https://i.pravatar.cc/80?img=13', text: 'Giá hơi cao so với các sản phẩm khác nhưng chất lượng thì không có gì để chê. Xắt ra miếng thật sự.' },
+            { name: 'Thảo Nguyên', avatar: 'https://i.pravatar.cc/80?img=14', text: 'Kem không gây mọc lông, không vàng lông. Đây là điểm mình rất thích ở sản phẩm này.' },
+            { name: 'Yến Nhi', avatar: 'https://i.pravatar.cc/80?img=15', text: 'Từ ngày dùng kem body của Trúc Đào, mình tự tin diện váy ngắn hơn hẳn. Cảm ơn shop nhiều.' },
+            { name: 'Hà My', avatar: 'https://i.pravatar.cc/80?img=16', text: 'Chất kem đặc nhưng không hề bí da, dưỡng ẩm rất tốt. Da mình hết bị khô nẻ vào mùa đông.' },
+            { name: 'Bích Thủy', avatar: 'https://i.pravatar.cc/80?img=17', text: 'Thấy review tốt nên mua dùng thử, không ngờ lại hợp da đến vậy. Sẽ là khách hàng trung thành của shop.' },
+            { name: 'Kim Chi', avatar: 'https://i.pravatar.cc/80?img=18', text: 'Da trắng sáng, mặc đồ màu gì cũng xinh. Rất hài lòng về sản phẩm.' },
+            { name: 'Lan Phương', avatar: 'https://i.pravatar.cc/80?img=19', text: 'Sản phẩm có thành phần từ thiên nhiên nên mình rất yên tâm sử dụng. Hiệu quả tuyệt vời.' },
+            { name: 'Mỹ Duyên', avatar: 'https://i.pravatar.cc/80?img=20', text: 'Da mình trắng lên rõ rệt sau khi dùng hết 1 hũ. Đã đặt thêm hũ thứ 2 để duy trì.' },
+            { name: 'Trà My', avatar: 'https://i.pravatar.cc/80?img=21', text: 'Kem thấm nhanh, không lộ vân kem, mặc quần áo không bị dính. Rất chuyên nghiệp.' },
+            { name: 'Thùy Dương', avatar: 'https://i.pravatar.cc/80?img=22', text: 'Da mình đều màu hơn, những vùng da sạm như khuỷu tay, đầu gối cũng sáng lên.' },
+            { name: 'Ngọc Hà', avatar: 'https://i.pravatar.cc/80?img=23', text: 'Được bạn giới thiệu, dùng thử và mê luôn. Da trắng mịn, ai cũng khen.' },
+            { name: 'Vân Khánh', avatar: 'https://i.pravatar.cc/80?img=24', text: 'Kem dưỡng trắng tốt nhất mình từng dùng. Chắc chắn sẽ giới thiệu cho bạn bè.' },
+            { name: 'Tú Anh', avatar: 'https://i.pravatar.cc/80?img=25', text: 'Da trắng hồng rạng rỡ, không phải kiểu trắng ảo. Rất thích hợp cho ai muốn dưỡng trắng an toàn.' },
+            { name: 'Hoài An', avatar: 'https://i.pravatar.cc/80?img=26', text: 'Dùng được 3 tuần da đã thấy sự khác biệt. Mềm mại và sáng hơn rất nhiều.' },
+            { name: 'Linh Chi', avatar: 'https://i.pravatar.cc/80?img=27', text: 'Mùi hương của kem rất sang, lưu hương lâu trên da. Vừa dưỡng da vừa như xịt nước hoa.' },
+            { name: 'Thanh Hằng', avatar: 'https://i.pravatar.cc/80?img=28', text: 'Đóng gói sản phẩm cẩn thận, đẹp mắt. Mở hộp ra đã thấy sự chuyên nghiệp của shop.' },
+            { name: 'Bảo Châu', avatar: 'https://i.pravatar.cc/80?img=29', text: 'Kem giúp da mình phục hồi sau khi đi biển về. Da nhả nắng nhanh và không bị sạm đen.' },
+            { name: 'Hương Giang', avatar: 'https://i.pravatar.cc/80?img=30', text: 'Sản phẩm này là cứu tinh cho làn da ngăm của mình. Giờ đã tự tin hơn rất nhiều.' },
+            { name: 'Thu Trang', avatar: 'https://i.pravatar.cc/80?img=31', text: 'Chất lượng vượt xa giá tiền. Dùng rất tiết kiệm, một hũ to dùng được khá lâu.' },
+            { name: 'Ngọc Trâm', avatar: 'https://i.pravatar.cc/80?img=32', text: 'Da trắng sáng, mịn màng, chạm vào rất thích. Chồng mình cũng khen.' },
+            { name: 'Kiều Anh', avatar: 'https://i.pravatar.cc/80?img=33', text: 'Mình đã thử nhiều loại nhưng cuối cùng vẫn quay về với em này. Chân ái cho làn da trắng.' },
+            { name: 'Thục Quyên', avatar: 'https://i.pravatar.cc/80?img=34', text: 'Kem không chỉ làm trắng mà còn cấp ẩm rất tốt. Da mình không còn bị bong tróc nữa.' },
+            { name: 'Mỹ Tâm', avatar: 'https://i.pravatar.cc/80?img=35', text: 'Hiệu quả làm trắng nhanh nhưng không hề gây hại cho da. Mình đã kiểm tra thành phần, rất an toàn.' },
+            { name: 'Tố Như', avatar: 'https://i.pravatar.cc/80?img=36', text: 'Da mình trắng lên một cách tự nhiên, nhìn rất khỏe mạnh. Rất hài lòng.' },
+            { name: 'Đan Lê', avatar: 'https://i.pravatar.cc/80?img=37', text: 'Sản phẩm tốt, shop uy tín. Sẽ tiếp tục ủng hộ shop trong tương lai.' },
+            { name: 'Huyền Trang', avatar: 'https://i.pravatar.cc/80?img=38', text: 'Kem body này đã thay đổi làn da của mình. Cảm ơn Trúc Đào Cosmetics.' },
+            { name: 'Thanh Mai', avatar: 'https://i.pravatar.cc/80?img=39', text: 'Da trắng sáng giúp mình dễ phối đồ hơn. Cảm thấy yêu đời hơn hẳn.' },
+            { name: 'Bảo Thy', avatar: 'https://i.pravatar.cc/80?img=40', text: 'Mình dùng đều đặn mỗi tối, sau 1 tháng da đã bật tone thấy rõ. Rất đáng để đầu tư.' },
+            { name: 'Cẩm Tú', avatar: 'https://i.pravatar.cc/80?img=41', text: 'Kem có kết cấu mềm mượt như sữa chua, thoa lên da rất dễ chịu.' },
+            { name: 'Diệu Linh', avatar: 'https://i.pravatar.cc/80?img=42', text: 'Da mình không chỉ trắng mà còn giảm hẳn các đốm nâu. Rất bất ngờ về hiệu quả.' },
+            { name: 'Hải Yến', avatar: 'https://i.pravatar.cc/80?img=43', text: 'Sản phẩm chất lượng, hiệu quả thật sự. Không uổng công mình tin tưởng.' },
+            { name: 'Khả Ngân', avatar: 'https://i.pravatar.cc/80?img=44', text: 'Da trắng mịn không tì vết là có thật. Cảm ơn shop đã mang đến sản phẩm tuyệt vời.' },
+            { name: 'Lệ Quyên', avatar: 'https://i.pravatar.cc/80?img=45', text: 'Mình rất kỹ tính trong việc chọn mỹ phẩm, nhưng sản phẩm này đã hoàn toàn chinh phục mình.' },
+            { name: 'Nhật Lệ', avatar: 'https://i.pravatar.cc/80?img=46', text: 'Da sáng và khỏe hơn từng ngày. Mình cảm nhận được sự thay đổi tích cực.' },
+            { name: 'Thúy Ngân', avatar: 'https://i.pravatar.cc/80?img=47', text: 'Kem không bắt nắng, mình dùng kết hợp kem chống nắng thấy da được bảo vệ rất tốt.' },
+            { name: 'Uyên Linh', avatar: 'https://i.pravatar.cc/80?img=48', text: 'Một sản phẩm không thể thiếu trong chu trình dưỡng da của mình. Yêu em nó lắm.' },
+            { name: 'Xuân Nghi', avatar: 'https://i.pravatar.cc/80?img=49', text: 'Da trắng bật tone, mình tự tin hơn khi giao tiếp với mọi người. Cảm ơn shop.' },
+            { name: 'Tường Vy', avatar: 'https://i.pravatar.cc/80?img=50', text: 'Đã giới thiệu cho cả hội bạn thân cùng dùng. Ai cũng khen nức nở. Shop cho em xin hoa hồng nhé!'}
+        ];
+
+        function renderTestimonials() {
+            const slider = document.getElementById('testimonial-slider');
+            if (!slider) return;
+            slider.innerHTML = '';
+            testimonials.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'testimonial-card';
+                card.innerHTML = `
+                    <img src="${item.avatar}" alt="${item.name}" class="testimonial-avatar">
+                    <div class="product-rating">
+                        <div class="rating-stars" style="justify-content: center;">
+                            <i class="fas fa-star rating-star filled"></i>
+                            <i class="fas fa-star rating-star filled"></i>
+                            <i class="fas fa-star rating-star filled"></i>
+                            <i class="fas fa-star rating-star filled"></i>
+                            <i class="fas fa-star rating-star filled"></i>
+                        </div>
+                    </div>
+                    <p class="testimonial-text">"${item.text}"</p>
+                    <h4 class="testimonial-name">${item.name}</h4>
+                `;
+                slider.appendChild(card);
+            });
+        }
+
+        function initTestimonialSlider() {
+            const slider = document.getElementById('testimonial-slider');
+            if (!slider) return;
+
+            // Clone items for infinite loop effect
+            const originalItems = slider.innerHTML;
+            slider.innerHTML += originalItems; // Duplicate for seamless loop
+
+            // Pause animation on hover
+            const sliderContainer = document.querySelector('.testimonial-slider-container');
+            if (sliderContainer) {
+                sliderContainer.addEventListener('mouseenter', () => slider.style.animationPlayState = 'paused');
+                sliderContainer.addEventListener('mouseleave', () => slider.style.animationPlayState = 'running');
+            }
+        }
+
         // Khởi tạo
         document.addEventListener('DOMContentLoaded', function() {
             // Khởi tạo các tính năng mới
             initAdminPanelResize();
             initAdminCustomization();
+            renderTestimonials(); // Phải render trước khi khởi tạo slider
+            initTestimonialSlider();
+            initQuickView();
             preventZoom();
             
+            // NEW: Initialize Admin Tabs
+            openTab({
+                id: 'dashboard',
+                title: 'Dashboard',
+                content: document.getElementById('tab-pane-dashboard').innerHTML
+            });
             // Hide preloader
             setTimeout(function() {
                 document.getElementById('preloader').style.opacity = '0';
@@ -3659,12 +4169,15 @@
                 }, 500);
             }, 1000);
             
-            updateVisitorCountAPI();
-            loadProductsFromAPI();
-            loadMessagesFromAPI();
-            loadOrdersFromAPI();
-            loadStatisticsFromAPI();
-            updateAnalytics();
+            // Tải dữ liệu mẫu thay vì gọi API
+            updateProductDisplay();
+            // renderProductsInAdmin(); // Called by openTab
+            // updateMessagesInAdmin(); // Called by openTab
+            // updateOrdersInAdmin(); // Called by openTab
+            // updateDashboardOrders(); // Part of dashboard tab
+            // updateDashboardMessages(); // Part of dashboard tab
+            // loadStatisticsFromAPI(); // Part of dashboard tab
+            // updateAnalytics(); // Called by openTab
             updateCartCount();
             renderCartItems();
             updateWishlistCount();
@@ -3768,7 +4281,7 @@
             // Product filters
             const applyFiltersBtn = document.getElementById('apply-filters');
             const resetFiltersBtn = document.getElementById('reset-filters');
-            
+
             applyFiltersBtn.addEventListener('click', function() {
                 // In a real app, this would filter products
                 showNotification('Bộ lọc đã được áp dụng!', 'success');
@@ -3781,7 +4294,194 @@
                 });
                 showNotification('Bộ lọc đã được đặt lại!', 'success');
             });
+
+            // Price slider functionality
+            const priceSlider = document.getElementById('price-slider');
+            const maxPriceDisplay = document.getElementById('max-price');
+            if (priceSlider) {
+                maxPriceDisplay.textContent = formatPrice(parseInt(priceSlider.value));
+                priceSlider.addEventListener('input', function() {
+                    maxPriceDisplay.textContent = formatPrice(parseInt(this.value));
+                });
+            }
+
+            // Hero Slider functionality
+            const sliderWrapper = document.querySelector('.slider-wrapper');
+            const slides = document.querySelectorAll('.slide');
+            const dotsContainer = document.getElementById('slider-dots');
+            const prevBtn = document.getElementById('prev-slide');
+            const nextBtn = document.getElementById('next-slide');
+            let currentSlide = 0;
+            let slideInterval;
+
+            function goToSlide(slideIndex) {
+                slides.forEach(s => s.classList.remove('active'));
+                slides[slideIndex].classList.add('active');
+                sliderWrapper.style.transform = `translateX(-${slideIndex * 100}%)`;
+                
+                document.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
+                document.querySelector(`.dot[data-slide="${slideIndex}"]`).classList.add('active');
+
+                currentSlide = slideIndex;
+            }
+
+            function nextSlide() {
+                const nextSlideIndex = (currentSlide + 1) % slides.length;
+                goToSlide(nextSlideIndex);
+            }
+
+            function prevSlide() {
+                const prevSlideIndex = (currentSlide - 1 + slides.length) % slides.length;
+                goToSlide(prevSlideIndex);
+            }
+
+            function startSlider() {
+                slideInterval = setInterval(nextSlide, 5000); // Change slide every 5 seconds
+            }
+
+            // Create dots
+            slides.forEach((_, index) => {
+                const dot = document.createElement('div');
+                dot.classList.add('dot');
+                dot.dataset.slide = index;
+                if (index === 0) dot.classList.add('active');
+                dot.addEventListener('click', () => {
+                    goToSlide(index);
+                    clearInterval(slideInterval);
+                    startSlider();
+                });
+                dotsContainer.appendChild(dot);
+            });
+
+            nextBtn.addEventListener('click', nextSlide);
+            prevBtn.addEventListener('click', prevSlide);
+
+            startSlider();
+
+            // NEW: Parallax effect for hero image on mouse move
+            const heroSlider = document.getElementById('hero-slider');
+            heroSlider.addEventListener('mousemove', function(e) {
+                const activeSlide = heroSlider.querySelector('.slide.active');
+                if (!activeSlide) return;
+
+                const heroImage = activeSlide.querySelector('.hero-image');
+                const rect = heroSlider.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                const moveX = (x - rect.width / 2) / 40; // Chia 40 để giảm độ dịch chuyển
+                const moveY = (y - rect.height / 2) / 40;
+
+                // heroImage.style.transform = `translateX(${moveX}px) translateY(${moveY}px) scale(1)`;
+            });
         });
+
+        // ==================== NEW: ADMIN MULTI-TAB ====================
+
+        function openTab({ id, title, content, onRender }) {
+            // Check if tab is already open
+            const existingTab = openTabs.find(tab => tab.id === id);
+            if (existingTab) {
+                switchTab(id);
+                return;
+            }
+
+            // Create new tab pane
+            const contentContainer = document.getElementById('admin-content-container');
+            const newPane = document.createElement('div');
+            newPane.className = 'tab-pane';
+            newPane.id = `tab-pane-${id}`;
+            newPane.innerHTML = content;
+            contentContainer.appendChild(newPane);
+
+            // Add to state
+            openTabs.push({ id, title, onRender });
+
+            renderTabs();
+            switchTab(id);
+
+            // Execute onRender callback if provided
+            if (onRender) {
+                onRender(newPane);
+            }
+        }
+
+        function switchTab(tabId) {
+            activeTabId = tabId;
+
+            // Deactivate all tabs and panes
+            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+
+            // Activate the correct one
+            const tabElement = document.querySelector(`.admin-tab[data-id="${tabId}"]`);
+            const paneElement = document.getElementById(`tab-pane-${tabId}`);
+
+            if (tabElement) tabElement.classList.add('active');
+            if (paneElement) paneElement.classList.add('active');
+        }
+
+        function closeTab(tabId, event) {
+            event.stopPropagation(); // Prevent switchTab from firing
+
+            const tabIndex = openTabs.findIndex(tab => tab.id === tabId);
+            if (tabIndex === -1) return;
+
+            // Remove from state
+            openTabs.splice(tabIndex, 1);
+
+            // Remove from DOM
+            const tabElement = document.querySelector(`.admin-tab[data-id="${tabId}"]`);
+            const paneElement = document.getElementById(`tab-pane-${tabId}`);
+            if (tabElement) tabElement.remove();
+            if (paneElement) paneElement.remove();
+
+            // If the closed tab was active, switch to another tab
+            if (activeTabId === tabId) {
+                if (openTabs.length > 0) {
+                    // Switch to the previous tab or the first one
+                    const newActiveIndex = Math.max(0, tabIndex - 1);
+                    switchTab(openTabs[newActiveIndex].id);
+                } else {
+                    activeTabId = null;
+                }
+            }
+
+            renderTabs(); // Re-render to be safe
+        }
+
+        function renderTabs() {
+            const tabsBar = document.getElementById('admin-tabs-bar');
+            tabsBar.innerHTML = '';
+
+            openTabs.forEach(tab => {
+                const tabElement = document.createElement('div');
+                tabElement.className = 'admin-tab';
+                tabElement.dataset.id = tab.id;
+                tabElement.innerHTML = `
+                    <span>${tab.title}</span>
+                    ${tab.id !== 'dashboard' ? '<i class="fas fa-times" style="margin-left: 10px; font-size: 0.8em; padding: 4px; border-radius: 50%;" onmouseover="this.style.background=\'#ddd\'" onmouseout="this.style.background=\'none\'"></i>' : ''}
+                `;
+
+                tabElement.addEventListener('click', () => switchTab(tab.id));
+                
+                const closeButton = tabElement.querySelector('.fa-times');
+                if (closeButton) {
+                    closeButton.addEventListener('click', (e) => closeTab(tab.id, e));
+                }
+
+                tabsBar.appendChild(tabElement);
+            });
+
+            // Re-apply active state
+            if (activeTabId) {
+                const activeTabElement = document.querySelector(`.admin-tab[data-id="${activeTabId}"]`);
+                if (activeTabElement) {
+                    activeTabElement.classList.add('active');
+                }
+            }
+        }
+
 
         // ==================== CÁC HÀM CŨ (giữ nguyên) ====================
         
@@ -4029,13 +4729,14 @@
 
         // Cart functionality
         function addToCart(id, name, price, image) {
-            const existingItem = cart.find(item => item.id === id);
+            const productId = parseInt(id);
+            const existingItem = cart.find(item => item.id === productId);
             
             if (existingItem) {
                 existingItem.quantity += 1;
             } else {
                 cart.push({
-                    id: id,
+                    id: productId,
                     name: name,
                     price: price,
                     image: image,
@@ -4098,21 +4799,21 @@
             // Add event listeners for quantity buttons
             document.querySelectorAll('.quantity-btn.minus').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    const productId = this.getAttribute('data-id');
+                    const productId = parseInt(this.getAttribute('data-id'));
                     updateQuantity(productId, -1);
                 });
             });
             
             document.querySelectorAll('.quantity-btn.plus').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    const productId = this.getAttribute('data-id');
+                    const productId = parseInt(this.getAttribute('data-id'));
                     updateQuantity(productId, 1);
                 });
             });
             
             document.querySelectorAll('.quantity-input').forEach(input => {
                 input.addEventListener('change', function() {
-                    const productId = this.getAttribute('data-id');
+                    const productId = parseInt(this.getAttribute('data-id'));
                     const newQuantity = parseInt(this.value);
                     if (newQuantity < 1) {
                         this.value = 1;
@@ -4131,7 +4832,8 @@
         }
         
         function updateQuantity(productId, change, setQuantity = null) {
-            const item = cart.find(item => item.id === productId);
+            const id = parseInt(productId);
+            const item = cart.find(item => item.id === id);
             if (item) {
                 if (setQuantity !== null) {
                     item.quantity = setQuantity;
@@ -4140,7 +4842,7 @@
                 }
                 
                 if (item.quantity < 1) {
-                    cart = cart.filter(item => item.id !== productId);
+                    cart = cart.filter(item => item.id !== id);
                 }
                 
                 localStorage.setItem('cart', JSON.stringify(cart));
@@ -4439,7 +5141,10 @@
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             
-            if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+            // Băm mật khẩu người dùng nhập vào và so sánh với chuỗi hash đã lưu
+            const enteredPasswordHash = sha256(password);
+
+            if (username === ADMIN_USERNAME && enteredPasswordHash === ADMIN_PASSWORD_HASH) {
                 document.getElementById('login-modal').style.display = 'none';
                 localStorage.setItem('adminLoggedIn', 'true');
                 showNotification('Đăng nhập admin thành công!', 'success');
@@ -4447,6 +5152,9 @@
                 // Show admin panel in navigation
                 document.getElementById('admin-nav-desktop').style.display = 'block';
                 document.getElementById('admin-nav-mobile').style.display = 'block';
+
+                // Show customization panel
+                document.getElementById('admin-customization').style.display = 'block';
                 
                 // Clear form
                 document.getElementById('username').value = '';
@@ -4481,6 +5189,7 @@
         if (localStorage.getItem('adminLoggedIn') === 'true') {
             document.getElementById('admin-nav-desktop').style.display = 'block';
             document.getElementById('admin-nav-mobile').style.display = 'block';
+            document.getElementById('admin-customization').style.display = 'block';
         }
         
         adminPanelLink.addEventListener('click', (e) => {
@@ -4505,34 +5214,41 @@
         // Tab switching
         adminNavItems.forEach(item => {
             item.addEventListener('click', () => {
-                const tabId = item.getAttribute('data-tab');
-                
-                // Update active tab
-                adminNavItems.forEach(t => t.classList.remove('active'));
-                item.classList.add('active');
-                
-                // Update active content
-                adminContents.forEach(content => {
-                    content.classList.remove('active');
-                    if (content.id === `${tabId}-tab`) {
-                        content.classList.add('active');
-                    }
-                });
-                
-                // Refresh data if needed
-                if (tabId === 'messages') {
-                    loadMessagesFromAPI();
-                } else if (tabId === 'analytics') {
-                    updateAnalytics();
-                } else if (tabId === 'products') {
-                    loadProductsFromAPI();
-                } else if (tabId === 'orders') {
-                    loadOrdersFromAPI();
-                } else if (tabId === 'dashboard') {
-                    loadStatisticsFromAPI();
-                    loadOrdersFromAPI();
-                    loadMessagesFromAPI();
+                const mainTabId = item.getAttribute('data-tab');
+                const tabTitle = item.querySelector('.admin-nav-label').textContent;
+                const initialContent = document.getElementById(`tab-pane-${mainTabId}`).innerHTML;
+
+                let onRenderCallback = null;
+
+                switch(mainTabId) {
+                    case 'products':
+                        onRenderCallback = () => {
+                            loadProductsFromAPI().then(renderProductsInAdmin);
+                        };
+                        break;
+                    case 'orders':
+                        onRenderCallback = () => {
+                            loadOrdersFromAPI().then(updateOrdersInAdmin);
+                        };
+                        break;
+                    case 'messages':
+                        onRenderCallback = () => {
+                            loadMessagesFromAPI().then(updateMessagesInAdmin);
+                        };
+                        break;
+                    case 'analytics':
+                        onRenderCallback = updateAnalytics;
+                        break;
+                    case 'dashboard':
+                        onRenderCallback = () => {
+                            loadStatisticsFromAPI();
+                            loadOrdersFromAPI().then(updateDashboardOrders);
+                            loadMessagesFromAPI().then(updateDashboardMessages);
+                        };
+                        break;
                 }
+
+                openTab({ id: mainTabId, title: tabTitle, content: initialContent, onRender: onRenderCallback });
             });
         });
         
@@ -4540,6 +5256,7 @@
         function renderProductsInAdmin() {
             const productList = document.getElementById('admin-product-list');
             productList.innerHTML = '';
+            if (!productList) return; // Guard against non-existent element in a tab
             
             if (products.length === 0) {
                 productList.innerHTML = `
@@ -4586,14 +5303,14 @@
             document.querySelectorAll('.edit-product').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const productId = this.getAttribute('data-id');
-                    editProduct(productId);
+                    openEditProductTab(productId);
                 });
             });
             
             document.querySelectorAll('.delete-product').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const productId = this.getAttribute('data-id');
-                    deleteProduct(productId);
+                    deleteProduct(productId); // This action doesn't need a new tab
                 });
             });
         }
@@ -4875,56 +5592,75 @@
 
         // Initialize quick view
         initQuickView();
-        
+
         // Add new product
-        document.getElementById('add-product-btn').addEventListener('click', function() {
-            document.getElementById('product-form-title').textContent = 'Thêm sản phẩm mới';
-            document.getElementById('product-form').style.display = 'block';
-            document.getElementById('edit-product-name').value = '';
-            document.getElementById('edit-product-category').value = 'Son môi';
-            document.getElementById('edit-product-original-price').value = '';
-            document.getElementById('edit-product-sale-price').value = '';
-            document.getElementById('edit-product-image-url').value = '';
-            document.getElementById('image-preview').style.display = 'none';
-            document.getElementById('edit-product-description').value = '';
-            
-            document.getElementById('save-product-btn').removeAttribute('data-id');
-            
-            // Scroll to form
-            document.getElementById('product-form').scrollIntoView({ behavior: 'smooth' });
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.id === 'add-product-btn') {
+                openEditProductTab(null); // Open tab for new product
+            }
         });
         
         // Edit product
-        function editProduct(productId) {
-            const product = products.find(p => p.id == productId);
-            if (product) {
-                document.getElementById('product-form-title').textContent = 'Sửa sản phẩm';
-                document.getElementById('product-form').style.display = 'block';
-                document.getElementById('edit-product-name').value = product.name;
-                document.getElementById('edit-product-category').value = product.category;
-                document.getElementById('edit-product-original-price').value = product.originalPrice;
-                document.getElementById('edit-product-sale-price').value = product.salePrice;
-                document.getElementById('edit-product-image-url').value = product.image;
-                document.getElementById('edit-product-description').value = product.description || '';
-                
-                // Show image preview
-                const preview = document.getElementById('image-preview');
-                preview.src = product.image;
-                preview.style.display = 'block';
-                
-                document.getElementById('save-product-btn').setAttribute('data-id', productId);
-                
-                // Scroll to form
-                document.getElementById('product-form').scrollIntoView({ behavior: 'smooth' });
-            }
+        function openEditProductTab(productId) {
+            const isNew = productId === null;
+            const tabId = isNew ? 'product-new' : `product-edit-${productId}`;
+            const product = isNew ? {} : products.find(p => p.id == parseInt(productId));
+            if (!isNew && !product) return;
+
+            const tabTitle = isNew ? 'Thêm sản phẩm' : `Sửa: ${product.name.substring(0, 15)}...`;
+            const formContent = document.getElementById('product-form').innerHTML;
+
+            openTab({
+                id: tabId,
+                title: tabTitle,
+                content: `<div class="admin-form">${formContent}</div>`,
+                onRender: (pane) => {
+                    const titleEl = pane.querySelector('#product-form-title');
+                    const nameEl = pane.querySelector('#edit-product-name');
+                    const categoryEl = pane.querySelector('#edit-product-category');
+                    const originalPriceEl = pane.querySelector('#edit-product-original-price');
+                    const salePriceEl = pane.querySelector('#edit-product-sale-price');
+                    const imageUrlEl = pane.querySelector('#edit-product-image-url');
+                    const imagePreviewEl = pane.querySelector('#image-preview');
+                    const descriptionEl = pane.querySelector('#edit-product-description');
+                    const saveBtn = pane.querySelector('#save-product-btn');
+
+                    titleEl.textContent = isNew ? 'Thêm sản phẩm mới' : 'Sửa sản phẩm';
+                    nameEl.value = product.name || '';
+                    categoryEl.value = product.category || 'Son môi';
+                    originalPriceEl.value = product.originalPrice || '';
+                    salePriceEl.value = product.salePrice || '';
+                    imageUrlEl.value = product.image || '';
+                    descriptionEl.value = product.description || '';
+
+                    if (product.image) {
+                        imagePreviewEl.src = product.image;
+                        imagePreviewEl.style.display = 'block';
+                    }
+
+                    if (isNew) {
+                        saveBtn.removeAttribute('data-id');
+                    } else {
+                        saveBtn.setAttribute('data-id', productId);
+                    }
+
+                    pane.querySelector('#cancel-product-btn').addEventListener('click', () => {
+                        closeTab(tabId, new Event('click'));
+                    });
+                }
+            });
         }
         
         // Delete product
         async function deleteProduct(productId) {
-            if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
+            if (confirm(`Bạn có chắc chắn muốn xóa sản phẩm có ID: ${productId}?`)) {
                 const success = await deleteProductFromAPI(productId);
                 if (success) {
-                    await loadProductsFromAPI();
+                    // Reload product list if it's open
+                    const productsTab = document.getElementById('tab-pane-products');
+                    if (productsTab) {
+                        loadProductsFromAPI().then(renderProductsInAdmin);
+                    }
                     showNotification('✅ Sản phẩm đã được xóa khỏi database!', 'success');
                 } else {
                     showNotification('❌ Lỗi khi xóa sản phẩm!', 'error');
@@ -4933,14 +5669,16 @@
         }
         
         // Save product
-        document.getElementById('save-product-btn').addEventListener('click', async function() {
-            const productId = this.getAttribute('data-id');
-            const name = document.getElementById('edit-product-name').value;
-            const category = document.getElementById('edit-product-category').value;
-            const originalPrice = parseInt(document.getElementById('edit-product-original-price').value);
-            const salePrice = parseInt(document.getElementById('edit-product-sale-price').value);
-            const image = document.getElementById('edit-product-image-url').value;
-            const description = document.getElementById('edit-product-description').value;
+        document.addEventListener('click', async function(e) {
+            if (e.target && e.target.id === 'save-product-btn') {
+                const form = e.target.closest('.admin-form');
+                const productId = e.target.getAttribute('data-id');
+                const name = form.querySelector('#edit-product-name').value;
+                const category = form.querySelector('#edit-product-category').value;
+                const originalPrice = parseInt(form.querySelector('#edit-product-original-price').value);
+                const salePrice = parseInt(form.querySelector('#edit-product-sale-price').value);
+                const image = form.querySelector('#edit-product-image-url').value;
+                const description = form.querySelector('#edit-product-description').value;
             
             if (name && category && originalPrice && salePrice && image) {
                 const productData = {
@@ -4958,25 +5696,29 @@
                 
                 const result = await saveProductToAPI(productData);
                 if (result) {
-                    await loadProductsFromAPI();
-                    document.getElementById('product-form').style.display = 'none';
+                    // Close current tab and refresh product list tab
+                    const currentTabId = e.target.closest('.tab-pane').id.replace('tab-pane-', '');
+                    closeTab(currentTabId, new Event('click'));
+                    
+                    const productsTab = document.getElementById('tab-pane-products');
+                    if (productsTab) {
+                        loadProductsFromAPI().then(renderProductsInAdmin);
+                    }
+
                     showNotification('✅ Sản phẩm đã được lưu thành công vào database!', 'success');
                 } else {
                     showNotification('❌ Lỗi khi lưu sản phẩm!', 'error');
                 }
             } else {
                 showNotification('⚠️ Vui lòng điền đầy đủ thông tin sản phẩm!', 'error');
+            } 
             }
-        });
-        
-        // Cancel product form
-        document.getElementById('cancel-product-btn').addEventListener('click', function() {
-            document.getElementById('product-form').style.display = 'none';
         });
         
         // Update orders in admin
         function updateOrdersInAdmin() {
             const ordersList = document.getElementById('admin-orders-list');
+            if (!ordersList) return;
             ordersList.innerHTML = '';
             
             if (orders.length === 0) {
@@ -5047,8 +5789,8 @@
             
             document.querySelectorAll('.view-order').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    const orderId = this.getAttribute('data-id');
-                    viewOrderDetails(orderId);
+                    const orderId = parseInt(this.getAttribute('data-id'));
+                    openOrderDetailsTab(orderId);
                 });
             });
         }
@@ -5056,6 +5798,7 @@
         // Update messages in admin
         function updateMessagesInAdmin() {
             const messageList = document.getElementById('admin-message-list');
+            if (!messageList) return;
             messageList.innerHTML = '';
             
             if (messages.length === 0) {
@@ -5248,7 +5991,8 @@
         // Update dashboard
         function updateDashboardStats(stats) {
             if (!stats) return;
-            
+            const dashboardPane = document.getElementById('tab-pane-dashboard');
+            if (!dashboardPane) return;
             document.getElementById('total-orders-count').textContent = stats.totalOrders || 0;
             document.getElementById('total-revenue').textContent = formatPrice(stats.totalRevenue || 0);
             document.getElementById('total-customers-count').textContent = stats.uniqueCustomers || 0;
@@ -5257,6 +6001,7 @@
         
         function updateDashboardOrders() {
             const recentOrdersTable = document.getElementById('recent-orders-table');
+            if (!recentOrdersTable) return;
             recentOrdersTable.innerHTML = '';
             
             // Get recent orders (last 5)
@@ -5295,7 +6040,7 @@
             document.querySelectorAll('.view-order').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const orderId = this.getAttribute('data-id');
-                    viewOrderDetails(orderId);
+                    openOrderDetailsTab(orderId);
                 });
             });
         }
@@ -5303,7 +6048,8 @@
         function updateDashboardMessages() {
             const recentMessagesList = document.getElementById('recent-messages-list');
             recentMessagesList.innerHTML = '';
-            
+            if (!recentMessagesList) return;
+
             // Get recent messages (last 5)
             const recentMessages = [...messages]
                 .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
@@ -5334,30 +6080,16 @@
         }
         
         // View order details
-        function viewOrderDetails(orderId) {
-            const order = orders.find(o => o.id == orderId);
+        function openOrderDetailsTab(orderId) {
+            const order = orders.find(o => o.id == parseInt(orderId));
             if (!order) return;
-            
-            // Create order details modal
-            const modal = document.createElement('div');
-            modal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0,0,0,0.5);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 3000;
-            `;
-            
-            modal.innerHTML = `
-                <div style="background: white; width: 90%; max-width: 700px; max-height: 80%; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column;">
+
+            const tabId = `order-details-${orderId}`;
+            const tabTitle = `Đơn #${orderId}`;
+            const content = `
+                <div style="background: white; width: 100%; height: 100%; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column;">
                     <div style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: between; align-items: center;">
                         <h3 style="margin: 0;">Chi tiết đơn hàng #${order.id}</h3>
-                        <button class="close-order-details" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
                     </div>
                     <div style="flex: 1; overflow-y: auto; padding: 20px;">
                         <div style="margin-bottom: 20px;">
@@ -5411,62 +6143,51 @@
                             <button class="btn btn-success confirm-order-details" data-id="${order.id}">Xác nhận</button>
                             <button class="btn btn-danger cancel-order-details" data-id="${order.id}">Hủy</button>
                         ` : ''}
-                        <button class="btn btn-secondary close-order-details-btn">Đóng</button>
                     </div>
                 </div>
             `;
-            
-            document.body.appendChild(modal);
-            
-            // Close modal
-            const closeBtn = modal.querySelector('.close-order-details');
-            const closeBtn2 = modal.querySelector('.close-order-details-btn');
-            
-            closeBtn.addEventListener('click', () => {
-                document.body.removeChild(modal);
-            });
-            
-            closeBtn2.addEventListener('click', () => {
-                document.body.removeChild(modal);
-            });
-            
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    document.body.removeChild(modal);
+
+            openTab({
+                id: tabId,
+                title: tabTitle,
+                content: content,
+                onRender: (pane) => {
+                    // Confirm order
+                    const confirmBtn = pane.querySelector('.confirm-order-details');
+                    if (confirmBtn) {
+                        confirmBtn.addEventListener('click', async () => {
+                            const success = await updateOrderStatus(order.id, 'completed');
+                            if (success) {
+                                closeTab(tabId, new Event('click'));
+                                showNotification('✅ Đơn hàng đã được xác nhận!', 'success');
+                            } else {
+                                showNotification('❌ Lỗi khi xác nhận đơn hàng!', 'error');
+                            }
+                        });
+                    }
+                    
+                    // Cancel order
+                    const cancelBtn = pane.querySelector('.cancel-order-details');
+                    if (cancelBtn) {
+                        cancelBtn.addEventListener('click', async () => {
+                            const success = await updateOrderStatus(order.id, 'cancelled');
+                            if (success) {
+                                closeTab(tabId, new Event('click'));
+                                showNotification('✅ Đơn hàng đã được hủy!', 'success');
+                            } else {
+                                showNotification('❌ Lỗi khi hủy đơn hàng!', 'error');
+                            }
+                        });
+                    }
                 }
             });
-            
-            // Confirm order
-            const confirmBtn = modal.querySelector('.confirm-order-details');
-            if (confirmBtn) {
-                confirmBtn.addEventListener('click', async () => {
-                    const success = await updateOrderStatus(order.id, 'completed');
-                    if (success) {
-                        document.body.removeChild(modal);
-                        showNotification('✅ Đơn hàng đã được xác nhận!', 'success');
-                    } else {
-                        showNotification('❌ Lỗi khi xác nhận đơn hàng!', 'error');
-                    }
-                });
-            }
-            
-            // Cancel order
-            const cancelBtn = modal.querySelector('.cancel-order-details');
-            if (cancelBtn) {
-                cancelBtn.addEventListener('click', async () => {
-                    const success = await updateOrderStatus(order.id, 'cancelled');
-                    if (success) {
-                        document.body.removeChild(modal);
-                        showNotification('✅ Đơn hàng đã được hủy!', 'success');
-                    } else {
-                        showNotification('❌ Lỗi khi hủy đơn hàng!', 'error');
-                    }
-                });
-            }
         }
         
         // Update analytics
         function updateAnalytics() {
+            const analyticsPane = document.getElementById('tab-pane-analytics');
+            if (!analyticsPane) return;
+
             document.getElementById('total-visitors').textContent = visitors.total.toLocaleString();
             document.getElementById('today-visitors').textContent = visitors.today.toLocaleString();
             document.getElementById('total-products-count').textContent = products.length;
@@ -5523,6 +6244,7 @@
                 localStorage.removeItem('adminLoggedIn');
                 document.getElementById('admin-nav-desktop').style.display = 'none';
                 document.getElementById('admin-nav-mobile').style.display = 'none';
+                document.getElementById('admin-customization').style.display = 'none';
                 adminPanel.classList.remove('active');
                 showNotification('Đã đăng xuất khỏi admin!', 'success');
             }
