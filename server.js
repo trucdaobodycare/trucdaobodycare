@@ -1,5 +1,9 @@
 const express = require('express');
 const path = require('path');
+// Load environment variables from .env file in development
+if (process.env.NODE_ENV !== 'production') {
+    require('dotenv').config();
+}
 const http = require('http');
 const mongoose = require('mongoose');
 const compression = require('compression');
@@ -23,6 +27,11 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://username:password@
 
 console.log('🚀 Environment:', isProduction ? 'production' : 'development');
 console.log('📍 Port:', PORT);
+
+if (isProduction && JWT_SECRET === 'trucdao-cosmetics-secret-key-2024') {
+    console.warn('🚨 WARNING: Using default JWT_SECRET in production. Please set a strong, unique secret in your environment variables.');
+}
+
 
 // ==================== MONGODB MODELS ====================
 
@@ -95,6 +104,16 @@ const messageSchema = new mongoose.Schema({
 
 const Message = mongoose.model('Message', messageSchema);
 
+// Constants for Order statuses
+const ORDER_STATUSES = {
+    PENDING: 'pending',
+    CONFIRMED: 'confirmed',
+    PROCESSING: 'processing',
+    SHIPPING: 'shipping',
+    DELIVERED: 'delivered',
+    CANCELLED: 'cancelled',
+    REFUNDED: 'refunded'
+};
 // Order Model
 const orderSchema = new mongoose.Schema({
     orderNumber: { type: String, unique: true },
@@ -114,7 +133,7 @@ const orderSchema = new mongoose.Schema({
     subtotal: { type: Number, required: true },
     shippingFee: { type: Number, default: 30000 },
     totalAmount: { type: Number, required: true },
-    status: { type: String, default: 'pending' }, // pending, confirmed, processing, shipping, delivered, cancelled, refunded
+    status: { type: String, default: ORDER_STATUSES.PENDING, enum: Object.values(ORDER_STATUSES) },
     paymentMethod: { type: String, default: 'bank_transfer' },
     paymentStatus: { type: String, default: 'pending' }, // pending, paid, failed, refunded
     paymentScreenshot: { type: String, default: '' },
@@ -282,30 +301,22 @@ app.use((req, res, next) => {
 
 // CORS configuration - FIXED: More permissive
 app.use(cors({
-    origin: function (origin, callback) {
-        // Allow all origins in production for now (adjust as needed)
-        if (!origin || isProduction) {
-            return callback(null, true);
-        }
-        
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
         const allowedOrigins = [
-            'https://trucdaobodycare.onrender.com',
-            'http://localhost:10000',
-            'http://localhost:3000',
-            'http://127.0.0.1:10000',
-            'http://127.0.0.1:3000',
-            'http://localhost:5500',
-            'http://127.0.0.1:5500'
+            'https://trucdaobodycare.onrender.com', // Your production frontend
+            'http://localhost:3000', // Local frontend dev
+            'http://localhost:5500', // Live Server for static files
+            'http://127.0.0.1:5500',
         ];
-        
-        if (allowedOrigins.includes(origin) || 
-            origin.includes('localhost') ||
-            origin.includes('127.0.0.1') ||
-            origin.includes('render.com')) {
+
+        if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
             console.log('🔒 Blocked by CORS:', origin);
-            callback(null, true); // Temporarily allow all for debugging
+            callback(new Error('Not allowed by CORS'));
         }
     },
     credentials: true,
@@ -348,7 +359,7 @@ app.use((req, res, next) => {
     res.header('X-Frame-Options', 'DENY');
     res.header('X-XSS-Protection', '1; mode=block');
     res.header('Referrer-Policy', 'strict-origin-when-cross-origin');
-    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+    // The `cors` middleware already handles Access-Control-Allow-Origin
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     next();
@@ -356,6 +367,7 @@ app.use((req, res, next) => {
 
 // ==================== AUTHENTICATION MIDDLEWARE ====================
 
+// Middleware to verify JWT token
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
@@ -373,6 +385,7 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
+// Middleware to ensure user is an admin
 const requireAdmin = (req, res, next) => {
     if (req.user && req.user.role === 'admin') {
         next();
@@ -383,6 +396,7 @@ const requireAdmin = (req, res, next) => {
 
 // ==================== FILE UPLOAD CONFIGURATION ====================
 
+// Multer disk storage configuration
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         const uploadDir = 'uploads/';
@@ -397,6 +411,7 @@ const storage = multer.diskStorage({
     }
 });
 
+// Filter to allow only image files
 const fileFilter = (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
         cb(null, true);
@@ -405,6 +420,7 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
+// Multer instance with configuration
 const upload = multer({
     storage: storage,
     fileFilter: fileFilter,
@@ -549,12 +565,13 @@ function generateSessionId() {
 
 async function updateStatistics() {
     try {
-        const totalProducts = await Product.countDocuments({ status: 'active' });
-        const totalOrders = await Order.countDocuments();
-        const completedOrders = await Order.countDocuments({ status: 'delivered' });
-        const totalRevenue = await Order.aggregate([
-            { $match: { status: 'delivered' } },
-            { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+        const [totalProducts, completedOrders, revenueResult] = await Promise.all([
+            Product.countDocuments({ status: 'active' }),
+            Order.countDocuments({ status: ORDER_STATUSES.DELIVERED }),
+            Order.aggregate([
+                { $match: { status: ORDER_STATUSES.DELIVERED } },
+                { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+            ])
         ]);
         
         const uniqueCustomers = await Order.distinct('customerPhone');
@@ -566,7 +583,7 @@ async function updateStatistics() {
         
         stats.totalProducts = totalProducts;
         stats.totalSales = completedOrders;
-        stats.totalRevenue = totalRevenue[0]?.total || 0;
+        stats.totalRevenue = revenueResult[0]?.total || 0;
         stats.totalCustomers = uniqueCustomers.length;
         stats.updatedAt = new Date();
         
@@ -584,10 +601,12 @@ app.get('/favicon.ico', (req, res) => res.status(204).end());
 // Health check
 app.get('/health', async (req, res) => {
     try {
+        const [productCount, orderCount, messageCount] = await Promise.all([
+            Product.countDocuments(),
+            Order.countDocuments(),
+            Message.countDocuments()
+        ]);
         const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
-        const productCount = await Product.countDocuments();
-        const orderCount = await Order.countDocuments();
-        const messageCount = await Message.countDocuments();
         
         res.json({
             status: 'OK',
@@ -765,10 +784,12 @@ app.get('/api/info', async (req, res) => {
 // Visitor tracking
 app.post('/api/visitors', async (req, res) => {
     try {
-        const { path, referrer, sessionId } = req.body;
+        const { path: reqPath, referrer, sessionId } = req.body;
         const ip = req.ip || req.connection.remoteAddress;
         const userAgent = req.get('User-Agent');
         
+        const newSessionId = sessionId || generateSessionId();
+
         let visitorData = await Visitor.findOne();
         if (!visitorData) {
             visitorData = new Visitor();
@@ -792,7 +813,7 @@ app.post('/api/visitors', async (req, res) => {
         
         // Check if unique visitor (based on session ID)
         const existingSession = visitorData.history.find(h => 
-            h.sessionId === sessionId && 
+            h.sessionId === newSessionId && 
             new Date(h.timestamp).toDateString() === today
         );
         
@@ -808,9 +829,9 @@ app.post('/api/visitors', async (req, res) => {
             timestamp: new Date(),
             ip,
             userAgent,
-            path: path || '/',
+            path: reqPath || '/',
             referrer: referrer || 'direct',
-            sessionId: sessionId || generateSessionId()
+            sessionId: newSessionId
         });
         
         // Keep history manageable
@@ -900,11 +921,12 @@ app.get('/api/products', async (req, res) => {
 app.get('/api/products/:id', async (req, res) => {
     try {
         const productId = req.params.id;
-        
-        let product;
-        if (mongoose.Types.ObjectId.isValid(productId)) {
-            product = await Product.findById(productId);
+
+        if (!mongoose.Types.ObjectId.isValid(productId)) {
+            return res.status(400).json({ error: 'ID sản phẩm không hợp lệ' });
         }
+        
+        const product = await Product.findById(productId);
         
         if (!product) {
             return res.status(404).json({ error: 'Không tìm thấy sản phẩm' });
@@ -998,14 +1020,15 @@ app.put('/api/products/:id', authenticateToken, requireAdmin, async (req, res) =
         // Remove id field if present
         delete updateData.id;
         
-        let product;
-        if (mongoose.Types.ObjectId.isValid(productId)) {
-            product = await Product.findByIdAndUpdate(
-                productId,
-                updateData,
-                { new: true, runValidators: true }
-            );
+        if (!mongoose.Types.ObjectId.isValid(productId)) {
+            return res.status(400).json({ error: 'ID sản phẩm không hợp lệ' });
         }
+        
+        const product = await Product.findByIdAndUpdate(
+            productId,
+            updateData,
+            { new: true, runValidators: true }
+        );
         
         if (!product) {
             return res.status(404).json({ error: 'Không tìm thấy sản phẩm' });
@@ -1044,11 +1067,11 @@ app.delete('/api/products/:id', authenticateToken, requireAdmin, async (req, res
     try {
         const productId = req.params.id;
         
-        let product;
-        if (mongoose.Types.ObjectId.isValid(productId)) {
-            product = await Product.findByIdAndDelete(productId);
+        if (!mongoose.Types.ObjectId.isValid(productId)) {
+            return res.status(400).json({ error: 'ID sản phẩm không hợp lệ' });
         }
         
+        const product = await Product.findByIdAndDelete(productId);
         if (!product) {
             return res.status(404).json({ error: 'Không tìm thấy sản phẩm' });
         }
@@ -1222,20 +1245,19 @@ app.put('/api/orders/:id/status', authenticateToken, requireAdmin, async (req, r
         const orderId = req.params.id;
         const { status, note } = req.body;
         
-        const validStatuses = ['pending', 'confirmed', 'processing', 'shipping', 'delivered', 'cancelled', 'refunded'];
-        if (!validStatuses.includes(status)) {
+        if (!Object.values(ORDER_STATUSES).includes(status)) {
             return res.status(400).json({ error: 'Trạng thái không hợp lệ' });
         }
         
-        let order;
-        if (mongoose.Types.ObjectId.isValid(orderId)) {
-            order = await Order.findById(orderId);
+        if (!mongoose.Types.ObjectId.isValid(orderId)) {
+            return res.status(400).json({ error: 'ID đơn hàng không hợp lệ' });
         }
+        
+        const order = await Order.findById(orderId);
         
         if (!order) {
             return res.status(404).json({ error: 'Không tìm thấy đơn hàng' });
         }
-        
         const updateData = {
             status: status,
             updatedAt: new Date()
@@ -1243,7 +1265,7 @@ app.put('/api/orders/:id/status', authenticateToken, requireAdmin, async (req, r
         
         // Add shipping info if status is shipping
         if (status === 'shipping') {
-            updateData.shippingInfo = {
+            order.shippingInfo = {
                 shippedAt: new Date(),
                 estimatedDelivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) // 3 days from now
             };
@@ -1258,12 +1280,10 @@ app.put('/api/orders/:id/status', authenticateToken, requireAdmin, async (req, r
                 timestamp: new Date()
             });
         }
-        
-        const updatedOrder = await Order.findByIdAndUpdate(
-            orderId,
-            updateData,
-            { new: true }
-        );
+
+        order.status = status;
+        order.updatedAt = new Date();
+        const updatedOrder = await order.save();
         
         // Update statistics
         await updateStatistics();
@@ -1539,47 +1559,30 @@ app.put('/api/settings', authenticateToken, requireAdmin, async (req, res) => {
 
 app.get('/api/statistics', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const productCount = await Product.countDocuments({ status: 'active' });
-        const messageCount = await Message.countDocuments();
-        const unreadMessages = await Message.countDocuments({ read: false, isAdminReply: false });
-        const visitorData = await Visitor.findOne();
-        const orderCount = await Order.countDocuments();
-        const pendingOrders = await Order.countDocuments({ status: 'pending' });
-        const completedOrders = await Order.countDocuments({ status: 'delivered' });
-        
-        const revenueData = await Order.aggregate([
-            { $match: { status: 'delivered' } },
-            { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+        const [
+            productCount, messageCount, unreadMessages, visitorData,
+            orderCount, pendingOrders, completedOrders, revenueData,
+            recentOrders, recentMessages, monthlyRevenue
+        ] = await Promise.all([
+            Product.countDocuments({ status: 'active' }),
+            Message.countDocuments(),
+            Message.countDocuments({ read: false, isAdminReply: false }),
+            Visitor.findOne(),
+            Order.countDocuments(),
+            Order.countDocuments({ status: ORDER_STATUSES.PENDING }),
+            Order.countDocuments({ status: ORDER_STATUSES.DELIVERED }),
+            Order.aggregate([{ $match: { status: ORDER_STATUSES.DELIVERED } }, { $group: { _id: null, total: { $sum: '$totalAmount' } } }]),
+            Order.find().sort({ createdAt: -1 }).limit(5).select('orderNumber customerName totalAmount status createdAt'),
+            Message.find().sort({ timestamp: -1 }).limit(5).select('customerInfo text timestamp read'),
+            Order.aggregate([
+                { $match: { status: ORDER_STATUSES.DELIVERED } },
+                { $group: { _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } }, revenue: { $sum: '$totalAmount' }, orders: { $sum: 1 } } },
+                { $sort: { '_id.year': -1, '_id.month': -1 } },
+                { $limit: 6 }
+            ])
         ]);
         
         const totalRevenue = revenueData[0]?.total || 0;
-        
-        const recentOrders = await Order.find()
-            .sort({ createdAt: -1 })
-            .limit(5)
-            .select('orderNumber customerName totalAmount status createdAt');
-        
-        const recentMessages = await Message.find()
-            .sort({ timestamp: -1 })
-            .limit(5)
-            .select('customerInfo text timestamp read');
-        
-        // Monthly revenue
-        const monthlyRevenue = await Order.aggregate([
-            { $match: { status: 'delivered' } },
-            {
-                $group: {
-                    _id: { 
-                        year: { $year: '$createdAt' },
-                        month: { $month: '$createdAt' }
-                    },
-                    revenue: { $sum: '$totalAmount' },
-                    orders: { $sum: 1 }
-                }
-            },
-            { $sort: { '_id.year': -1, '_id.month': -1 } },
-            { $limit: 6 }
-        ]);
         
         const formattedMonthlyRevenue = monthlyRevenue.map(item => ({
             month: `${item._id.month}/${item._id.year}`,
@@ -1615,16 +1618,13 @@ app.get('/api/dashboard', authenticateToken, requireAdmin, async (req, res) => {
             totalOrders,
             pendingOrders,
             completedOrders,
-            totalProducts,
-            totalMessages,
-            unreadMessages,
-            visitorData,
-            recentOrders,
-            recentMessages
+            totalProducts, totalMessages, unreadMessages,
+            visitorData, recentOrders, recentMessages,
+            revenueData
         ] = await Promise.all([
             Order.countDocuments(),
-            Order.countDocuments({ status: 'pending' }),
-            Order.countDocuments({ status: 'delivered' }),
+            Order.countDocuments({ status: ORDER_STATUSES.PENDING }),
+            Order.countDocuments({ status: ORDER_STATUSES.DELIVERED }),
             Product.countDocuments({ status: 'active' }),
             Message.countDocuments(),
             Message.countDocuments({ read: false, isAdminReply: false }),
@@ -1633,8 +1633,8 @@ app.get('/api/dashboard', authenticateToken, requireAdmin, async (req, res) => {
             Message.find().sort({ timestamp: -1 }).limit(5)
         ]);
         
-        const revenueData = await Order.aggregate([
-            { $match: { status: 'delivered' } },
+        const revenueResult = await Order.aggregate([
+            { $match: { status: ORDER_STATUSES.DELIVERED } },
             { $group: { _id: null, total: { $sum: '$totalAmount' } } }
         ]);
         
@@ -1645,7 +1645,7 @@ app.get('/api/dashboard', authenticateToken, requireAdmin, async (req, res) => {
                 totalOrders,
                 pendingOrders,
                 completedOrders,
-                totalRevenue,
+                totalRevenue: revenueResult[0]?.total || 0,
                 totalProducts,
                 totalMessages,
                 unreadMessages,
@@ -1787,7 +1787,7 @@ async function startServer() {
         
         await mongoose.connect(MONGODB_URI, {
             useNewUrlParser: true,
-            useUnifiedTopology: true,
+            useUnifiedTopology: true, // This option is deprecated but doesn't harm
             serverSelectionTimeoutMS: 10000, // Increased timeout for Render
             socketTimeoutMS: 45000,
         });
