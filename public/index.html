@@ -5583,10 +5583,10 @@
             const tabId = isNew ? 'product-new' : `product-edit-${productId}`;
             const product = isNew ? {} : products.find(p => p.id == parseInt(productId));
             if (!isNew && !product) return;
-
+    
             const tabTitle = isNew ? 'Thêm sản phẩm' : `Sửa: ${product.name.substring(0, 15)}...`;
             const formContent = document.getElementById('product-form').innerHTML;
-
+    
             openTab({
                 id: tabId,
                 title: tabTitle,
@@ -5601,7 +5601,7 @@
                     const imagePreviewEl = pane.querySelector('#image-preview');
                     const descriptionEl = pane.querySelector('#edit-product-description');
                     const saveBtn = pane.querySelector('#save-product-btn');
-
+    
                     titleEl.textContent = isNew ? 'Thêm sản phẩm mới' : 'Sửa sản phẩm';
                     nameEl.value = product.name || '';
                     categoryEl.value = product.category || 'Son môi';
@@ -5610,20 +5610,41 @@
                     imageUrlEl.value = product.image || '';
                     descriptionEl.value = product.description || '';
 
+                    // NEW: Make IDs unique for this tab
+                    const uploadBtn = pane.querySelector('#upload-image-btn');
+                    const uploadInput = pane.querySelector('#edit-product-image-upload');
+                    
+                    uploadBtn.id = `upload-image-btn-${tabId}`;
+                    uploadInput.id = `edit-product-image-upload-${tabId}`;
+                    imagePreviewEl.id = `image-preview-${tabId}`;
+                    imageUrlEl.id = `edit-product-image-url-${tabId}`;
+
+                    // Re-add event listener for the unique button
+                    uploadBtn.addEventListener('click', () => {
+                        uploadInput.click();
+                    });
+
+                    uploadInput.addEventListener('change', (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                                imagePreviewEl.src = event.target.result;
+                                imagePreviewEl.style.display = 'block';
+                                imageUrlEl.value = event.target.result; // Save as base64
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    });
+
                     if (product.image) {
                         imagePreviewEl.src = product.image;
                         imagePreviewEl.style.display = 'block';
                     }
-
-                    if (isNew) {
-                        saveBtn.removeAttribute('data-id');
-                    } else {
-                        saveBtn.setAttribute('data-id', productId);
-                    }
-
-                    pane.querySelector('#cancel-product-btn').addEventListener('click', () => {
-                        closeTab(tabId, new Event('click'));
-                    });
+    
+                    saveBtn.setAttribute('data-id', isNew ? '' : productId);
+    
+                    pane.querySelector('#cancel-product-btn').addEventListener('click', () => closeTab(tabId, new Event('click')));
                 }
             });
         }
