@@ -19,6 +19,10 @@ const crypto = require('crypto');
 
 const app = express();
 
+// Trust the first proxy hop (e.g., from Render's load balancer)
+// This is crucial for rate limiting and getting the correct client IP.
+app.set('trust proxy', 1);
+
 // ==================== CONFIGURATION ====================
 const isProduction = process.env.NODE_ENV === 'production';
 const PORT = process.env.PORT || 10000;
