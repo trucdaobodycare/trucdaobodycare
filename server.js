@@ -1016,8 +1016,9 @@ app.put('/api/products/:id', authenticateToken, requireAdmin, async (req, res) =
     try {
         const productId = req.params.id;
         const updateData = { ...req.body, updatedAt: new Date() };
-        
-        // Remove id field if present
+
+        // Prevent overwriting sku with null/undefined and remove id field if present
+        if (updateData.sku === undefined || updateData.sku === null) delete updateData.sku;
         delete updateData.id;
         
         if (!mongoose.Types.ObjectId.isValid(productId)) {
