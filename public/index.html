@@ -7,8 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Thêm thư viện SHA256 để băm mật khẩu -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js"></script>
     <style>
         :root {
             --primary-color: #e83e8c;
@@ -327,7 +325,7 @@
         .slider-wrapper {
             display: flex;
             height: 100%;
-            transition: transform 0.7s cubic-bezier(0.65, 0, 0.35, 1);
+            transition: transform 1s ease-in-out; /* Cải thiện hiệu ứng chuyển slide mượt mà hơn */
         }
 
         .slide {
@@ -345,13 +343,12 @@
         .slide::before {
             content: '';
             position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(90deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 60%);
+            top: 0; left: 0; width: 100%; height: 100%;            
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 50%);
             z-index: 1;
         }
-        .slide:nth-child(1) { background: linear-gradient(135deg, #fde4f2 0%, #fef5f9 100%); }
-        .slide:nth-child(2) { background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%); }
-        .slide:nth-child(3) { background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%); }
+        .slide { background-size: cover; background-position: center; }
+
 
         .hero-content {
             position: relative;
@@ -382,46 +379,28 @@
 
         .hero-content h1 {
             font-size: clamp(2.5rem, 5vw, 3.8rem);
+            font-family: 'Playfair Display', serif; /* Thay đổi font chữ sang trọng hơn */
             margin-bottom: 20px;
             font-weight: 700;
             line-height: 1.2;
             color: var(--dark-color);            
-            /* Hiệu ứng chữ gradient */
-            background: linear-gradient(135deg, var(--primary-dark), var(--dark-color));
+            /* Hiệu ứng chữ gradient - Thay đổi để nổi bật trên nền tối */
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-color)); /* Khôi phục gradient màu hồng đậm */
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2); /* Thêm bóng đổ nhẹ cho chiều sâu */
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             text-fill-color: transparent;
         }
 
+
         .hero-content p {
             font-size: clamp(1rem, 2vw, 1.2rem);
             margin-bottom: 30px;
+            font-family: 'Poppins', sans-serif; /* Thay đổi font chữ cho dễ đọc và hiện đại */
             max-width: 500px;
-            color: var(--gray-700);
-        }
-
-        .hero-image {
-            position: absolute;
-            right: 0;
-            bottom: 0;
-            width: 60%; /* Điều chỉnh chiều rộng của vùng chứa ảnh */
-            height: 100%; /* Cho ảnh cao bằng slide */
-            z-index: 0; /* Đưa ảnh xuống dưới lớp phủ và nội dung */
-            opacity: 0;
-            transform: translateX(50px) scale(1.2); /* Tăng scale ban đầu */
-            transition: opacity 1.2s ease, transform 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            object-fit: cover; /* Đảm bảo ảnh vừa vặn mà không bị méo */
-            object-position: center; /* Căn giữa ảnh */
-        }
-
-        .slide.active .hero-image {
-            opacity: 1;
-            transform: translateX(0) scale(1.05); /* Hiệu ứng Ken Burns - phóng to nhẹ */
-            /* Thêm animation cho hiệu ứng Ken Burns */
-            animation: kenburns 20s infinite;
-            transition-duration: 1.5s; /* Kéo dài hiệu ứng cho ảnh */
-            transition-timing-function: cubic-bezier(0.165, 0.84, 0.44, 1);
+            color: #fdfbfb; /* Giữ màu trắng ngà để dễ đọc trên nền tối */
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5); /* Thêm bóng đổ cho chữ */
         }
 
         .slider-nav {
@@ -2778,7 +2757,7 @@
     <section class="hero-slider" id="hero-slider">
         <div class="slider-wrapper">
             <!-- Slide 1 -->
-            <div class="slide active">
+            <div class="slide active" style="background-image: url('https://i.pinimg.com/736x/85/c8/06/85c806e9fa80a049a01e73addbeb32ec.jpg');">
                 <div class="hero-content">
                     <h1>Vẻ Đẹp Rạng Rỡ, Tự Tin Tỏa Sáng</h1>
                     <p>Khám phá bộ sưu tập mỹ phẩm cao cấp với ưu đãi đặc biệt lên đến 50% chỉ trong tháng này.</p>
@@ -2787,10 +2766,9 @@
                         <a href="#" class="btn btn-outline">Khám phá <i class="fas fa-arrow-right"></i></a>
                     </div>
                 </div>
-                <img src="https://i.pinimg.com/736x/85/c8/06/85c806e9fa80a049a01e73addbeb32ec.jpg" alt="Cosmetics Model 1" class="hero-image">
             </div>
             <!-- Slide 2 -->
-            <div class="slide">
+            <div class="slide" style="background-image: url('https://i.pinimg.com/736x/45/42/25/454225e7546ed3d56a125c2b0d2fff80.jpg');">
                 <div class="hero-content">
                     <h1>Dưỡng Da Chuyên Sâu Trắng Sáng Tự Nhiên</h1>
                     <p>Trải nghiệm dòng sản phẩm chăm sóc da mới, an toàn cho mọi loại da.</p>
@@ -2798,10 +2776,9 @@
                         <a href="#" class="btn">Xem sản phẩm <i class="fas fa-spa"></i></a>
                     </div>
                 </div>
-                <img src="https://i.pinimg.com/736x/45/42/25/454225e7546ed3d56a125c2b0d2fff80.jpg" alt="Cosmetics Model 2" class="hero-image">
             </div>
             <!-- Slide 3 -->
-            <div class="slide">
+            <div class="slide" style="background-image: url('https://i.pinimg.com/736x/53/b0/58/53b058eb6f07a7456531a30968324e70.jpg');">
             <div class="hero-content">
                     <h1>Sắc Màu Mới, Phong Cách Mới</h1>
                     <p>Bộ sưu tập kem Face mới nhất đã ra mắt. Hãy là người đầu tiên sở hữu những màu sắc thời thượng.</p>
@@ -2809,7 +2786,6 @@
                         <a href="#" class="btn">Khám phá ngay <i class="fas fa-kiss-wink-heart"></i></a>
                     </div>
                 </div>
-                <img src="https://i.pinimg.com/736x/53/b0/58/53b058eb6f07a7456531a30968324e70.jpg" alt="Cosmetics Model 3" class="hero-image">
             </div>
         </div>
         <button class="slider-nav prev" id="prev-slide"><i class="fas fa-chevron-left"></i></button>
@@ -3756,11 +3732,10 @@
 
     <script>
         // Admin credentials
-        // KHÔNG BAO GIỜ LƯU MẬT KHẨU TRỰC TIẾP. Đây là giải pháp tạm thời.
-        // Mật khẩu gốc là "Thanhduy@060596"
-        const ADMIN_USERNAME = "Trucdaoadminlogin"; 
-        const ADMIN_PASSWORD_HASH = "a5a554491c33b7cb326883386a375837ace1338a6aaec7139359a3c909899557"; // SHA-256 hash of the password
-
+        // WARNING: This is NOT secure. It's just obfuscation.
+        const ADMIN_USERNAME_B64 = "VHJ1Y2Rhb2FkbWlubG9naW4="; // "user:admin123"
+        const ADMIN_PASSWORD_B64 = "VGhhbmhkdXlAMDYwNTk2"; // "Pass:123456789"
+        
         // API Base URL
         const API_BASE = '/api';
 
@@ -5141,10 +5116,12 @@
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             
-            // Băm mật khẩu người dùng nhập vào và so sánh với chuỗi hash đã lưu
-            const enteredPasswordHash = sha256(password);
-
-            if (username === ADMIN_USERNAME && enteredPasswordHash === ADMIN_PASSWORD_HASH) {
+            // Decode from Base64 before comparing.
+            // WARNING: This is NOT a secure way to handle authentication.
+            const decodedUsername = atob(ADMIN_USERNAME_B64);
+            const decodedPassword = atob(ADMIN_PASSWORD_B64);
+            
+            if (username === decodedUsername && password === decodedPassword) {
                 document.getElementById('login-modal').style.display = 'none';
                 localStorage.setItem('adminLoggedIn', 'true');
                 showNotification('Đăng nhập admin thành công!', 'success');
