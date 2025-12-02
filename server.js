@@ -1023,9 +1023,6 @@ app.put('/api/products/:id', authenticateToken, requireAdmin, async (req, res) =
 
         // Prevent overwriting sku with null/undefined and remove id field if present
         if (updateData.sku === undefined || updateData.sku === null) delete updateData.sku;
-        delete updateData.id;
-
-        // Ensure numeric fields are correctly typed
         if (updateData.originalPrice !== undefined) {
             updateData.originalPrice = parseInt(updateData.originalPrice, 10);
         }
@@ -1035,6 +1032,13 @@ app.put('/api/products/:id', authenticateToken, requireAdmin, async (req, res) =
         if (updateData.stock !== undefined) {
             updateData.stock = parseInt(updateData.stock, 10);
         }
+        // Handle tags: if it's an empty string, convert to empty array
+        if (updateData.tags !== undefined) {
+            if (typeof updateData.tags === 'string') {
+                updateData.tags = updateData.tags.split(',').map(tag => tag.trim()).filter(Boolean);
+            }
+        }
+        delete updateData.id; // This field should not be in the body, but good to be safe
         
         if (!mongoose.Types.ObjectId.isValid(productId)) {
             return res.status(400).json({ error: 'ID sản phẩm không hợp lệ' });
@@ -1074,7 +1078,11 @@ app.put('/api/products/:id', authenticateToken, requireAdmin, async (req, res) =
             product: responseProduct
         });
     } catch (error) {
-        console.error('Error updating product:', error);
+        console.error('❌ Error updating product:', {
+            productId: req.params.id,
+            updateData: req.body,
+            error: error
+        });
         res.status(500).json({ error: 'Lỗi server khi cập nhật sản phẩm' });
     }
 });
