@@ -1020,6 +1020,17 @@ app.put('/api/products/:id', authenticateToken, requireAdmin, async (req, res) =
         // Prevent overwriting sku with null/undefined and remove id field if present
         if (updateData.sku === undefined || updateData.sku === null) delete updateData.sku;
         delete updateData.id;
+
+        // Ensure numeric fields are correctly typed
+        if (updateData.originalPrice !== undefined) {
+            updateData.originalPrice = parseInt(updateData.originalPrice, 10);
+        }
+        if (updateData.salePrice !== undefined) {
+            updateData.salePrice = parseInt(updateData.salePrice, 10);
+        }
+        if (updateData.stock !== undefined) {
+            updateData.stock = parseInt(updateData.stock, 10);
+        }
         
         if (!mongoose.Types.ObjectId.isValid(productId)) {
             return res.status(400).json({ error: 'ID sản phẩm không hợp lệ' });
