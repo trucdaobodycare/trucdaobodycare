@@ -4120,23 +4120,30 @@
             }
         }
 
-        // Khởi tạo        document.addEventListener('DOMContentLoaded', function() {
+        // Khởi tạo
+        document.addEventListener('DOMContentLoaded', async function() {
             // Khởi tạo các tính năng mới
             initAdminPanelResize();
             initAdminCustomization();
             renderTestimonials(); // Phải render trước khi khởi tạo slider
             initTestimonialSlider();
             initQuickView();
-            loadProductsFromAPI(); // Tải sản phẩm ngay khi trang được tải
-
             preventZoom();
             
             // NEW: Initialize Admin Tabs
             openTab({
                 id: 'dashboard',
                 title: 'Dashboard',
-                content: document.getElementById('tab-pane-dashboard').innerHTML
+                content: document.getElementById('tab-pane-dashboard').innerHTML,
+                onRender: () => {
+                    if (localStorage.getItem('adminToken')) {
+                        loadStatisticsFromAPI();
+                        loadOrdersFromAPI().then(updateDashboardOrders);
+                        loadMessagesFromAPI().then(updateDashboardMessages);
+                    }
+                }
             });
+
             // Hide preloader
             setTimeout(function() {
                 document.getElementById('preloader').style.opacity = '0';
@@ -4144,15 +4151,10 @@
                     document.getElementById('preloader').style.display = 'none';
                 }, 500);
             }, 1000);
-            
-            // Kiểm tra khi tải trang, nếu đã có token thì hiển thị các mục của admin
-            if (localStorage.getItem('adminToken')) {
-                document.getElementById('admin-nav-desktop').style.display = 'block';
-                document.getElementById('admin-nav-mobile').style.display = 'block';
-                document.getElementById('admin-customization').style.display = 'block';
-                handleLoginSuccess({ token: localStorage.getItem('adminToken'), user: {} }); // Tải dữ liệu admin
-            }
 
+            // Tải dữ liệu ban đầu
+            await loadProductsFromAPI();
+            
             updateCartCount();
             renderCartItems();
             updateWishlistCount();
@@ -4580,11 +4582,6 @@
             document.getElementById('admin-customization').style.display = 'block';
             document.getElementById('username').value = '';
             document.getElementById('password').value = '';
-
-            // Tải lại dữ liệu cần xác thực
-            loadOrdersFromAPI();
-            loadMessagesFromAPI();
-            loadStatisticsFromAPI();
         }
 
         // Hàm lấy tin nhắn từ API
