@@ -3497,11 +3497,11 @@
                     <div class="form-row">
                         <div class="admin-form-group">
                             <label for="edit-product-name">Tên sản phẩm</label>
-                            <input type="text" id="edit-product-name">
+                            <input type="text" id="edit-product-name" class="edit-product-name">
                         </div>
                         <div class="admin-form-group">
                             <label for="edit-product-category">Danh mục</label>
-                            <select id="edit-product-category">
+                            <select id="edit-product-category" class="edit-product-category">
                                 <option value="Son môi">Son môi</option>
                                 <option value="Trang điểm mắt">Trang điểm mắt</option>
                                 <option value="Trang điểm mặt">Trang điểm mặt</option>
@@ -3513,23 +3513,23 @@
                     <div class="form-row">
                         <div class="admin-form-group">
                             <label for="edit-product-original-price">Giá gốc (đ)</label>
-                            <input type="number" id="edit-product-original-price">
+                            <input type="number" id="edit-product-original-price" class="edit-product-original-price">
                         </div>
                         <div class="admin-form-group">
                             <label for="edit-product-sale-price">Giá khuyến mãi (đ)</label>
-                            <input type="number" id="edit-product-sale-price">
+                            <input type="number" id="edit-product-sale-price" class="edit-product-sale-price">
                         </div>
                     </div>
                     <div class="image-upload-container">
                         <label for="edit-product-image">Hình ảnh sản phẩm</label>
                         <input type="file" id="edit-product-image-upload" accept="image/*" style="display: none;">
                         <button class="upload-btn" id="upload-image-btn"><i class="fas fa-upload"></i> Chọn hình ảnh</button>
-                        <img id="image-preview" class="image-preview" alt="Preview">
-                        <input type="text" id="edit-product-image-url" placeholder="Hoặc nhập URL hình ảnh" style="margin-top: 10px;">
+                        <img id="image-preview" class="image-preview" alt="Preview"> 
+                        <input type="text" id="edit-product-image-url" class="edit-product-image-url" placeholder="Hoặc nhập URL hình ảnh" style="margin-top: 10px;">
                     </div>
                     <div class="admin-form-group">
                         <label for="edit-product-description">Mô tả</label>
-                        <textarea id="edit-product-description" rows="3"></textarea>
+                        <textarea id="edit-product-description" class="edit-product-description" rows="3"></textarea>
                     </div>
                     <div class="form-row">
                         <button class="btn" id="save-product-btn">Lưu sản phẩm</button>
@@ -5593,20 +5593,20 @@
                 content: `<div class="admin-form">${formContent}</div>`,
                 onRender: (pane) => {
                     const titleEl = pane.querySelector('#product-form-title');
-                    const nameEl = pane.querySelector('#edit-product-name');
-                    const categoryEl = pane.querySelector('#edit-product-category');
-                    const originalPriceEl = pane.querySelector('#edit-product-original-price');
-                    const salePriceEl = pane.querySelector('#edit-product-sale-price');
-                    const imageUrlEl = pane.querySelector('#edit-product-image-url');
+                    const nameEl = pane.querySelector('.edit-product-name');
+                    const categoryEl = pane.querySelector('.edit-product-category');
+                    const originalPriceEl = pane.querySelector('.edit-product-original-price');
+                    const salePriceEl = pane.querySelector('.edit-product-sale-price');
+                    const imageUrlEl = pane.querySelector('.edit-product-image-url');
                     const imagePreviewEl = pane.querySelector('#image-preview');
-                    const descriptionEl = pane.querySelector('#edit-product-description');
+                    const descriptionEl = pane.querySelector('.edit-product-description');
                     const saveBtn = pane.querySelector('#save-product-btn');
     
                     titleEl.textContent = isNew ? 'Thêm sản phẩm mới' : 'Sửa sản phẩm';
                     nameEl.value = product.name || '';
                     categoryEl.value = product.category || 'Son môi';
                     originalPriceEl.value = product.originalPrice || '';
-                    salePriceEl.value = product.salePrice || '';
+                    salePriceEl.value = product.salePrice || ''; 
                     imageUrlEl.value = product.image || '';
                     descriptionEl.value = product.description || '';
 
@@ -5671,12 +5671,12 @@
             if (e.target && e.target.id === 'save-product-btn') {
                 const form = e.target.closest('.admin-form');
                 const productId = e.target.getAttribute('data-id');
-                const name = form.querySelector('#edit-product-name').value;
-                const category = form.querySelector('#edit-product-category').value;
-                const originalPrice = parseInt(form.querySelector('#edit-product-original-price').value);
-                const salePrice = parseInt(form.querySelector('#edit-product-sale-price').value);
-                const image = form.querySelector('#edit-product-image-url').value;
-                const description = form.querySelector('#edit-product-description').value;
+                const name = form.querySelector('.edit-product-name').value;
+                const category = form.querySelector('.edit-product-category').value;
+                const originalPrice = parseInt(form.querySelector('.edit-product-original-price').value);
+                const salePrice = parseInt(form.querySelector('.edit-product-sale-price').value);
+                const image = form.querySelector('.edit-product-image-url').value;
+                const description = form.querySelector('.edit-product-description').value;
             
             if (name && category && originalPrice && salePrice && image) {
                 const productData = {
