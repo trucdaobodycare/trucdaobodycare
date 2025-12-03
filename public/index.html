@@ -5644,55 +5644,53 @@
     
                     saveBtn.setAttribute('data-id', isNew ? '' : productId);
     
+                    // NEW: Add event listener directly to the save button in this tab
+                    saveBtn.addEventListener('click', async function() {
+                        const currentForm = this.closest('.admin-form');
+                        const currentProductId = this.getAttribute('data-id');
+                        const name = currentForm.querySelector('.edit-product-name').value;
+                        const category = currentForm.querySelector('.edit-product-category').value;
+                        const originalPrice = parseInt(currentForm.querySelector('.edit-product-original-price').value);
+                        const salePrice = parseInt(currentForm.querySelector('.edit-product-sale-price').value);
+                        const image = currentForm.querySelector('.edit-product-image-url').value;
+                        const description = currentForm.querySelector('.edit-product-description').value;
+
+                        if (name && category && !isNaN(originalPrice) && !isNaN(salePrice) && image) {
+                            const productData = {
+                                name, category, originalPrice, salePrice, image, description
+                            };
+
+                            if (currentProductId) {
+                                productData.id = parseInt(currentProductId);
+                            }
+
+                            const savedProduct = await saveProductToAPI(productData);
+                            if (savedProduct) {
+                                // Close current tab and refresh product list tab
+                                closeTab(tabId, new Event('click'));
+
+                                const productsTabPane = document.getElementById('tab-pane-products');
+                                if (productsTabPane) {
+                                    // Re-fetch and re-render the main product list
+                                    loadProductsFromAPI().then(renderProductsInAdmin);
+                                }
+                                showNotification('✅ Sản phẩm đã được lưu thành công!', 'success');
+                            } else {
+                                showNotification('❌ Lỗi khi lưu sản phẩm!', 'error');
+                            }
+                        } else {
+                            showNotification('⚠️ Vui lòng điền đầy đủ thông tin sản phẩm!', 'error');
+                        }
+                    });
+
                     pane.querySelector('#cancel-product-btn').addEventListener('click', () => closeTab(tabId, new Event('click')));
                 }
             });
         }
         
         // Delete product
-        async function deleteProduct(productId) {
-            if (confirm(`Bạn có chắc chắn muốn xóa sản phẩm có ID: ${productId}?`)) {
-                const success = await deleteProductFromAPI(productId);
-                if (success) {
-                    // Reload product list if it's open
-                    const productsTab = document.getElementById('tab-pane-products');
-                    if (productsTab) {
-                        loadProductsFromAPI().then(renderProductsInAdmin);
-                    }
-                    showNotification('✅ Sản phẩm đã được xóa khỏi database!', 'success');
-                } else {
-                    showNotification('❌ Lỗi khi xóa sản phẩm!', 'error');
-                }
-            }
-        }
-        
-        // Save product
-        document.addEventListener('click', async function(e) {
-            if (e.target && e.target.id === 'save-product-btn') {
-                const form = e.target.closest('.admin-form');
-                const productId = e.target.getAttribute('data-id');
-                const name = form.querySelector('.edit-product-name').value;
-                const category = form.querySelector('.edit-product-category').value;
-                const originalPrice = parseInt(form.querySelector('.edit-product-original-price').value);
-                const salePrice = parseInt(form.querySelector('.edit-product-sale-price').value);
-                const image = form.querySelector('.edit-product-image-url').value;
-                const description = form.querySelector('.edit-product-description').value;
-            // Sửa lại điều kiện kiểm tra: giá có thể bằng 0
-            if (name && category && !isNaN(originalPrice) && !isNaN(salePrice) && image) {
-                const productData = {
-                    name,
-                    category,
-                    originalPrice,
-                    salePrice, 
-                    image,
-                    description
-                };
-                
-                if (productId) {
-                    productData.id = parseInt(productId);
-                }
-                
-                const savedProduct = await saveProductToAPI(productData);
+        async function deleteProduct(productId) {            if (confirm(`Bạn có chắc chắn muốn xóa sản phẩm có ID: ${productId}?`)) {
+                const savedProduct = await deleteProductFromAPI(productId);
                 if (savedProduct) {
                     // Close current tab and refresh product list tab
                     const currentTabId = e.target.closest('.tab-pane').id.replace('tab-pane-', '');
@@ -5703,15 +5701,14 @@
                         loadProductsFromAPI().then(renderProductsInAdmin);
                     }
 
-                    showNotification('✅ Sản phẩm đã được lưu thành công vào database!', 'success');
+                    showNotification('✅ Sản phẩm đã được xóa khỏi database!', 'success');
                 } else {
-                    showNotification('❌ Lỗi khi lưu sản phẩm!', 'error');
+                    showNotification('❌ Lỗi khi xóa sản phẩm!', 'error');
                 }
-            } else {
-                showNotification('⚠️ Vui lòng điền đầy đủ thông tin sản phẩm!', 'error');
-            } 
             }
-        });
+        }
+        
+        // Save product (This global listener is now removed)
         
         // Update orders in admin
         function updateOrdersInAdmin() {
