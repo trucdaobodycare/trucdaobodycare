@@ -4490,7 +4490,7 @@
             const token = localStorage.getItem('adminToken');
             if (!token) {
                 showNotification('❌ Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'error');
-                // Optional: redirect to login
+                openLoginModal();
                 return null;
             }
 
@@ -4533,6 +4533,7 @@
                     return result;
                 } else if (response.status === 401 || response.status === 403) {
                     showNotification('❌ Xác thực thất bại. Vui lòng đăng nhập lại.', 'error');
+                    openLoginModal();
                     return null;
                 }
             } catch (error) {
@@ -4546,7 +4547,8 @@
             const token = localStorage.getItem('adminToken');
             if (!token) {
                 showNotification('❌ Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'error');
-                return false;
+                openLoginModal();
+                return false; 
             }
             try {
                 const response = await fetch(`${API_BASE}/products/${productId}`, {
@@ -4576,6 +4578,11 @@
             document.getElementById('admin-customization').style.display = 'block';
             document.getElementById('username').value = '';
             document.getElementById('password').value = '';
+
+            // Tải lại dữ liệu cần xác thực
+            loadOrdersFromAPI();
+            loadMessagesFromAPI();
+            loadStatisticsFromAPI();
         }
 
         // Hàm lấy tin nhắn từ API
@@ -5655,7 +5662,7 @@
             const product = isNew ? {} : products.find(p => p.id == parseInt(productId));
             if (!isNew && !product) return;
     
-            const tabTitle = isNew ? 'Thêm sản phẩm' : `Sửa: ${product.name.substring(0, 15)}...`;
+            const tabTitle = isNew ? 'Thêm sản phẩm' : `Sửa: ${(product.name || '').substring(0, 15)}...`;
             const formContent = document.getElementById('product-form').innerHTML;
     
             openTab({
@@ -5671,6 +5678,7 @@
                     const imageUrlEl = pane.querySelector('.edit-product-image-url');
                     const imagePreviewEl = pane.querySelector('#image-preview');
                     const descriptionEl = pane.querySelector('.edit-product-description');
+                    const cancelBtn = pane.querySelector('#cancel-product-btn');
                     const saveBtn = pane.querySelector('#save-product-btn');
     
                     titleEl.textContent = isNew ? 'Thêm sản phẩm mới' : 'Sửa sản phẩm';
@@ -5725,7 +5733,7 @@
                         const salePrice = parseInt(currentForm.querySelector('.edit-product-sale-price').value);
                         const image = currentForm.querySelector('.edit-product-image-url').value;
                         const description = currentForm.querySelector('.edit-product-description').value;
-
+                        
                         if (name && category && !isNaN(originalPrice) && !isNaN(salePrice) && image) {
                             const productData = {
                                 name, category, originalPrice, salePrice, image, description
@@ -5737,15 +5745,16 @@
 
                             const savedProduct = await saveProductToAPI(productData);
                             if (savedProduct) {
-                                // Close current tab and refresh product list tab
-                                closeTab(tabId, new Event('click'));
-
+                                showNotification('✅ Sản phẩm đã được lưu thành công!', 'success');
+                                
+                                // Refresh the main product list
                                 const productsTabPane = document.getElementById('tab-pane-products');
                                 if (productsTabPane) {
-                                    // Re-fetch and re-render the main product list
                                     loadProductsFromAPI().then(renderProductsInAdmin);
                                 }
-                                showNotification('✅ Sản phẩm đã được lưu thành công!', 'success');
+                                // Close the current edit/new tab
+                                closeTab(tabId, new Event('click'));
+
                             } else {
                                 showNotification('❌ Lỗi khi lưu sản phẩm!', 'error');
                             }
@@ -5754,19 +5763,21 @@
                         }
                     });
 
-                    pane.querySelector('#cancel-product-btn').addEventListener('click', () => closeTab(tabId, new Event('click')));
+                    cancelBtn.addEventListener('click', () => closeTab(tabId, new Event('click')));
                 }
             });
         }
         
         // Delete product
-        async function deleteProduct(productId) {            if (confirm(`Bạn có chắc chắn muốn xóa sản phẩm có ID: ${productId}?`)) {
-                const savedProduct = await deleteProductFromAPI(productId);
-                if (savedProduct) {
-                    // Close current tab and refresh product list tab
-                    const currentTabId = e.target.closest('.tab-pane').id.replace('tab-pane-', '');
-                    closeTab(currentTabId, new Event('click'));
-                    
+        async function deleteProduct(productId) {
+            if (confirm(`Bạn có chắc chắn muốn xóa sản phẩm này?`)) {
+                const success = await deleteProductFromAPI(productId);
+                if (success) {
+                    showNotification('✅ Sản phẩm đã được xóa!', 'success');
+
+                    // Close the edit tab if it's open for this product
+                    closeTab(`product-edit-${productId}`, new Event('click'));
+
                     const productsTab = document.getElementById('tab-pane-products');
                     if (productsTab) {
                         loadProductsFromAPI().then(renderProductsInAdmin);
@@ -5774,12 +5785,10 @@
 
                     showNotification('✅ Sản phẩm đã được xóa khỏi database!', 'success');
                 } else {
-                    showNotification('❌ Lỗi khi xóa sản phẩm!', 'error');
+                    showNotification('❌ Lỗi khi xóa sản phẩm. Vui lòng thử lại.', 'error');
                 }
             }
         }
-        
-        // Save product (This global listener is now removed)
         
         // Update orders in admin
         function updateOrdersInAdmin() {
