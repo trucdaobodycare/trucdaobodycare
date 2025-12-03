@@ -4120,14 +4120,15 @@
             }
         }
 
-        // Khởi tạo
-        document.addEventListener('DOMContentLoaded', function() {
+        // Khởi tạo        document.addEventListener('DOMContentLoaded', function() {
             // Khởi tạo các tính năng mới
             initAdminPanelResize();
             initAdminCustomization();
             renderTestimonials(); // Phải render trước khi khởi tạo slider
             initTestimonialSlider();
             initQuickView();
+            loadProductsFromAPI(); // Tải sản phẩm ngay khi trang được tải
+
             preventZoom();
             
             // NEW: Initialize Admin Tabs
@@ -4144,15 +4145,14 @@
                 }, 500);
             }, 1000);
             
-            // Tải dữ liệu mẫu thay vì gọi API
-            updateProductDisplay();
-            // renderProductsInAdmin(); // Called by openTab
-            // updateMessagesInAdmin(); // Called by openTab
-            // updateOrdersInAdmin(); // Called by openTab
-            // updateDashboardOrders(); // Part of dashboard tab
-            // updateDashboardMessages(); // Part of dashboard tab
-            // loadStatisticsFromAPI(); // Part of dashboard tab
-            // updateAnalytics(); // Called by openTab
+            // Kiểm tra khi tải trang, nếu đã có token thì hiển thị các mục của admin
+            if (localStorage.getItem('adminToken')) {
+                document.getElementById('admin-nav-desktop').style.display = 'block';
+                document.getElementById('admin-nav-mobile').style.display = 'block';
+                document.getElementById('admin-customization').style.display = 'block';
+                handleLoginSuccess({ token: localStorage.getItem('adminToken'), user: {} }); // Tải dữ liệu admin
+            }
+
             updateCartCount();
             renderCartItems();
             updateWishlistCount();
@@ -4510,7 +4510,7 @@
                 };
 
                 let response;
-                if (product.id) {
+                if (product._id) {
                     // Update existing product
                     response = await fetch(`${API_BASE}/products/${product.id}`, {
                         method: 'PUT',
@@ -4550,23 +4550,25 @@
 
         // Hàm xóa sản phẩm từ API
         async function deleteProductFromAPI(productId) {
+            const token = localStorage.getItem('adminToken');
+            if (!token) {
+                showNotification('❌ Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'error');
+                openLoginModal();
+                return false;
+            }
             try {
-                const response = await callAPI(`${API_BASE}/products/${productId}`, {
+                const response = await fetch(`${API_BASE}/products/${productId}`, {
                     method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
-                
-                
                 if (response.ok) {
                     console.log('✅ Sản phẩm đã được xóa khỏi database');
                     return true;
                 }
             } catch (error) {
                 console.error('❌ Lỗi khi xóa sản phẩm:', error);
-            }
-            return false;
-        }
-
-        // Hàm lưu token khi đăng nhập
+            } return false;
+        }        // Hàm lưu token khi đăng nhập
         function handleLoginSuccess(data) {
             localStorage.setItem('adminToken', data.token);
             localStorage.setItem('adminLoggedIn', 'true');
@@ -5741,7 +5743,7 @@
                             };
 
                             if (currentProductId) {
-                                productData.id = currentProductId; // No longer parseInt
+                            productData._id = currentProductId; // Sửa thành _id để khớp với server
                             }
 
                             const savedProduct = await saveProductToAPI(productData);
@@ -5784,7 +5786,7 @@
                         loadProductsFromAPI().then(renderProductsInAdmin);
                     }
 
-                    showNotification('✅ Sản phẩm đã được xóa khỏi database!', 'success');
+                    showNotification('✅ Sản phẩm đã được xóa!', 'success');
                 } else {
                     showNotification('❌ Lỗi khi xóa sản phẩm. Vui lòng thử lại.', 'error');
                 }
