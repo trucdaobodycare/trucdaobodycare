@@ -1053,33 +1053,35 @@ app.put('/api/products/:id', authenticateToken, requireAdmin, async (req, res) =
             return res.status(400).json({ error: 'ID sản phẩm không hợp lệ' });
         }
 
-        if (!product) {
+        if (product) {
+            const responseProduct = {
+                id: product._id.toString(),
+                name: product.name,
+                category: product.category,
+                originalPrice: product.originalPrice,
+                salePrice: product.salePrice,
+                image: product.image,
+                description: product.description,
+                sku: product.sku,
+                stock: product.stock,
+                featured: product.featured,
+                tags: product.tags,
+                views: product.views,
+                sales: product.sales,
+                createdAt: product.createdAt,
+                updatedAt: product.updatedAt
+            };
+            
+            res.json({
+                success: true,
+                message: 'Cập nhật sản phẩm thành công',
+                product: responseProduct
+            });
+        } else {
+            // Nếu không tìm thấy sản phẩm, trả về lỗi 404
             return res.status(404).json({ error: 'Không tìm thấy sản phẩm' });
         }
-        
-        const responseProduct = {
-            id: product._id.toString(),
-            name: product.name,
-            category: product.category,
-            originalPrice: product.originalPrice,
-            salePrice: product.salePrice,
-            image: product.image,
-            description: product.description,
-            sku: product.sku,
-            stock: product.stock,
-            featured: product.featured,
-            tags: product.tags,
-            views: product.views,
-            sales: product.sales,
-            createdAt: product.createdAt,
-            updatedAt: product.updatedAt
-        };
-        
-        res.json({
-            success: true,
-            message: 'Cập nhật sản phẩm thành công',
-            product: responseProduct
-        });
+
     } catch (error) {
         console.error('❌ Error updating product:', {
             productId: req.params.id,
