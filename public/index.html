@@ -5190,32 +5190,41 @@
         // Login functionality
         const adminLoginBtn = document.getElementById('admin-login-btn');
         
-        adminLoginBtn.addEventListener('click', () => {
+        adminLoginBtn.addEventListener('click', async () => {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-            
-            // Decode from Base64 before comparing.
-            // WARNING: This is NOT a secure way to handle authentication.
-            const decodedUsername = atob(ADMIN_USERNAME_B64);
-            const decodedPassword = atob(ADMIN_PASSWORD_B64);
-            
-            if (username === decodedUsername && password === decodedPassword) {
-                document.getElementById('login-modal').style.display = 'none';
-                localStorage.setItem('adminLoggedIn', 'true');
-                showNotification('Đăng nhập admin thành công!', 'success');
-                
-                // Show admin panel in navigation
-                document.getElementById('admin-nav-desktop').style.display = 'block';
-                document.getElementById('admin-nav-mobile').style.display = 'block';
 
-                // Show customization panel
-                document.getElementById('admin-customization').style.display = 'block';
-                
-                // Clear form
-                document.getElementById('username').value = '';
-                document.getElementById('password').value = '';
-            } else {
-                showNotification('Tên đăng nhập hoặc mật khẩu không đúng!', 'error');
+            if (!username || !password) {
+                showNotification('Vui lòng nhập tên đăng nhập và mật khẩu!', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identifier: username, password: password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.token && data.user.role === 'admin') {
+                    // Đăng nhập thành công và có quyền admin
+                    handleLoginSuccess(data);
+                } else {
+                    // Xử lý lỗi
+                    let errorMessage = 'Tên đăng nhập hoặc mật khẩu không đúng!';
+                    if (data.user && data.user.role !== 'admin') {
+                        errorMessage = 'Tài khoản không có quyền quản trị!';
+                    } else if (data.message) {
+                        errorMessage = data.message;
+                    }
+                    showNotification(errorMessage, 'error');
+                    localStorage.removeItem('adminToken'); // Xóa token cũ nếu có
+                }
+            } catch (error) {
+                console.error('Lỗi đăng nhập:', error);
+                showNotification('Lỗi kết nối đến máy chủ. Vui lòng thử lại.', 'error');
             }
         });
         
@@ -5238,14 +5247,6 @@
         const adminPanel = document.getElementById('admin-panel');
         const closeAdmin = document.getElementById('close-admin');
         const adminNavItems = document.querySelectorAll('.admin-nav-item');
-        const adminContents = document.querySelectorAll('.admin-content');
-        
-        // Check if admin is already logged in
-        if (localStorage.getItem('adminLoggedIn') === 'true') {
-            document.getElementById('admin-nav-desktop').style.display = 'block';
-            document.getElementById('admin-nav-mobile').style.display = 'block';
-            document.getElementById('admin-customization').style.display = 'block';
-        }
         
         adminPanelLink.addEventListener('click', (e) => {
             e.preventDefault();
@@ -6316,7 +6317,7 @@
         // Logout admin
         document.getElementById('logout-admin').addEventListener('click', function() {
             if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
-                localStorage.removeItem('adminLoggedIn');
+                localStorage.removeItem('adminToken');
                 document.getElementById('admin-nav-desktop').style.display = 'none';
                 document.getElementById('admin-nav-mobile').style.display = 'none';
                 document.getElementById('admin-customization').style.display = 'none';
