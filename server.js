@@ -1777,7 +1777,7 @@ app.use('/api/*', (req, res) => {
 });
 
 // SPA fallback
-app.use('*', (req, res) => {
+app.get('*', (req, res) => {
     if (req.accepts('html')) {
         res.sendFile(path.join(__dirname, 'public', 'index.html'));
     } else if (req.accepts('json')) {
