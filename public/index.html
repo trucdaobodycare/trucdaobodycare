@@ -5677,13 +5677,13 @@
                 const salePrice = parseInt(form.querySelector('.edit-product-sale-price').value);
                 const image = form.querySelector('.edit-product-image-url').value;
                 const description = form.querySelector('.edit-product-description').value;
-            
-            if (name && category && originalPrice && salePrice && image) {
+            // Sửa lại điều kiện kiểm tra: giá có thể bằng 0
+            if (name && category && !isNaN(originalPrice) && !isNaN(salePrice) && image) {
                 const productData = {
                     name,
                     category,
                     originalPrice,
-                    salePrice,
+                    salePrice, 
                     image,
                     description
                 };
@@ -5692,8 +5692,8 @@
                     productData.id = parseInt(productId);
                 }
                 
-                const result = await saveProductToAPI(productData);
-                if (result) {
+                const savedProduct = await saveProductToAPI(productData);
+                if (savedProduct) {
                     // Close current tab and refresh product list tab
                     const currentTabId = e.target.closest('.tab-pane').id.replace('tab-pane-', '');
                     closeTab(currentTabId, new Event('click'));
