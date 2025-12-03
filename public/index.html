@@ -4485,6 +4485,13 @@
 
         // Hàm lưu sản phẩm lên API
         async function saveProductToAPI(product) {
+            const token = localStorage.getItem('adminToken');
+            if (!token) {
+                showNotification('❌ Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'error');
+                // Optional: redirect to login
+                return null;
+            }
+
             try {
                 const productData = {
                     name: product.name,
@@ -4502,6 +4509,7 @@
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
                         },
                         body: JSON.stringify(productData)
                     });
@@ -4511,6 +4519,7 @@
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
                         },
                         body: JSON.stringify(productData)
                     });
@@ -4520,6 +4529,9 @@
                     const result = await response.json();
                     console.log('✅ Sản phẩm đã được lưu vào database');
                     return result;
+                } else if (response.status === 401 || response.status === 403) {
+                    showNotification('❌ Xác thực thất bại. Vui lòng đăng nhập lại.', 'error');
+                    return null;
                 }
             } catch (error) {
                 console.error('❌ Lỗi khi lưu sản phẩm:', error);
@@ -4529,9 +4541,15 @@
 
         // Hàm xóa sản phẩm từ API
         async function deleteProductFromAPI(productId) {
+            const token = localStorage.getItem('adminToken');
+            if (!token) {
+                showNotification('❌ Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'error');
+                return false;
+            }
             try {
                 const response = await fetch(`${API_BASE}/products/${productId}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
                 if (response.ok) {
@@ -4542,6 +4560,20 @@
                 console.error('❌ Lỗi khi xóa sản phẩm:', error);
             }
             return false;
+        }
+
+        // Hàm lưu token khi đăng nhập
+        function handleLoginSuccess(data) {
+            localStorage.setItem('adminToken', data.token);
+            localStorage.setItem('adminLoggedIn', 'true');
+            showNotification('Đăng nhập admin thành công!', 'success');
+            
+            document.getElementById('login-modal').style.display = 'none';
+            document.getElementById('admin-nav-desktop').style.display = 'block';
+            document.getElementById('admin-nav-mobile').style.display = 'block';
+            document.getElementById('admin-customization').style.display = 'block';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
         }
 
         // Hàm lấy tin nhắn từ API
