@@ -4461,6 +4461,11 @@
         // ==================== CÁC HÀM CŨ (giữ nguyên) ====================
         
         // Hàm gọi API để lấy sản phẩm
+        // Function to open the login modal
+        function openLoginModal() {
+            document.getElementById('login-modal').style.display = 'flex';
+        }
+
         async function loadProductsFromAPI() {
             try {
                 console.log('🔄 Đang tải sản phẩm từ API...');
