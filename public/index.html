@@ -5280,7 +5280,7 @@
             
             products.forEach(product => {
                 const discount = Math.round((1 - product.salePrice / product.originalPrice) * 100);
-                const views = productViews[product.id] || 0;
+                const views = product.views || 0;
                 
                 const productRow = document.createElement('tr');
                 productRow.innerHTML = `
@@ -5299,8 +5299,8 @@
                     <td>${views}</td>
                     <td>
                         <div style="display: flex; gap: 5px;">
-                            <button class="btn btn-sm edit-product" data-id="${product.id}">Sửa</button>
-                            <button class="btn btn-sm btn-danger delete-product" data-id="${product.id}">Xóa</button>
+                            <button class="btn btn-sm edit-product" data-id="${product.id}">Sửa</button> <!-- product.id is now ObjectId string -->
+                            <button class="btn btn-sm btn-danger delete-product" data-id="${product.id}">Xóa</button> <!-- product.id is now ObjectId string -->
                         </div>
                     </td>
                 `;
@@ -5338,7 +5338,7 @@
             
             products.forEach(product => {
                 const discount = Math.round((1 - product.salePrice / product.originalPrice) * 100);
-                const isInWishlist = wishlist.includes(product.id);
+                const isInWishlist = wishlist.includes(product.id); // product.id is ObjectId string
                 
                 const productCard = document.createElement('div');
                 productCard.className = 'product-card';
@@ -5693,7 +5693,7 @@
                             };
 
                             if (currentProductId) {
-                                productData.id = parseInt(currentProductId);
+                                productData.id = currentProductId; // No longer parseInt
                             }
 
                             const savedProduct = await saveProductToAPI(productData);
