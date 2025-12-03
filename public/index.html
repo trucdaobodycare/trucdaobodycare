@@ -4585,6 +4585,12 @@
             loadStatisticsFromAPI();
         }
 
+        function openLoginModal() {
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('adminLoggedIn');
+            document.getElementById('login-modal').style.display = 'flex';
+        }
+
         // Hàm lấy tin nhắn từ API
         async function loadMessagesFromAPI() {
             const token = localStorage.getItem('adminToken');
