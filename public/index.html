@@ -4533,6 +4533,7 @@
                     return result;
                 } else if (response.status === 401 || response.status === 403) {
                     showNotification('❌ Xác thực thất bại. Vui lòng đăng nhập lại.', 'error');
+                localStorage.removeItem('adminToken');
                     openLoginModal();
                     return null;
                 }
@@ -4544,17 +4545,11 @@
 
         // Hàm xóa sản phẩm từ API
         async function deleteProductFromAPI(productId) {
-            const token = localStorage.getItem('adminToken');
-            if (!token) {
-                showNotification('❌ Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'error');
-                openLoginModal();
-                return false; 
-            }
             try {
-                const response = await fetch(`${API_BASE}/products/${productId}`, {
+                const response = await callAPI(`${API_BASE}/products/${productId}`, {
                     method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
                 });
+                
                 
                 if (response.ok) {
                     console.log('✅ Sản phẩm đã được xóa khỏi database');
@@ -4583,12 +4578,6 @@
             loadOrdersFromAPI();
             loadMessagesFromAPI();
             loadStatisticsFromAPI();
-        }
-
-        function openLoginModal() {
-            localStorage.removeItem('adminToken');
-            localStorage.removeItem('adminLoggedIn');
-            document.getElementById('login-modal').style.display = 'flex';
         }
 
         // Hàm lấy tin nhắn từ API
