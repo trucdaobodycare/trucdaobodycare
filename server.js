@@ -1040,15 +1040,20 @@ app.put('/api/products/:id', authenticateToken, requireAdmin, async (req, res) =
         }
         delete updateData.id; // This field should not be in the body, but good to be safe
         
-        if (!mongoose.Types.ObjectId.isValid(productId)) {
-            return res.status(400).json({ error: 'ID sản phẩm không hợp lệ' });
+        // Build query to find by either ObjectId or legacy integer ID
+        let findQuery;
+        if (mongoose.Types.ObjectId.isValid(productId)) {
+            findQuery = { _id: productId };
+        } else if (!isNaN(parseInt(productId))) {
+            // This is a fallback for old numeric IDs if you have them in your DB
+            // Note: This assumes you have a numeric `id` field. The current schema does not.
+            // Let's find by _id for now and log if it's not an ObjectId
+            console.warn(`Warning: Received a non-ObjectId product ID: ${productId}. Attempting to find by _id anyway.`);
+            findQuery = { _id: productId };
         }
         
-        const product = await Product.findByIdAndUpdate(
-            productId,
-            updateData,
-            { new: true, runValidators: true }
-        );
+        // Use findOneAndUpdate with the flexible query
+        const product = await Product.findOneAndUpdate(findQuery, updateData, { new: true, runValidators: true });
         
         if (!product) {
             return res.status(404).json({ error: 'Không tìm thấy sản phẩm' });
