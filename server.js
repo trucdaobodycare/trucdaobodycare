@@ -1039,14 +1039,18 @@ app.put('/api/products/:id', authenticateToken, requireAdmin, async (req, res) =
             }
         }
         delete updateData.id; // This field should not be in the body, but good to be safe
-        
+
+        let product;
         if (mongoose.Types.ObjectId.isValid(productId)) {
             // Use findByIdAndUpdate directly as the ID is a valid ObjectId
-            const product = await Product.findByIdAndUpdate(
+            product = await Product.findByIdAndUpdate(
                 productId,
                 updateData,
                 { new: true, runValidators: true }
             );
+        } else {
+            // Nếu ID không hợp lệ, trả về lỗi 400
+            return res.status(400).json({ error: 'ID sản phẩm không hợp lệ' });
         }
 
         if (!product) {
