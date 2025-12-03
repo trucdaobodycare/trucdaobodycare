@@ -4464,14 +4464,16 @@
         async function loadProductsFromAPI() {
             try {
                 console.log('🔄 Đang tải sản phẩm từ API...');
-                const response = await fetch(`${API_BASE}/products`);
+                const response = await fetch(`${API_BASE}/products`); // This endpoint is public, no token needed
                 if (response.ok) {
                     const apiProducts = await response.json();
-                    console.log(`✅ Đã tải ${apiProducts.length} sản phẩm từ database`);
+                    // FIX: The response is an object { products: [...] }, not an array.
+                    console.log(`✅ Đã tải ${apiProducts.products.length} sản phẩm từ database`);
                     
                     // Cập nhật danh sách sản phẩm từ API
-                    if (apiProducts && apiProducts.length > 0) {
-                        products = apiProducts;
+                    // FIX: Assign the array of products, not the whole response object.
+                    if (apiProducts && apiProducts.products && apiProducts.products.length > 0) {
+                        products = apiProducts.products;
                         renderProductsInAdmin();
                         updateProductDisplay();
                     }
@@ -4578,11 +4580,18 @@
 
         // Hàm lấy tin nhắn từ API
         async function loadMessagesFromAPI() {
+            const token = localStorage.getItem('adminToken');
+            if (!token) return [];
+
             try {
-                const response = await fetch(`${API_BASE}/messages`);
+                // FIX: Add Authorization header
+                const response = await fetch(`${API_BASE}/messages`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 if (response.ok) {
                     const apiMessages = await response.json();
-                    messages = apiMessages;
+                    // The response is { messages: [...], ... }, so we extract the array
+                    messages = apiMessages.messages || [];
                     updateMessagesInAdmin();
                     updateDashboardMessages();
                     return apiMessages;
@@ -4613,9 +4622,15 @@
 
         // Hàm đánh dấu tin nhắn đã đọc
         async function markMessageAsRead(messageId) {
+            const token = localStorage.getItem('adminToken');
+            if (!token) return false;
             try {
+                // FIX: Add Authorization header
                 const response = await fetch(`${API_BASE}/messages/${messageId}/read`, {
-                    method: 'PUT'
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
                 });
                 return response.ok;
             } catch (error) {
@@ -4626,9 +4641,15 @@
 
         // Hàm đánh dấu tất cả tin nhắn đã đọc cho một khách hàng
         async function markAllMessagesAsRead(phone) {
+            const token = localStorage.getItem('adminToken');
+            if (!token) return false;
             try {
+                // FIX: Add Authorization header
                 const response = await fetch(`${API_BASE}/messages/customer/${phone}/read-all`, {
-                    method: 'PUT'
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
                 });
                 return response.ok;
             } catch (error) {
@@ -4639,11 +4660,14 @@
 
         // Hàm trả lời tin nhắn
         async function replyToMessage(messageId, replyText) {
+            const token = localStorage.getItem('adminToken');
+            if (!token) return false;
             try {
                 const response = await fetch(`${API_BASE}/messages/${messageId}/reply`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify({
                         text: replyText,
@@ -4663,11 +4687,18 @@
 
         // Hàm lấy đơn hàng từ API
         async function loadOrdersFromAPI() {
+            const token = localStorage.getItem('adminToken');
+            if (!token) return [];
+
             try {
-                const response = await fetch(`${API_BASE}/orders`);
+                // FIX: Add Authorization header
+                const response = await fetch(`${API_BASE}/orders`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 if (response.ok) {
                     const apiOrders = await response.json();
-                    orders = apiOrders;
+                    // The response is { orders: [...] }, so extract the array
+                    orders = apiOrders.orders || [];
                     updateOrdersInAdmin();
                     updateDashboardOrders();
                     return apiOrders;
@@ -4680,11 +4711,14 @@
 
         // Hàm cập nhật trạng thái đơn hàng
         async function updateOrderStatus(orderId, status) {
+            const token = localStorage.getItem('adminToken');
+            if (!token) return false;
             try {
                 const response = await fetch(`${API_BASE}/orders/${orderId}/status`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify({ status })
                 });
@@ -4701,8 +4735,13 @@
 
         // Hàm lấy thống kê từ API
         async function loadStatisticsFromAPI() {
+            const token = localStorage.getItem('adminToken');
+            if (!token) return null;
             try {
-                const response = await fetch(`${API_BASE}/statistics`);
+                // FIX: Add Authorization header
+                const response = await fetch(`${API_BASE}/statistics`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 if (response.ok) {
                     const stats = await response.json();
                     updateDashboardStats(stats);
