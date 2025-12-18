@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://trucdaobodycare.onrender.com/sitemap.xml
